@@ -6,6 +6,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { runDiscovery, parseRequirements } from '../src/engine/discovery.js';
+import { detectTechnology } from '../src/registry/technologies.js';
 import { proposeAgents, customAgentProposal, runAfterOptions } from '../src/engine/agentFactory.js';
 import { customGuardrailProposal } from '../src/engine/guardrailDesigner.js';
 import { composeWorkflow } from '../src/engine/workflowComposer.js';
@@ -157,4 +158,69 @@ test('every run ends pending a human decision, and the decision is recorded', as
   const approval = recordApproval(run.id, { state: 'approved', note: 'Checked the generated specs by hand.' });
   assert.equal(approval.state, 'approved');
   assert.equal(getRun(run.id).approval.note, 'Checked the generated specs by hand.');
+});
+
+test('technology detection picks the most specific profile, not the first one listed', () => {
+  // Regression: "Playwright API testing (TypeScript)" used to tie with the bare "playwright"
+  // keyword and resolve to the UI profile, which then ran a browser emitter over an API source
+  // model and produced code referencing an undefined `response`.
+  const cases = [
+    ['Playwright API testing (TypeScript)', 'target', 'playwright-api'],
+    ['Playwright (TypeScript)', 'target', 'playwright-ts'],
+    ['Playwright (Python)', 'target', 'playwright-python'],
+    ['playwright', 'target', 'playwright-ts'],
+    ['Selenium WebDriver (Java) with TestNG', 'source', 'selenium-java'],
+    ['Selenium WebDriver (Python)', 'source', 'selenium-python'],
+    ['Legacy REST API tests (Postman collection)', 'source', 'rest-collection'],
+    ['Mainframe COBOL batch test harness', 'source', 'unknown'],
+  ];
+  for (const [declared, role, expected] of cases) {
+    assert.equal(detectTechnology(declared, [], role).id, expected, `"${declared}" as ${role}`);
+  }
+});
+
+test('the structure check does not trip over URLs, escaped quotes or truncated comments', async () => {
+  // Regression: `//` inside 'https://shop.example.com/login' was read as a line comment, which
+  // swallowed the rest of the line — including its closing bracket — and reported clean generated
+  // files as structurally broken blockers.
+  const sample = SAMPLES.find((s) => s.id === 'selenium-to-playwright');
+  const project = { id: id('prj'), name: 'structure', spec: sample.spec, interview: { answers: {}, ready: true } };
+  project.discovery = runDiscovery(project.spec);
+  const { proposals } = proposeAgents(project.discovery);
+  project.proposals = { agents: proposals.map((p) => ({ ...p, decision: 'accepted' })), guardrails: [] };
+  project.graph = composeWorkflow(project.proposals.agents);
+
+  const run = await executeRun(createRun(project).id, project);
+  const report = run.ws.structureReport;
+
+  assert.ok(run.ws.generated.some((a) => a.content.includes("goto('https://")), 'the sample really does contain a URL');
+  assert.ok(run.ws.generated.some((a) => a.content.includes("xpath=//button")), 'and an xpath with a double slash');
+  assert.equal(report.blockers, 0, `no structural blockers, got: ${JSON.stringify(report.findings.filter((f) => f.severity === 'blocker'))}`);
+});
+
+test('a REST collection migrates to real Playwright API tests, not broken browser specs', async () => {
+  const sample = SAMPLES.find((s) => s.id === 'rest-to-playwright-api');
+  const discovery = runDiscovery(sample.spec);
+  assert.equal(discovery.target.id, 'playwright-api');
+
+  const project = { id: id('prj'), name: 'api', spec: sample.spec, interview: { answers: {}, ready: true } };
+  project.discovery = discovery;
+  const { proposals } = proposeAgents(discovery);
+  project.proposals = { agents: proposals.map((p) => ({ ...p, decision: 'accepted' })), guardrails: [] };
+  project.graph = composeWorkflow(project.proposals.agents);
+
+  const run = await executeRun(createRun(project).id, project);
+  const spec = run.ws.generated.find((a) => a.path.endsWith('.spec.ts'));
+  assert.ok(spec, 'an API spec file is produced');
+  assert.match(spec.content, /await request\.(get|post)\(/, 'it uses APIRequestContext, not the page fixture');
+  assert.ok(!spec.content.includes('{ page }'), 'no browser page fixture in an API spec');
+
+  const balanced = (text, open, close) =>
+    [...text].filter((c) => c === open).length === [...text].filter((c) => c === close).length;
+  assert.ok(balanced(spec.content, '(', ')'), 'parentheses balance');
+  assert.ok(balanced(spec.content, '{', '}'), 'braces balance');
+  assert.ok(
+    !spec.content.includes('response.status()') || spec.content.includes('const response = await request'),
+    'any response assertion has a response binding to read',
+  );
 });

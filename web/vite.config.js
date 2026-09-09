@@ -7,7 +7,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    open: true,
+    // Deliberately does not open a browser: the dev server restarts often, and each restart
+    // launching another window is noise. Open http://localhost:5173 once and leave it.
+    open: false,
+    strictPort: true,
     proxy: {
       // Same-origin API in dev, so no CORS juggling and SSE works untouched.
       '/api': { target: API, changeOrigin: true },

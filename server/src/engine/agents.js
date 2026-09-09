@@ -93,7 +93,7 @@ async function bddGenerator(ctx) {
   for (const suite of model.suites) {
     const lines = [`Feature: ${humanise(suite.name)}`, `  # Source: ${suite.file}`, ''];
     for (const test of suite.tests) {
-      const requirement = matchRequirement(test, requirements);
+      const requirement = matchRequirement(test, ctx);
       if (requirement) lines.push(`  @${requirement.id}`);
       lines.push(`  Scenario: ${humanise(test.name)}`);
       const first = test.steps[0];
@@ -153,20 +153,62 @@ function describeAssertion(assertion) {
   }
 }
 
-function matchRequirement(test, requirements) {
-  if (!requirements?.length) return null;
-  const words = new Set(humanise(test.name).toLowerCase().split(/\W+/).filter((w) => w.length > 3));
-  let best = null;
-  let bestScore = 0;
-  for (const requirement of requirements) {
-    const reqWords = requirement.text.toLowerCase().split(/\W+/).filter((w) => w.length > 3);
-    const score = reqWords.filter((w) => words.has(w)).length;
-    if (score > bestScore) {
-      bestScore = score;
-      best = requirement;
+const STOP_WORDS = new Set(['with', 'that', 'this', 'from', 'when', 'then', 'they', 'their', 'shall', 'must', 'should', 'test', 'tests', 'user', 'users', 'able']);
+
+function keyWords(text) {
+  return new Set(
+    humanise(text)
+      .toLowerCase()
+      .split(/\W+/)
+      .filter((word) => word.length > 3 && !STOP_WORDS.has(word)),
+  );
+}
+
+/**
+ * Assigns requirements to tests ONE-TO-ONE wherever possible.
+ *
+ * Scoring each test independently lets two tests both claim the strongest requirement and leaves a
+ * third orphaned — the traceability guardrail then reports a coverage failure that is an artefact
+ * of the matcher, not of the migration. Strongest pairs are assigned first, each requirement is
+ * used once, and only then may leftovers share.
+ */
+function assignRequirements(tests, requirements) {
+  const pairs = [];
+  for (const test of tests) {
+    const testWords = keyWords(test.name);
+    for (const requirement of requirements) {
+      const reqWords = keyWords(requirement.text);
+      const shared = [...reqWords].filter((word) => testWords.has(word));
+      if (!shared.length) continue;
+      // Favour overlap that is a large share of the requirement, not just a long requirement.
+      pairs.push({ testId: test.id, requirement, score: shared.length + shared.length / reqWords.size });
     }
   }
-  return bestScore >= 1 ? best : null;
+  pairs.sort((a, b) => b.score - a.score);
+
+  const byTest = new Map();
+  const usedRequirements = new Set();
+  for (const pair of pairs) {
+    if (byTest.has(pair.testId) || usedRequirements.has(pair.requirement.id)) continue;
+    byTest.set(pair.testId, pair.requirement);
+    usedRequirements.add(pair.requirement.id);
+  }
+  // Anything still unmatched may share a requirement rather than being reported as untraced.
+  for (const pair of pairs) {
+    if (!byTest.has(pair.testId)) byTest.set(pair.testId, pair.requirement);
+  }
+  return byTest;
+}
+
+/** Cached per run, so every agent sees the same requirement → test assignment. */
+function matchRequirement(test, ctx) {
+  const requirements = ctx?.discovery?.requirements || [];
+  if (!requirements.length) return null;
+  if (!ctx.ws.requirementMap) {
+    const tests = (ctx.ws.sourceModel?.suites || []).flatMap((suite) => suite.tests);
+    ctx.ws.requirementMap = assignRequirements(tests, requirements);
+  }
+  return ctx.ws.requirementMap.get(test.id) || null;
 }
 
 /* ------------------------------------------------- playwright typescript */
@@ -186,7 +228,7 @@ async function playwrightTsGenerator(ctx) {
 
     body.push(`test.describe('${escape(humanise(suite.name))}', () => {`);
     for (const test of suite.tests) {
-      const requirement = matchRequirement(test, ctx.discovery.requirements);
+      const requirement = matchRequirement(test, ctx);
       if (requirement) body.push(`  // traces: ${requirement.id} — ${escape(requirement.text.slice(0, 90))}`);
       body.push(`  // source: ${suite.file} :: ${test.name}`);
       body.push(`  test('${escape(humanise(test.name))}', async ({ page }) => {`);
@@ -326,7 +368,10 @@ function tsAssertion(assertion, ctx, usePom, className, pageLocators) {
     case 'attribute':
       return target ? `await expect(${target}).toHaveAttribute('value', '${expected}');` : null;
     case 'status':
-      return `expect(response.status()).toBe(${Number(assertion.expected) || 200});`;
+      // A response-status assertion has no meaning in a browser spec — emitting one would
+      // reference a `response` binding that does not exist and produce code that cannot compile.
+      ctx.notes.push('A response-status assertion was left as a TODO: this is a UI spec, not an API spec.');
+      return `// TODO: response status ${assertion.expected ?? ''} — port this to an API test`;
     default:
       if (target && expected) return `await expect(${target}).toHaveText('${expected}');`;
       if (target) return `await expect(${target}).toBeVisible();`;
@@ -427,7 +472,9 @@ async function playwrightApiGenerator(ctx) {
       lines.push(`    expect(response.status()).toBe(${status});`);
       assertionCount += 1;
       for (const assertion of test.assertions.filter((a) => a.subject === 'body')) {
-        lines.push(`    // TODO: port body assertion — ${escape((assertion.raw || '').slice(0, 90))}`);
+        // Name the original check rather than quoting a truncated fragment of its source.
+        const name = (assertion.raw || '').match(/pm\.test\(\s*["']([^"']+)/)?.[1] || (assertion.raw || '').slice(0, 70);
+        lines.push(`    // TODO: port body assertion "${escape(name)}"`);
       }
       lines.push('  });');
     }
@@ -589,7 +636,7 @@ async function traceabilityAgent(ctx) {
   const rows = [];
   for (const suite of model.suites) {
     for (const test of suite.tests) {
-      const requirement = matchRequirement(test, requirements);
+      const requirement = matchRequirement(test, ctx);
       const artifacts = generated.filter((a) => a.traces.includes(test.id));
       rows.push({
         requirementId: requirement?.id || null,
@@ -635,8 +682,11 @@ async function structureValidator(ctx) {
   for (const file of files) {
     const text = file.content;
     if (file.language === 'typescript') {
-      if (countChar(text, '{') !== countChar(text, '}')) findings.push({ file: file.path, issue: 'Unbalanced braces', severity: 'blocker' });
-      if (countChar(text, '(') !== countChar(text, ')')) findings.push({ file: file.path, issue: 'Unbalanced parentheses', severity: 'blocker' });
+      // Count delimiters in CODE only. A source line quoted inside a comment can legitimately be
+      // truncated mid-expression, and counting it produced a blocker on a file that compiles.
+      const code = stripNonCode(text);
+      if (countChar(code, '{') !== countChar(code, '}')) findings.push({ file: file.path, issue: 'Unbalanced braces', severity: 'blocker' });
+      if (countChar(code, '(') !== countChar(code, ')')) findings.push({ file: file.path, issue: 'Unbalanced parentheses', severity: 'blocker' });
       if (/\btest\(/.test(text) && !/@playwright\/test/.test(text)) findings.push({ file: file.path, issue: 'Uses test() without importing @playwright/test', severity: 'blocker' });
       if (/test\('[^']*',\s*async\s*\([^)]*\)\s*=>\s*\{\s*\}\s*\)/.test(text)) findings.push({ file: file.path, issue: 'Empty test body', severity: 'major' });
     }
@@ -663,6 +713,57 @@ async function structureValidator(ctx) {
     metrics: report,
     notes: findings.filter((f) => f.severity !== 'minor').map((f) => `${f.file}: ${f.issue}`),
   };
+}
+
+/**
+ * Blanks out comments and string literals so delimiter counting only sees executable code.
+ *
+ * This is a left-to-right scan rather than a set of regexes on purpose: strip comments first and
+ * the `//` inside `'https://example.com/login'` eats the rest of the line, taking the closing
+ * bracket with it and reporting a perfectly good file as unbalanced.
+ */
+function stripNonCode(text) {
+  let out = '';
+  let state = 'code'; // code | line | block | single | double | template
+  let i = 0;
+
+  while (i < text.length) {
+    const c = text[i];
+    const next = text[i + 1];
+
+    if (state === 'code') {
+      if (c === '/' && next === '/') { state = 'line'; out += '  '; i += 2; continue; }
+      if (c === '/' && next === '*') { state = 'block'; out += '  '; i += 2; continue; }
+      if (c === "'") { state = 'single'; out += ' '; i += 1; continue; }
+      if (c === '"') { state = 'double'; out += ' '; i += 1; continue; }
+      if (c === '`') { state = 'template'; out += ' '; i += 1; continue; }
+      out += c;
+      i += 1;
+      continue;
+    }
+
+    if (state === 'line') {
+      if (c === '\n') { state = 'code'; out += '\n'; } else out += ' ';
+      i += 1;
+      continue;
+    }
+
+    if (state === 'block') {
+      if (c === '*' && next === '/') { state = 'code'; out += '  '; i += 2; continue; }
+      out += c === '\n' ? '\n' : ' ';
+      i += 1;
+      continue;
+    }
+
+    // Inside a string literal.
+    if (c === '\\') { out += '  '; i += 2; continue; }
+    const closes = (state === 'single' && c === "'") || (state === 'double' && c === '"') || (state === 'template' && c === '`');
+    if (closes) { state = 'code'; out += ' '; i += 1; continue; }
+    out += c === '\n' ? '\n' : ' ';
+    i += 1;
+  }
+
+  return out;
 }
 
 function countChar(text, char) {

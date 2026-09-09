@@ -126,16 +126,44 @@ const UNKNOWN = (raw, role) => ({
  * Returns the best match with its evidence, or an `unknown` profile.
  */
 export function detectTechnology(rawStack, artifacts = [], role = 'source') {
-  const declared = String(rawStack || '').toLowerCase();
+  // Punctuation must not hide a phrase: "Playwright (Python)" has to match the keyword
+  // "playwright python", otherwise it falls through to the bare "playwright" profile.
+  const declared = String(rawStack || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9+#.]+/g, ' ')
+    .trim();
+  // A named language is decisive: "Selenium WebDriver (Python)" matches the phrase
+  // "selenium webdriver" (a Java profile keyword) more strongly than anything in the Python
+  // profile, so without this the wrong parser wins.
+  const words = new Set(declared.split(' '));
+  const LANGUAGE_WORDS = { java: 'java', python: 'python', typescript: 'typescript', ts: 'typescript', javascript: 'javascript', js: 'javascript' };
+  let declaredLanguage = null;
+  for (const [word, language] of Object.entries(LANGUAGE_WORDS)) {
+    if (words.has(word)) declaredLanguage = language;
+  }
+
   const scored = TECHNOLOGIES.map((tech) => {
     let score = 0;
     const evidence = [];
 
-    for (const keyword of tech.keywords) {
-      if (declared.includes(keyword)) {
-        score += 6;
-        evidence.push(`declared stack mentions "${keyword}"`);
+    if (declaredLanguage) {
+      if (tech.language === declaredLanguage) {
+        score += 5;
+        evidence.push(`declared language is ${declaredLanguage}`);
+      } else {
+        score -= 6;
       }
+    }
+
+    // Score the MOST SPECIFIC matching keyword, weighted by how specific it is. Without this,
+    // "Playwright API testing (TypeScript)" ties between the playwright-ts profile (matching the
+    // bare word "playwright") and playwright-api (matching "playwright api"), and array order
+    // decides the winner — which silently runs a UI emitter over an API source model.
+    const matched = tech.keywords.filter((keyword) => declared.includes(keyword));
+    if (matched.length) {
+      const best = matched.sort((a, b) => b.length - a.length)[0];
+      score += 6 + best.split(/\s+/).length * 2;
+      evidence.push(`declared stack mentions "${best}"`);
     }
     // Single-word fallback so "Cypress" alone still matches.
     const head = tech.id.split('-')[0];
