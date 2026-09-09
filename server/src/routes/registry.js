@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { listAgents, addAgent, removeAgent } from '../registry/agents.js';
 import { listGuardrails, addGuardrail, removeGuardrail } from '../registry/guardrails.js';
-import { AGENT_IMPLS } from '../engine/agents.js';
+import { AGENT_IMPLS, INPUT_SOURCES } from '../engine/agents.js';
 import { AVAILABLE_CHECKS } from '../engine/validator.js';
 import { TECHNOLOGIES } from '../registry/technologies.js';
 import { CAPABILITY_CATALOG } from '../engine/discovery.js';
+import { ON_FAILURE_OPTIONS } from '../engine/guardrailDesigner.js';
 import { HttpError } from '../lib/util.js';
 
 const router = Router();
@@ -16,6 +17,9 @@ router.get('/', (req, res) => {
     technologies: TECHNOLOGIES.map(({ codeSignals, ...rest }) => ({ ...rest, codeSignals: codeSignals.map(String) })),
     capabilityGroups: CAPABILITY_CATALOG,
     impls: Object.keys(AGENT_IMPLS),
+    // The authoring forms are built from these, so the UI never drifts from what the engine accepts.
+    inputSources: Object.entries(INPUT_SOURCES).map(([id, source]) => ({ id, label: source.label })),
+    onFailureOptions: ON_FAILURE_OPTIONS,
     checks: AVAILABLE_CHECKS,
   });
 });

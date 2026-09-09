@@ -49,6 +49,28 @@ Three consequences every module must honour:
 | Registries | `server/src/registry/*.js` | Seed agents and guardrails, user extensible |
 | LLM assist | `server/src/lib/llm.js` | Optional; falls back to rules when no key is set |
 
+## 3a. Who owns what
+
+> AI proposes the migration architecture; the human owns the final architecture.
+
+| The platform proposes | The human decides |
+|---|---|
+| Capabilities required, risks found, gaps that block | Which agents run, in what order, reading what |
+| Registry agents that match, guardrails that cover each risk | Accept / Reject / Edit / **Create my own** on every proposal |
+| Verdicts computed from artifacts | Whether the run is accepted at all (approval gate) |
+
+An **authored agent** (`impl: instructionAgent`) is a first-class node: its instructions, chosen
+input sources, expected output and graph position travel with it and are executed. With no model
+configured it writes the fully resolved brief and states that it did not run — it never fabricates.
+
+An **authored guardrail** (`check: customRule`) carries a plain-English rule, an `appliesTo` target
+and an `onFailure` policy. `stop` is honoured mid-run: guardrails scoped to an agent execute the
+moment that agent finishes, so the workflow halts there instead of reporting the failure afterwards.
+
+A **custom project kind** switches off every migration assumption — no source parser is expected, no
+emitter, no framework questions, and no capability gaps. The platform contributes only what it can
+prove (traceability, structural checks) and the human authors the rest.
+
 ## 4. Contracts
 
 **Capability** — the unit of matchmaking: `{ id, label, tags[] }`. Agents *provide* capabilities;

@@ -14,6 +14,7 @@ import {
   toPlaywrightSelector,
 } from './parsers.js';
 import { slug, pascal, camel, id } from '../lib/util.js';
+import { assist, llmAvailable } from '../lib/llm.js';
 
 /* ------------------------------------------------------------------ output */
 
@@ -695,9 +696,182 @@ async function genericAdapter(ctx) {
   };
 }
 
+/* --------------------------------------------------- human-authored agent */
+
+/**
+ * The input kinds a human can tick when authoring an agent. Each one knows how to pull its
+ * material out of the run context, so "which inputs does this agent see" is a checkbox list in
+ * the UI and a real, auditable slice of context here.
+ */
+export const INPUT_SOURCES = {
+  requirements: {
+    label: 'Requirements',
+    collect: (ctx) => (ctx.discovery.requirements || []).map((r) => `${r.id} ${r.text}`).join('\n'),
+  },
+  constraints: {
+    label: 'Constraints & clarifications',
+    collect: (ctx) =>
+      [ctx.spec.constraints, ...Object.entries(ctx.answers || {}).map(([key, value]) => `${key}: ${value}`)]
+        .filter(Boolean)
+        .join('\n'),
+  },
+  artifacts: {
+    label: 'Source artifacts',
+    collect: (ctx, authored) => {
+      const filter = (authored?.artifactFilter || '')
+        .split(',')
+        .map((part) => part.trim().toLowerCase().replace(/^\*?\.?/, ''))
+        .filter(Boolean);
+      const files = (ctx.spec.artifacts || []).filter(
+        (file) => !filter.length || filter.some((ext) => file.path.toLowerCase().endsWith(`.${ext}`)),
+      );
+      return files.map((file) => `--- ${file.path}\n${file.content.slice(0, 6000)}`).join('\n\n');
+    },
+  },
+  sourceModel: {
+    label: 'Parsed source model',
+    collect: (ctx) => (ctx.ws.sourceModel ? JSON.stringify(ctx.ws.sourceModel, null, 1).slice(0, 12000) : ''),
+  },
+  generated: {
+    label: 'Artifacts generated earlier in this run',
+    collect: (ctx) =>
+      ctx.ws.generated.map((a) => `--- ${a.path}\n${a.content.slice(0, 4000)}`).join('\n\n'),
+  },
+};
+
+/** Keeps a model-proposed path inside the run's output tree. */
+function safePath(raw, fallbackDir) {
+  const cleaned = String(raw || '')
+    .replace(/\\/g, '/')
+    .replace(/^[a-zA-Z]:/, '')
+    .split('/')
+    .filter((part) => part && part !== '.' && part !== '..')
+    .join('/');
+  return cleaned || `${fallbackDir}/output.txt`;
+}
+
+/**
+ * Runs an agent a human wrote in the UI: their purpose, their instructions, their chosen inputs.
+ *
+ * With a model configured it genuinely executes those instructions and writes whatever files come
+ * back. With no model it writes the fully resolved brief instead and marks itself a placeholder —
+ * it does not invent output and then let a guardrail call it a success.
+ */
+async function instructionAgent(ctx) {
+  const node = ctx.node;
+  const authored = node.authored || {};
+  const selections = authored.inputSelections?.length ? authored.inputSelections : ['requirements', 'artifacts'];
+
+  const sections = [];
+  for (const key of selections) {
+    const source = INPUT_SOURCES[key];
+    if (!source) continue;
+    const body = source.collect(ctx, authored);
+    if (body?.trim()) sections.push({ key, label: source.label, body });
+  }
+
+  const inputDigest = sections.map((section) => `## ${section.label}\n${section.body}`).join('\n\n');
+  ctx.log(`Authored agent "${node.name}" reading ${sections.length} input source(s): ${sections.map((s) => s.label).join(', ') || 'none'}.`);
+
+  const outputDir = `custom/${slug(node.name) || 'agent'}`;
+
+  if (!llmAvailable()) {
+    const brief = [
+      `# ${node.name}`,
+      '',
+      `**Purpose:** ${authored.purpose || node.description || '(not stated)'}`,
+      `**Expected output:** ${authored.outputDescription || '(not stated)'}`,
+      `**Runs:** ${authored.runAfterLabel || `phase ${node.phase}`}`,
+      '',
+      '## Instructions as written',
+      '',
+      authored.instructions || '(no instructions were provided)',
+      '',
+      '## Inputs this agent was given',
+      '',
+      ...sections.map((section) => `- **${section.label}** — ${section.body.split('\n').length} line(s)`),
+      '',
+      '---',
+      '',
+      'No model is configured, so these instructions were **not executed**. The deterministic engine',
+      'cannot interpret free-text instructions. Set a model in Settings and re-run, or replace this',
+      'agent with a registry agent that has a real implementation.',
+    ].join('\n');
+
+    ctx.ws.placeholders = (ctx.ws.placeholders || 0) + 1;
+    ctx.log('No model configured — wrote the resolved brief instead of executing the instructions.');
+    return {
+      outputs: [artifact(`${outputDir}/BRIEF.md`, brief, { kind: 'analysis' })],
+      metrics: { placeholder: true, inputsSeen: sections.length },
+      notes: [`"${node.name}" did not execute: authored agents need a model, and none is configured.`],
+    };
+  }
+
+  const response = await assist({
+    task: 'generation',
+    maxTokens: 8000,
+    system:
+      'You are executing one agent inside a migration platform. Follow the operator\'s instructions exactly and produce files. ' +
+      'Never invent source material that is not in the inputs. If the inputs are insufficient to do the job properly, say so in notes and produce only what is genuinely supported. ' +
+      'Respond as {"files":[{"path":"relative/path.ext","content":"..."}],"notes":["..."],"unableTo":["..."]}',
+    prompt: [
+      `# Agent: ${node.name}`,
+      `Purpose: ${authored.purpose || node.description || '(not stated)'}`,
+      `Expected output: ${authored.outputDescription || '(not stated)'}`,
+      '',
+      '# Instructions',
+      authored.instructions || '(none given — infer from the purpose)',
+      '',
+      '# Project context',
+      `Source stack: ${ctx.spec.sourceStack || 'unspecified'}`,
+      `Target stack: ${ctx.spec.targetStack || 'unspecified'}`,
+      '',
+      '# Inputs',
+      inputDigest || '(no inputs matched the selected sources)',
+      '',
+      `Write files under "${outputDir}/" unless the instructions name specific paths.`,
+    ].join('\n'),
+  });
+
+  if (!response || response.__error) {
+    ctx.ws.placeholders = (ctx.ws.placeholders || 0) + 1;
+    const reason = response?.__error || 'the model was unavailable';
+    ctx.log(`Model call failed: ${reason}`);
+    return {
+      outputs: [
+        artifact(`${outputDir}/FAILED.md`, `# ${node.name} did not run\n\n${reason}\n\nInstructions were:\n\n${authored.instructions || '(none)'}\n`, { kind: 'analysis' }),
+      ],
+      metrics: { placeholder: true, error: reason },
+      notes: [`"${node.name}" failed to execute: ${reason}`],
+    };
+  }
+
+  const files = Array.isArray(response.files) ? response.files : [];
+  const outputs = files
+    .filter((file) => typeof file?.content === 'string' && file.content.trim())
+    .map((file) => artifact(safePath(file.path, outputDir), file.content, { kind: file.kind || 'code' }));
+
+  const notes = [...(response.notes || []), ...(response.unableTo || []).map((item) => `Could not do: ${item}`)];
+
+  if (!outputs.length) {
+    ctx.ws.placeholders = (ctx.ws.placeholders || 0) + 1;
+    outputs.push(
+      artifact(`${outputDir}/NO-OUTPUT.md`, `# ${node.name} produced no files\n\nThe model returned no usable files.\n\nNotes:\n${notes.map((n) => `- ${n}`).join('\n') || '- (none)'}\n`, { kind: 'analysis' }),
+    );
+  }
+
+  ctx.log(`Authored agent produced ${outputs.length} file(s) via ${response.__model}.`);
+  return {
+    outputs,
+    metrics: { files: outputs.length, model: response.__model, inputsSeen: sections.length },
+    notes,
+  };
+}
+
 /* ------------------------------------------------------------- registry */
 
 export const AGENT_IMPLS = {
+  instructionAgent,
   seleniumJavaAnalyzer: analyzerFor('selenium-java'),
   seleniumPythonAnalyzer: analyzerFor('selenium-python'),
   cypressAnalyzer: analyzerFor('cypress'),

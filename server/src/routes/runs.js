@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getRun, busFor, listRuns } from '../engine/orchestrator.js';
+import { getRun, busFor, listRuns, recordApproval } from '../engine/orchestrator.js';
 import { HttpError } from '../lib/util.js';
 
 const router = Router();
@@ -42,6 +42,17 @@ router.get('/:runId/stream', (req, res) => {
     bus.off('event', onEvent);
     res.end();
   });
+});
+
+/** The last gate in the flow: a person accepts the run, or sends it back for changes. */
+router.post('/:runId/approval', (req, res) => {
+  const { state, note, by } = req.body || {};
+  if (!['approved', 'changes-requested'].includes(state)) {
+    throw new HttpError(400, 'state must be "approved" or "changes-requested".');
+  }
+  const approval = recordApproval(req.params.runId, { state, note, by });
+  if (!approval) throw new HttpError(404, 'Run not found.');
+  res.json(approval);
 });
 
 router.get('/:runId/report.md', (req, res) => {

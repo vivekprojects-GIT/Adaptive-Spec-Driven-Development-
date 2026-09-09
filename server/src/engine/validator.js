@@ -5,6 +5,8 @@
  * and "it is fine" are different answers and the report keeps them different.
  */
 
+import { assist, llmAvailable } from '../lib/llm.js';
+
 const CODE_KINDS = new Set(['code', 'config']);
 
 function generatedCode(ws) {
@@ -183,10 +185,89 @@ const CHECKS = {
       evidence: `"${guardrail.name}" has no automated check — it requires a human sign-off before this run can be called done.`,
     };
   },
+
+  /**
+   * A rule a human wrote in plain English. With a model configured it is genuinely evaluated
+   * against the artifacts in scope; without one it returns `warn` and asks for a sign-off,
+   * because "we could not check this" must never render as green.
+   */
+  async customRule({ guardrail, ws, run }) {
+    const rule = guardrail.rule || guardrail.description || guardrail.name;
+    const scope = scopeArtifacts(guardrail, ws, run);
+
+    if (!scope.artifacts.length) {
+      return {
+        status: 'warn',
+        evidence: `Nothing in scope to check — ${scope.label} produced no artifacts.`,
+      };
+    }
+
+    if (!llmAvailable()) {
+      return {
+        status: 'warn',
+        evidence: `No model configured, so this rule was not evaluated. ${scope.artifacts.length} artifact(s) from ${scope.label} need a human sign-off against: "${rule}"`,
+      };
+    }
+
+    const digest = scope.artifacts
+      .map((a) => `--- ${a.path}\n${a.content.slice(0, 5000)}`)
+      .join('\n\n')
+      .slice(0, 40000);
+
+    const response = await assist({
+      task: 'rationale',
+      maxTokens: 1200,
+      system:
+        'You are a migration guardrail. Judge ONLY the rule you are given against the artifacts provided. ' +
+        'Answer "pass" only if the artifacts demonstrably satisfy the rule. Answer "fail" if they demonstrably violate it. ' +
+        'Answer "warn" if the artifacts do not contain enough information to decide. Quote the specific evidence you used. ' +
+        'Respond as {"status":"pass|fail|warn","evidence":"one or two sentences quoting what you saw"}',
+      prompt: `RULE: ${rule}\n\nSOURCE FACTS: ${JSON.stringify(sourceFacts(ws))}\n\nARTIFACTS (${scope.label}):\n${digest}`,
+    });
+
+    if (!response || response.__error) {
+      return { status: 'warn', evidence: `Rule could not be evaluated: ${response?.__error || 'model unavailable'}.` };
+    }
+    const status = ['pass', 'fail', 'warn'].includes(response.status) ? response.status : 'warn';
+    return {
+      status,
+      evidence: `${response.evidence || 'The model returned no evidence.'} (judged by ${response.__model} over ${scope.artifacts.length} artifact(s) from ${scope.label})`,
+    };
+  },
 };
 
-export function runGuardrails(guardrails, context) {
-  return guardrails.map((guardrail) => {
+/** Resolves a guardrail's `appliesTo` to the artifacts it should read. */
+function scopeArtifacts(guardrail, ws, run) {
+  const target = guardrail.appliesTo;
+  if (!target || target === 'workflow') {
+    return { label: 'the whole workflow', artifacts: ws.generated };
+  }
+  const nodes = (run?.nodes || []).filter((node) => node.agentId === target || node.nodeId === target);
+  if (!nodes.length) return { label: `agent "${target}" (not in this graph)`, artifacts: [] };
+  const nodeIds = new Set(nodes.map((node) => node.nodeId));
+  return {
+    label: nodes.map((node) => node.name).join(', '),
+    artifacts: ws.generated.filter((artifact) => nodeIds.has(artifact.producedBy)),
+  };
+}
+
+/** Counts a rule-evaluating model can check against, so it is not judging from prose alone. */
+function sourceFacts(ws) {
+  const model = ws.sourceModel;
+  if (!model) return { sourceModel: 'not available' };
+  return {
+    suites: model.totals?.suites,
+    tests: model.totals?.tests,
+    assertions: model.totals?.assertions,
+    dataRecords: model.totals?.dataRecords,
+    requests: model.totals?.requests,
+    unmapped: (model.unmapped || []).map((u) => u.construct),
+  };
+}
+
+export async function runGuardrails(guardrails, context) {
+  const results = [];
+  for (const guardrail of guardrails) {
     const check = CHECKS[guardrail.check];
     const started = Date.now();
     let result;
@@ -194,22 +275,31 @@ export function runGuardrails(guardrails, context) {
       result = { status: 'warn', evidence: `No implementation registered for check "${guardrail.check}"; the verdict is unknown, not passing.` };
     } else {
       try {
-        result = check({ ...context, params: guardrail.params || {}, guardrail });
+        result = await check({ ...context, params: guardrail.params || {}, guardrail });
       } catch (err) {
         result = { status: 'warn', evidence: `Check threw: ${err.message}` };
       }
     }
-    return {
+    results.push({
       guardrailId: guardrail.guardrailId || guardrail.id,
       name: guardrail.name,
       severity: guardrail.severity,
       risks: guardrail.risks,
       check: guardrail.check,
       params: guardrail.params,
+      appliesTo: guardrail.appliesTo || 'workflow',
+      onFailure: guardrail.onFailure || 'flag',
+      rule: guardrail.rule || null,
       ...result,
       ms: Date.now() - started,
-    };
-  });
+    });
+  }
+  return results;
+}
+
+/** A failed guardrail whose author asked for the run to stop. */
+export function shouldHalt(results) {
+  return results.find((result) => result.status === 'fail' && result.onFailure === 'stop') || null;
 }
 
 export function verdictOf(results) {

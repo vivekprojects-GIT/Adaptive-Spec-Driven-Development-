@@ -6,6 +6,7 @@
  * clone-and-run promise true offline.
  */
 import { activeApiKey, resolveModel, getSettings } from './settings.js';
+import { logger } from './logger.js';
 
 const API_URL = 'https://api.anthropic.com/v1/messages';
 
@@ -51,9 +52,12 @@ export async function assist({ task = 'discovery', system, prompt, json = true, 
 
     if (!response.ok) {
       const body = await response.text();
-      return { __error: `LLM call failed (${response.status}): ${body.slice(0, 300)}` };
+      const message = `LLM call failed (${response.status}): ${body.slice(0, 300)}`;
+      logger.error('llm', message, { task, model });
+      return { __error: message };
     }
 
+    logger.debug('llm', `${task} call succeeded on ${model}`, { task, model, usage: null });
     const data = await response.json();
     const text = (data.content || []).filter((block) => block.type === 'text').map((block) => block.text).join('\n').trim();
     if (!json) return { text, model };
@@ -67,7 +71,9 @@ export async function assist({ task = 'discovery', system, prompt, json = true, 
       return { __error: `LLM returned unparseable JSON: ${err.message}` };
     }
   } catch (err) {
-    return { __error: err.name === 'AbortError' ? 'LLM call timed out after 45s.' : err.message };
+    const message = err.name === 'AbortError' ? 'LLM call timed out after 45s.' : err.message;
+    logger.error('llm', `${task} call failed: ${message}`, { task, model });
+    return { __error: message };
   } finally {
     clearTimeout(timeout);
   }

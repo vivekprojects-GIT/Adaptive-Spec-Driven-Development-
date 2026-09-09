@@ -9,6 +9,7 @@ export default function RunStage({ project, reload, navigate, toast }) {
   const [events, setEvents] = useState([]);
   const [busy, setBusy] = useState(false);
   const [selectedArtifact, setSelectedArtifact] = useState(null);
+  const [approvalNote, setApprovalNote] = useState('');
   const consoleRef = useRef(null);
 
   const load = useCallback(async (targetId) => {
@@ -169,6 +170,80 @@ export default function RunStage({ project, reload, navigate, toast }) {
           </div>
         </Card>
       </div>
+
+      {run?.approval && (
+        <Card
+          title="Human approval"
+          sub="The last gate. AI proposed the architecture; you own the decision on what it produced."
+          right={
+            <Badge tone={run.approval.state === 'approved' ? 'pass' : run.approval.state === 'pending' ? 'warn' : 'fail'}>
+              {run.approval.state}
+            </Badge>
+          }
+        >
+          {run.approval.state === 'pending' ? (
+            <>
+              <div className="proposal-why" style={{ marginBottom: 12 }}>{run.approval.reason}</div>
+              <textarea
+                rows={2}
+                placeholder="Optional note — what you checked, or what needs changing."
+                value={approvalNote}
+                onChange={(e) => setApprovalNote(e.target.value)}
+              />
+              <div className="row" style={{ marginTop: 10 }}>
+                <button
+                  className="btn pass"
+                  disabled={busy}
+                  onClick={async () => {
+                    setBusy(true);
+                    try {
+                      await api.approve(run.id, { state: 'approved', note: approvalNote });
+                      await load(run.id);
+                      await reload();
+                      toast('Run approved.', 'ok');
+                    } catch (err) {
+                      toast(err.message, 'err');
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                >
+                  ✓ Approve this run
+                </button>
+                <button
+                  className="btn danger"
+                  disabled={busy}
+                  onClick={async () => {
+                    setBusy(true);
+                    try {
+                      await api.approve(run.id, { state: 'changes-requested', note: approvalNote });
+                      await load(run.id);
+                      await reload();
+                      toast('Changes requested.', 'ok');
+                    } catch (err) {
+                      toast(err.message, 'err');
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                >
+                  ↩ Request changes
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="kv">
+              <div className="k">Decision</div>
+              <div className="v">{run.approval.state === 'approved' ? 'Approved' : 'Changes requested'}</div>
+              <div className="k">By</div>
+              <div className="v">{run.approval.by}</div>
+              <div className="k">When</div>
+              <div className="v">{new Date(run.approval.at).toLocaleString()}</div>
+              {run.approval.note && (<><div className="k">Note</div><div className="v">{run.approval.note}</div></>)}
+            </div>
+          )}
+        </Card>
+      )}
 
       {results.length > 0 && (
         <Card

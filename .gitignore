@@ -6,3 +6,4 @@ server/data/*.json
 !server/data/.gitkeep
 *.log
 .DS_Store
+test/.data/

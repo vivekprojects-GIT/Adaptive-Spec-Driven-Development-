@@ -7,7 +7,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-export const DATA_DIR = path.resolve(here, '../../data');
+// Tests point this at a scratch directory so a test run never touches real projects.
+export const DATA_DIR = process.env.ASDD_DATA_DIR
+  ? path.resolve(process.env.ASDD_DATA_DIR)
+  : path.resolve(here, '../../data');
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 

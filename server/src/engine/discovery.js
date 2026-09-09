@@ -50,17 +50,74 @@ const SECRET_PATTERNS = [
   { label: 'credential typed into a field', re: /(?:password|passwd|pwd|api[_-]?key|secret|token)[^\n]{0,80}(?:sendKeys|send_keys|\.type|\.fill)\s*\(\s*["'][^"']{3,}["']/i },
 ];
 
+/**
+ * Pulls requirements out of whatever the requirements document looks like: bullets, numbered
+ * lists, tagged IDs (REQ-001, US-14), user stories, or "The system shall …" sentences.
+ *
+ * Headings, table rules and prose scaffolding are skipped, because a heading traced to a test is
+ * a false positive and the traceability guardrail would then be measuring nothing.
+ */
 export function parseRequirements(text = '') {
-  return String(text)
+  const SKIP = /^(#{1,6}\s|[-=]{3,}$|\|?\s*[-:|\s]+\|?$|>\s|```)/;
+  const PROSE = /^(introduction|overview|scope|background|purpose|context|out of scope|assumptions?|glossary|table of contents|appendix)\b/i;
+  const SHALL = /\b(shall|must|should|can|is able to|will)\b/i;
+
+  const candidates = String(text)
     .split('\n')
-    .map((line) => line.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, '').trim())
-    .filter((line) => line.length > 3)
-    .map((line, index) => {
-      const tagged = line.match(/^([A-Z]{2,5}-\d+)\s*[:—-]?\s*(.*)$/);
-      return tagged
-        ? { id: tagged[1], text: tagged[2] || tagged[1], raw: line }
-        : { id: `REQ-${String(index + 1).padStart(3, '0')}`, text: line, raw: line };
-    });
+    .map((line) => line.trim())
+    .filter((line) => line && !SKIP.test(line));
+
+  /**
+   * Two shapes arrive here and both are legitimate:
+   *   - somebody typed three lines into the box — every line is a requirement, full stop;
+   *   - somebody pasted a 200-line requirements document — most lines are prose scaffolding.
+   * Short input is read loosely; long input is filtered. If filtering a long document finds
+   * nothing, fall back to loose rather than reporting zero requirements.
+   */
+  const looksLikeDocument =
+    /^#{1,6}\s/m.test(text) ||
+    /^\s*\d+\.\s+[A-Z][a-z]+\s*$/m.test(text) ||
+    candidates.filter((line) => /^(?:[-*•·]|\d+[.)])\s+/.test(line) || /^[A-Z]{2,6}[-_ ]?\d{1,4}\b/.test(line)).length >= 3;
+  const loose = !looksLikeDocument;
+
+  const collect = (permissive) => {
+    const out = [];
+    let counter = 0;
+    for (const line of candidates) {
+      const bulleted = /^(?:[-*•·]|\d+[.)])\s+/.test(line);
+      const stripped = line
+        .replace(/^(?:[-*•·]|\d+[.)])\s+/, '')
+        .replace(/^\*\*(.+?)\*\*/, '$1')
+        .trim();
+      if (stripped.length < 4) continue;
+
+      const tagged = stripped.match(/^([A-Z]{2,6}[-_ ]?\d{1,4})\s*[:.—–-]?\s*(.+)$/);
+      const story = /^as an?\s+.+?,?\s+i (?:want|need|should)/i.test(stripped);
+
+      if (!permissive) {
+        if (!tagged && !bulleted && !story && !SHALL.test(stripped)) continue;
+        if (!tagged && PROSE.test(stripped)) continue;
+      }
+
+      counter += 1;
+      out.push(
+        tagged
+          ? { id: tagged[1].replace(/[_ ]/g, '-').toUpperCase(), text: tagged[2].trim(), raw: line }
+          : { id: `REQ-${String(counter).padStart(3, '0')}`, text: stripped, raw: line },
+      );
+    }
+    return out;
+  };
+
+  const out = loose ? collect(true) : collect(false).length ? collect(false) : collect(true);
+
+  // Deduplicate ids that repeat across a document (tables often restate them).
+  const seen = new Map();
+  return out.filter((requirement) => {
+    const count = (seen.get(requirement.id) || 0) + 1;
+    seen.set(requirement.id, count);
+    return count === 1;
+  });
 }
 
 export function runDiscovery(spec) {
@@ -89,25 +146,43 @@ export function runDiscovery(spec) {
 
   /* ---- capabilities ------------------------------------------------ */
 
-  require(
-    source.analyzeCapability || 'source.analyze.unknown',
-    `The source suite is ${source.label}; its constructs must be read into the neutral source model before anything can be generated.`,
-    ['source stack'],
-  );
+  // A "custom" project makes no assumption that this is a test migration. The platform contributes
+  // what it can prove (traceability, structural checks) and leaves the shape of the work to the
+  // agents the human authors. Nothing here is specific to any framework.
+  const isCustom = spec.projectKind === 'custom';
 
-  if (target.generateCapability) {
-    require(target.generateCapability, `The target is ${target.label}; a generator must emit it from the source model.`, ['target stack']);
+  if (isCustom) {
+    require(
+      'custom.workflow',
+      'This project is marked custom, so the platform does not assume what the work is. Author the agents that do it — the graph is yours.',
+      ['project kind'],
+    );
+    if (source.id !== 'unknown' && source.analyzeCapability) {
+      require(source.analyzeCapability, `The artifacts still look like ${source.label}, so parsing them into the source model is available if you want it.`, ['artifacts']);
+    }
   } else {
-    require('target.generate.unknown', `The declared target "${spec.targetStack || 'unspecified'}" has no registered emitter.`, ['target stack']);
+    require(
+      source.analyzeCapability || 'source.analyze.unknown',
+      `The source suite is ${source.label}; its constructs must be read into the neutral source model before anything can be generated.`,
+      ['source stack'],
+    );
+
+    if (target.generateCapability) {
+      require(target.generateCapability, `The target is ${target.label}; a generator must emit it from the source model.`, ['target stack']);
+    } else {
+      require('target.generate.unknown', `The declared target "${spec.targetStack || 'unspecified'}" has no registered emitter.`, ['target stack']);
+    }
   }
 
-  if (source.id === 'cypress' && String(target.id).startsWith('playwright')) {
+  if (!isCustom && source.id === 'cypress' && String(target.id).startsWith('playwright')) {
     require('mapping.command.cypress-playwright', 'Cypress chains commands off cy.*; each command needs an explicit Playwright equivalent before generation.', ['source/target pair']);
   }
 
   if (requirements.length) {
-    require('spec.bdd.generate', `${requirements.length} requirement(s) were supplied, so generated tests can and should be anchored to them.`, requirements.slice(0, 3).map((r) => r.id));
-    require('traceability.build', 'Requirements exist, so requirement → test → artifact links must be produced.', ['requirements']);
+    if (!isCustom) {
+      require('spec.bdd.generate', `${requirements.length} requirement(s) were supplied, so generated tests can and should be anchored to them.`, requirements.slice(0, 3).map((r) => r.id));
+    }
+    require('traceability.build', 'Requirements exist, so requirement → output → artifact links must be produced.', ['requirements']);
   }
 
   if (sourceModel.dataFiles.length) {
@@ -160,7 +235,8 @@ export function runDiscovery(spec) {
 
   /* ---- gaps --------------------------------------------------------- */
 
-  if (!SUPPORTED_SOURCE_PARSERS.includes(source.id)) {
+  // A custom project has no expectation of a parser or an emitter, so neither is a gap.
+  if (!isCustom && !SUPPORTED_SOURCE_PARSERS.includes(source.id)) {
     gaps.push({
       capability: source.analyzeCapability || 'source.analyze.unknown',
       reason: `No parser exists for "${spec.sourceStack || 'the declared source'}".`,
@@ -169,7 +245,7 @@ export function runDiscovery(spec) {
     });
     risk('risk.generated-agent', 'Unbuilt capability in the path', 'blocker', 'The migration depends on a capability the platform does not have yet.', spec.sourceStack || 'unknown source');
   }
-  if (!target.generateCapability) {
+  if (!isCustom && !target.generateCapability) {
     gaps.push({
       capability: 'target.generate.unknown',
       reason: `No emitter exists for "${spec.targetStack || 'the declared target'}".`,

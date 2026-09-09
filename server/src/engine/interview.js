@@ -15,11 +15,17 @@ import { assist, llmAvailable } from '../lib/llm.js';
 import { getSettings } from '../lib/settings.js';
 import { id } from '../lib/util.js';
 
+/**
+ * Checks are gated on project kind. A "custom" project makes no assumption that a source
+ * framework or a target framework even exists, so the migration-shaped questions do not apply —
+ * what matters instead is that the requirements and the desired outcome are stated.
+ */
 const CHECKS = [
   {
     key: 'source-stack',
     weight: 18,
     required: true,
+    appliesTo: 'migration',
     test: (ctx) => ctx.source.id !== 'unknown',
     question: (ctx) => ({
       question: 'Which framework and language is the source suite written in?',
@@ -36,6 +42,7 @@ const CHECKS = [
     key: 'target-stack',
     weight: 18,
     required: true,
+    appliesTo: 'migration',
     test: (ctx) => ctx.target.id !== 'unknown',
     question: (ctx) => ({
       question: 'What exactly is the target framework, including language?',
@@ -51,7 +58,9 @@ const CHECKS = [
   {
     key: 'artifacts',
     weight: 20,
+    // A custom project may legitimately start from requirements alone, so this only blocks a migration.
     required: true,
+    requiredFor: 'migration',
     test: (ctx) => ctx.spec.artifacts?.length > 0,
     question: () => ({
       question: 'Paste or upload at least one source file (a test class, a spec, or a collection export).',
@@ -79,6 +88,7 @@ const CHECKS = [
     key: 'parseable',
     weight: 12,
     required: true,
+    appliesTo: 'migration',
     test: (ctx) => ctx.parsedTests > 0 || !ctx.spec.artifacts?.length,
     question: (ctx) => ({
       question: 'The supplied artifacts parsed to 0 test cases. Are these the right files, or does the suite use a custom base class / annotation?',
@@ -106,6 +116,7 @@ const CHECKS = [
     key: 'pom',
     weight: 5,
     required: false,
+    appliesTo: 'migration',
     test: (ctx) => ctx.kind !== 'ui-test' || Boolean(ctx.answers.pom),
     question: () => ({
       question: 'Should the generated UI suite use Page Objects, or inline locators in the specs?',
@@ -120,6 +131,7 @@ const CHECKS = [
     key: 'waits',
     weight: 5,
     required: false,
+    appliesTo: 'migration',
     test: (ctx) => !ctx.hasExplicitWaits || Boolean(ctx.answers.waits),
     question: () => ({
       question: 'The source uses explicit sleeps. Convert them to Playwright auto-waiting, or keep the fixed delays?',
@@ -148,6 +160,7 @@ const CHECKS = [
     key: 'unmapped-policy',
     weight: 5,
     required: false,
+    appliesTo: 'migration',
     test: (ctx) => ctx.unmapped === 0 || Boolean(ctx.answers['unmapped-policy']),
     question: (ctx) => ({
       question: `${ctx.unmapped} source construct(s) have no target equivalent. What should the run do with them?`,
@@ -156,6 +169,20 @@ const CHECKS = [
       options: ['Emit a failing placeholder test so it cannot be missed', 'Emit a skipped test with a TODO', 'List them in the report only'],
       field: 'unmappedPolicy',
       severity: 'major',
+    }),
+  },
+  {
+    key: 'desired-outcome',
+    weight: 16,
+    required: true,
+    appliesTo: 'custom',
+    test: (ctx) => Boolean(ctx.answers['desired-outcome'] || ctx.spec.targetStack || ctx.spec.constraints),
+    question: () => ({
+      question: 'What should this project produce? Describe the output you expect the agents to hand back.',
+      why: 'This project is marked custom, so the platform makes no assumption about the work. Without a stated outcome there is nothing to compose a workflow towards.',
+      kind: 'text',
+      field: 'targetStack',
+      severity: 'blocker',
     }),
   },
   {
@@ -212,9 +239,12 @@ export async function assessSpec(spec, answers = {}, { withLlm = true } = {}) {
   const questions = [];
   const satisfied = [];
   let score = 0;
-  const total = CHECKS.reduce((sum, check) => sum + check.weight, 0);
 
-  for (const check of CHECKS) {
+  const kind = spec.projectKind === 'custom' ? 'custom' : 'migration';
+  const applicable = CHECKS.filter((check) => !check.appliesTo || check.appliesTo === kind);
+  const total = applicable.reduce((sum, check) => sum + check.weight, 0);
+
+  for (const check of applicable) {
     const passes = check.test(ctx);
     const answered = Boolean(answers[check.key]);
     if (passes || answered) {
@@ -223,9 +253,10 @@ export async function assessSpec(spec, answers = {}, { withLlm = true } = {}) {
       if (passes) continue;
     }
     const q = check.question(ctx);
+    const blocks = check.required && (!check.requiredFor || check.requiredFor === kind);
     questions.push({
       id: check.key,
-      required: check.required,
+      required: blocks,
       weight: check.weight,
       answer: answers[check.key] || '',
       answered,
@@ -278,7 +309,10 @@ export async function assessSpec(spec, answers = {}, { withLlm = true } = {}) {
     }
   }
 
-  result.ready = result.blockingCount === 0 && result.readiness >= 70;
+  // The gate is the blocking questions, not the score. A custom project legitimately leaves
+  // optional checks unsatisfied for ever (it may have no source artifacts at all), so gating on a
+  // percentage would deadlock it with nothing left to answer. Readiness stays as a quality signal.
+  result.ready = result.blockingCount === 0;
   return result;
 }
 
@@ -317,7 +351,8 @@ export function applyAnswers(spec, answers = {}) {
     else next[field] = value;
   };
 
-  for (const check of CHECKS) {
+  const kind = spec.projectKind === 'custom' ? 'custom' : 'migration';
+  for (const check of CHECKS.filter((c) => !c.appliesTo || c.appliesTo === kind)) {
     const answer = answers[check.key];
     if (!answer) continue;
     const field = check.question(buildContext(spec, answers)).field;

@@ -22,6 +22,8 @@ export function composeWorkflow(acceptedAgents, options = {}) {
     inputs: agent.inputs,
     outputs: agent.outputs,
     source: agent.source,
+    // Everything a human authored travels with the node, so the run executes what they wrote.
+    authored: agent.authored || null,
   }));
 
   if (!nodes.length) {

@@ -8,6 +8,27 @@ export default function SpecStage({ project, reload, navigate, toast }) {
   const [viewing, setViewing] = useState(null);
   const [pasting, setPasting] = useState(false);
   const fileInput = useRef(null);
+  const reqInput = useRef(null);
+
+  /**
+   * Import a requirements document. The server parses it and reports how many requirements it
+   * recognised, so a document it could not read fails loudly instead of quietly importing nothing.
+   */
+  async function onRequirementsDoc(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const content = await file.text();
+      const { extracted } = await api.importRequirements(project.id, { content, path: file.name, mode: 'append' });
+      const next = await reload();
+      setSpec(next.spec);
+      toast(`Imported ${extracted.length} requirement(s) from ${file.name}.`, 'ok');
+    } catch (err) {
+      toast(err.message, 'err');
+    } finally {
+      event.target.value = '';
+    }
+  }
 
   const dirty = JSON.stringify({ ...spec, artifacts: undefined }) !== JSON.stringify({ ...project.spec, artifacts: undefined });
 
@@ -15,6 +36,7 @@ export default function SpecStage({ project, reload, navigate, toast }) {
     setSaving(true);
     try {
       await api.saveSpec(project.id, {
+        projectKind: spec.projectKind || 'migration',
         requirements: spec.requirements,
         sourceStack: spec.sourceStack,
         targetStack: spec.targetStack,
@@ -56,6 +78,20 @@ export default function SpecStage({ project, reload, navigate, toast }) {
       <div className="grid cols-2">
         <div>
           <Card title="1 · The spec" sub="Requirements, source, target. Everything downstream is derived from this.">
+            <Field
+              label="Project kind"
+              hint={
+                spec.projectKind === 'custom'
+                  ? 'Custom: the platform assumes nothing about the work. It asks what you want produced, then you author the agents that do it.'
+                  : 'Migration: the platform expects a source suite and a target framework, and brings its own parsers, emitters and guardrails.'
+              }
+            >
+              <select value={spec.projectKind || 'migration'} onChange={(e) => setSpec({ ...spec, projectKind: e.target.value })}>
+                <option value="migration">Migration — convert a suite from one framework to another</option>
+                <option value="custom">Custom — any other project, agents authored by me</option>
+              </select>
+            </Field>
+
             <div className="grid cols-2">
               <Field label="Source stack" hint="Free text — the platform matches it against its technology profiles.">
                 <input type="text" value={spec.sourceStack || ''} onChange={(e) => setSpec({ ...spec, sourceStack: e.target.value })} placeholder="Selenium WebDriver (Java) with TestNG" />
@@ -65,14 +101,24 @@ export default function SpecStage({ project, reload, navigate, toast }) {
               </Field>
             </div>
 
-            <Field label="Requirements" hint="One per line. IDs like REQ-001 are picked up and used in the traceability matrix.">
+            <Field
+              label={
+                <span className="row" style={{ gap: 8 }}>
+                  Requirements
+                  <button className="btn ghost sm" onClick={() => reqInput.current?.click()}>⬆ Import a document</button>
+                  {project.spec.requirementsSource && <span className="tiny faint">from {project.spec.requirementsSource}</span>}
+                </span>
+              }
+              hint="Type a few lines, or import a requirements document — both work. IDs like REQ-001 are picked up and used in the traceability matrix."
+            >
               <textarea
                 className="mono"
                 rows={9}
                 value={spec.requirements || ''}
                 onChange={(e) => setSpec({ ...spec, requirements: e.target.value })}
-                placeholder={'REQ-001 A shopper can log in with valid credentials\nREQ-002 An invalid password shows an inline error'}
+                placeholder={'Convert our Selenium suite to Playwright\nKeep every assertion\n\n…or paste a whole requirements document and click Import.'}
               />
+              <input ref={reqInput} type="file" accept=".md,.txt,.csv,.json,.rst,.adoc" hidden onChange={onRequirementsDoc} />
             </Field>
 
             <Field label="Constraints" hint="CI, security, deadlines, anything the migration must respect.">

@@ -5,12 +5,16 @@ A migration-adaptive AI control plane, built with the BMAD method.
 > **Requirements determine the workflow, the workflow determines the agents,
 > and the identified risks determine the guardrails.**
 
-Give it a spec (requirements + source stack + target stack + source files). It interviews you about
-anything it does not know, discovers what is really being migrated, composes an agent graph from a
-reusable registry, proposes guardrails matched to the risks it found, waits for your approval, runs
-the migration, and proves what it did with computed evidence.
+Give it requirements — three typed lines or a whole document — plus whatever source material you
+have. It interviews you about anything it does not know, discovers what is really being asked for,
+composes an agent graph from a reusable registry, proposes guardrails matched to the risks it found,
+waits for your approval, runs the work, and proves what it did with computed evidence.
 
-It is not a Selenium-to-Playwright tool. Selenium → Playwright is one path through it.
+It is not a Selenium-to-Playwright tool. Selenium → Playwright is one path through it. Set the
+project kind to `custom` and it makes no assumptions at all — you author the agents, it runs them
+and holds them to your rules.
+
+**AI proposes the architecture; you own the final architecture.**
 
 ---
 
@@ -54,21 +58,77 @@ Everything. There is no step that requires curl or editing a file by hand.
 | Step | What happens |
 |---|---|
 | **1 Spec** | Type requirements, name the stacks, upload or paste source files |
-| **2 Interview** | The platform asks what it does not know and **blocks fulfilment until you answer**. Each question says *why* it matters and what changes based on your answer |
+| **2 Interview** | The platform asks what it does not know and **blocks fulfilment until you answer**. Each question says *why* it matters and what changes based on your answer. Blocking questions are the gate — the readiness score is only a quality signal |
 | **3 Discovery** | Classifies source/target, parses the artifacts, counts entities, emits required **capabilities**, **risks**, and honest **capability gaps** |
-| **4 Agents** | Agent Factory proposals — registry hits marked `reused`, synthesised ones marked `generated`. Accept / Reject / Edit / Create your own |
+| **4 Agents** | Agent Factory proposals — registry hits marked `reused`, synthesised ones marked `generated`. Accept / Reject / Edit / **Create my own** |
 | **5 Guardrails** | Guardrail Designer proposals, each naming the discovered risk it covers. Same four actions |
 | **6 Workflow** | The composed DAG, drawn. Layers come from capability phases, so the picture is the real execution order |
 | **7 Run** | Live execution with a streaming console, per-node status on the graph, guardrail verdicts, and a browsable file viewer of everything generated |
+| **7a Approval** | Approve the run or request changes — the run stays `pending` until you decide |
 | **8 Trace** | Five-column lineage — requirement → source test → agent → artifact → guardrail. Click any node and its whole chain lights up. Plus the traceability matrix and a full decision trail |
 | **9 Report** | Acceptance summary and a Markdown report, downloadable, plus a JSON bundle of the entire run |
 
-Two more screens in the sidebar:
+Three more screens in the sidebar:
 
+- **Dashboard** — built to answer one question: *where did it fail?* It ranks failing guardrails with
+  their evidence, agents that threw and what they threw, agents that produced placeholders instead of
+  real work, requirements that never reached an artifact, capability gaps still open, and projects
+  stuck at the interview. Underneath sits the live activity log — every API call, stage change, agent
+  step, guardrail verdict and model call, filterable by level and scope.
 - **Registries** — browse and extend the agent registry, the guardrail registry, and the technology
   profiles. An agent you add here is available to the *next* discovery on any project.
 - **Settings** — pick the model (**Auto**, Opus 5, Sonnet 5, Haiku 4.5, Fable 5.1, or **Offline**),
   set an API key, test the connection, and cap how many questions the interview may ask.
+
+---
+
+## You own the architecture, not the tool
+
+The platform proposes; you decide. Every proposal — agent or guardrail — carries four actions:
+**Accept**, **Reject**, **Edit**, and **Create my own**.
+
+**Create an agent** and you fill in what an agent actually is:
+
+| Field | What it does |
+|---|---|
+| Name, Purpose | Identity, and the description used everywhere it appears |
+| Input | Checkboxes: requirements, constraints, source artifacts (optionally filtered to `java, xml, csv`), the parsed source model, artifacts generated earlier in this run. Nothing else reaches it |
+| Output | What it should hand back |
+| Instructions | Written as you'd brief a colleague — and **executed**, not filed as a note |
+| When should it run? | Before everything, after any agent already in the graph, or at the very end |
+
+With a model configured, the instructions run and whatever files come back are written into the run.
+With no model, the agent writes the fully resolved brief and states plainly that it did not execute —
+it never invents output and lets a guardrail call it a success.
+
+**Create a guardrail** and you get the same ownership:
+
+| Field | What it does |
+|---|---|
+| Rule | Plain English. With a model it is evaluated against the artifacts in scope; without one it becomes a required human sign-off |
+| Severity | blocker / major / minor |
+| Applies to | The whole workflow, or one specific agent |
+| On failure | **Stop workflow and request review** · Flag and carry on · Record only |
+
+`Stop` is real. A guardrail scoped to an agent runs the moment that agent finishes, so the workflow
+halts *there* — later agents are marked skipped, the verdict is `blocked`, and the run waits for you.
+
+And every run ends the same way: **pending your approval**. Approve it, or request changes with a
+note. Nothing is accepted just because the machine finished.
+
+---
+
+## Any project, not just migrations
+
+Set **Project kind** to `custom` on the Spec step and every migration assumption switches off: no
+source framework question, no target emitter, no capability gaps. The platform contributes only what
+it can genuinely prove — traceability and structural checks — and you author the agents that do the
+work.
+
+Requirements arrive either way. Paste three lines, or import a requirements document (`.md`, `.txt`,
+`.csv`, `.json`) — the parser handles tagged IDs, bullets, numbered lists, user stories and
+"the system shall" sentences, skips headings and prose scaffolding, and tells you how many
+requirements it recognised so a document it could not read fails loudly rather than importing nothing.
 
 ### Model selection and Auto mode
 
@@ -178,11 +238,12 @@ server/
   src/engine/              discovery · agentFactory · guardrailDesigner · workflowComposer
                            orchestrator · agents · parsers · validator · reporter · interview
   src/registry/            agents · guardrails · technologies
-  src/routes/              projects · runs · registry · settings
+  src/routes/              projects · runs · registry · settings · observability
   src/samples.js           five runnable sample projects
   test/smoke.test.js       end-to-end pipeline tests
+  test/authoring.test.js   custom projects, authored agents/guardrails, halting, approval
 web/
-  src/pages/               Projects · Workspace · Registry · Settings
+  src/pages/               Dashboard · Projects · Workspace · Registry · Settings
   src/stages/              Spec · Interview · Discovery · Proposals · Workflow · Run · Trace · Report
   src/components/Graph.jsx SVG DAG renderer, shared by the workflow and run views
 ```
@@ -202,6 +263,9 @@ CORS. That is the entire dependency list.
 - **Generated agents are honest placeholders.** When the factory synthesises an agent for a capability
   with no implementation, it runs on the generic adapter and the run report says so.
 - **Single user, local.** No auth, no multi-tenancy, no cloud deployment.
+- **Authored agents need a model.** Free-text instructions cannot be executed by the deterministic
+  engine. Without a key they produce a resolved brief and say so; they never pretend to have run.
+- **Requirements import is text only** (`.md`, `.txt`, `.csv`, `.json`). No .docx or PDF parsing.
 
 ---
 

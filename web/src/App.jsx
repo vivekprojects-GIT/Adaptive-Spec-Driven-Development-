@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { api } from './lib/api.js';
 import { Badge, Dot, useToast } from './lib/ui.jsx';
+import Dashboard from './pages/Dashboard.jsx';
 import Projects from './pages/Projects.jsx';
 import Workspace from './pages/Workspace.jsx';
 import Registry from './pages/Registry.jsx';
@@ -62,6 +63,9 @@ export default function App() {
         </div>
 
         <div className="nav-label">Workspace</div>
+        <div className={`nav-item ${section === 'dashboard' ? 'active' : ''}`} onClick={() => navigate('/dashboard')}>
+          <span className="ico">◱</span> Dashboard
+        </div>
         <div className={`nav-item ${section === 'projects' && !projectId ? 'active' : ''}`} onClick={() => navigate('/projects')}>
           <span className="ico">▤</span> Projects
           <span className="nav-count">{projects.length}</span>
@@ -104,6 +108,7 @@ export default function App() {
       </aside>
 
       <main className="main">
+        {section === 'dashboard' && <Dashboard navigate={navigate} />}
         {section === 'projects' && !projectId && (
           <Projects projects={projects} onChanged={refreshProjects} navigate={navigate} />
         )}

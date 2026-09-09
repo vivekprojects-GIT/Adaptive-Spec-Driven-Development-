@@ -8,11 +8,13 @@ import projectsRouter from './routes/projects.js';
 import runsRouter from './routes/runs.js';
 import registryRouter from './routes/registry.js';
 import settingsRouter from './routes/settings.js';
+import observabilityRouter from './routes/observability.js';
 import { SAMPLES, findSample } from './samples.js';
 import { ensureSeeded as seedAgents } from './registry/agents.js';
 import { ensureSeeded as seedGuardrails } from './registry/guardrails.js';
 import { llmStatus } from './lib/settings.js';
 import { HttpError } from './lib/util.js';
+import { logger } from './lib/logger.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 5174;
@@ -23,6 +25,22 @@ seedGuardrails();
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '25mb' }));
+
+// Every API call is logged, so the dashboard can always show the last thing that happened.
+app.use((req, res, next) => {
+  if (!req.path.startsWith('/api') || req.path === '/api/logs' || req.path === '/api/dashboard') return next();
+  const started = Date.now();
+  res.on('finish', () => {
+    const ms = Date.now() - started;
+    const level = res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'debug';
+    logger[level]('api', `${req.method} ${req.originalUrl.split('?')[0]} → ${res.statusCode} (${ms}ms)`, {
+      projectId: req.params?.id || req.body?.projectId || null,
+      status: res.statusCode,
+      ms,
+    });
+  });
+  next();
+});
 
 app.get('/api/health', (req, res) => {
   res.json({ ok: true, service: 'asdd-control-plane', version: '1.0.0', llm: llmStatus() });
@@ -53,6 +71,7 @@ app.use('/api/projects', projectsRouter);
 app.use('/api/runs', runsRouter);
 app.use('/api/registry', registryRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api', observabilityRouter);
 
 // Production: serve the built UI from the same origin so `npm start` is a single process.
 const dist = path.resolve(here, '../../web/dist');
@@ -64,7 +83,11 @@ if (fs.existsSync(dist)) {
 // Errors are returned as JSON the UI can render, never swallowed.
 app.use((err, req, res, next) => {
   const status = err.status || 500;
-  if (status >= 500) console.error(err);
+  logger[status >= 500 ? 'error' : 'warn']('api', `${req.method} ${req.originalUrl.split('?')[0]} failed: ${err.message}`, {
+    status,
+    details: err.details || null,
+    stack: status >= 500 ? String(err.stack || '').split('\n').slice(0, 4).join(' | ') : undefined,
+  });
   res.status(status).json({ error: err.message || 'Internal error', details: err.details || null });
 });
 

@@ -67,8 +67,14 @@ function severityRank(severity) {
   return { blocker: 3, major: 2, minor: 1 }[severity] ?? 0;
 }
 
+/**
+ * "Create my own guardrail" — the human writes the rule in plain English, says which agent it
+ * applies to, and says what should happen when it fails. `onFailure: 'stop'` is honoured by the
+ * orchestrator: the workflow halts at that agent and asks for review.
+ */
 export function customGuardrailProposal(input) {
   const known = listGuardrails().find((g) => g.id === input.guardrailId);
+  const rule = input.rule?.trim() || '';
   return {
     proposalId: id('gp'),
     kind: 'guardrail',
@@ -78,9 +84,22 @@ export function customGuardrailProposal(input) {
     name: input.name || known?.name || 'Custom guardrail',
     risks: input.risks || known?.risks || ['risk.custom'],
     severity: input.severity || known?.severity || 'major',
-    description: input.description || known?.description || 'Human-authored guardrail.',
-    check: input.check || known?.check || 'manualSignOff',
+    description: rule || input.description || known?.description || 'Human-authored guardrail.',
+    rule: rule || null,
+    appliesTo: input.appliesTo || 'workflow',
+    appliesToLabel: input.appliesToLabel || 'The whole workflow',
+    onFailure: input.onFailure || 'flag',
+    // A rule written in English is evaluated by customRule; anything else keeps its named check.
+    check: input.check || (rule ? 'customRule' : known?.check || 'manualSignOff'),
     params: input.params || known?.params || {},
-    rationale: 'Added by a human during guardrail review.',
+    rationale: rule
+      ? `Authored by a human: "${rule.slice(0, 160)}"`
+      : 'Added by a human during guardrail review.',
   };
 }
+
+export const ON_FAILURE_OPTIONS = [
+  { value: 'stop', label: 'Stop workflow and request review' },
+  { value: 'flag', label: 'Flag it and carry on' },
+  { value: 'continue', label: 'Record it only' },
+];

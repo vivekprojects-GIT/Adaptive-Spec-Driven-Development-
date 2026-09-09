@@ -24,6 +24,13 @@ execution layer over a pluggable Agent Registry and Guardrail Registry.
 | FR-11 | **Report**: traceability matrix (requirement → agent → artifact → guardrail) + Markdown / JSON export | Downloadable from the run page |
 | FR-12 | **Registries** browsable and extensible from the UI | A user-added agent is selectable on the next discovery |
 | FR-13 | **Capability gaps** surfaced, never silently skipped | Gap states what is missing (parser / connector / runtime) |
+| FR-14 | **Any project, not only migrations.** A `custom` project kind assumes no source suite and no target framework | Custom projects raise no gaps and ask no framework questions |
+| FR-15 | **Requirements arrive either way** — a pasted line or an imported document | Parser handles both; import reports how many it recognised |
+| FR-16 | **Author your own agent**: name, purpose, inputs, output, instructions, and where it runs | An authored agent with instructions is executed, not filed as a note |
+| FR-17 | **Author your own guardrail**: rule in plain English, severity, applies-to, on-failure | `on failure: stop` halts the run at that agent and skips the rest |
+| FR-18 | **Human approval** closes every run | Run ends `pending`; approve or request changes, recorded on the run |
+| FR-19 | **Everything is logged** — API calls, stage changes, agent steps, guardrail verdicts, model calls | Filterable feed with levels and scopes |
+| FR-20 | **Dashboard answers "where did it fail"** | Ranks failing guardrails, failing agents, placeholder agents, orphan requirements, open gaps, blocked projects |
 
 ## 3. Non-functional
 

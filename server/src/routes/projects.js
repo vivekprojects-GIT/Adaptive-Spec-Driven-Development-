@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { collection } from '../lib/store.js';
-import { runDiscovery } from '../engine/discovery.js';
+import { runDiscovery, parseRequirements } from '../engine/discovery.js';
 import { proposeAgents, customAgentProposal } from '../engine/agentFactory.js';
 import { proposeGuardrails, customGuardrailProposal } from '../engine/guardrailDesigner.js';
 import { composeWorkflow } from '../engine/workflowComposer.js';
@@ -14,6 +14,9 @@ const projects = collection('projects');
 const router = Router();
 
 const EMPTY_SPEC = {
+  // 'migration' assumes a source suite and a target framework. 'custom' assumes nothing at all —
+  // the human authors the agents and the platform only contributes what it can prove.
+  projectKind: 'migration',
   requirements: '',
   sourceStack: '',
   targetStack: '',
@@ -136,6 +139,37 @@ router.delete('/:id/artifacts/:artifactId', (req, res) => {
   res.json(updated);
 });
 
+/**
+ * Import a requirements document. Some people paste three lines, some upload a 40-page spec —
+ * both land here, and the parser reports how many requirements it actually recognised so nobody
+ * has to guess whether the import worked.
+ */
+router.post('/:id/requirements/import', (req, res) => {
+  const project = must(req.params.id);
+  const { content, path: docPath, mode = 'append' } = req.body || {};
+  if (typeof content !== 'string' || !content.trim()) throw new HttpError(400, 'content is required.');
+
+  const extracted = parseRequirements(content);
+  if (!extracted.length) {
+    throw new HttpError(422, 'No requirements could be recognised in that document. Paste them directly, or check that the file is text.', {
+      lines: content.split('\n').length,
+    });
+  }
+
+  const asText = extracted.map((requirement) => `${requirement.id} ${requirement.text}`).join('\n');
+  const requirements = mode === 'replace' || !project.spec.requirements ? asText : `${project.spec.requirements}\n${asText}`;
+
+  const updated = projects.update(project.id, {
+    spec: { ...project.spec, requirements, requirementsSource: docPath || 'pasted document' },
+    trail: trail(project, {
+      stage: 'spec',
+      action: 'requirements.imported',
+      detail: `Imported ${extracted.length} requirement(s) from ${docPath || 'a pasted document'} (${mode}).`,
+    }),
+  });
+  res.json({ project: updated, extracted });
+});
+
 /* ------------------------------------------------------------ interview */
 
 router.post('/:id/interview', asyncH(async (req, res) => {
@@ -239,6 +273,9 @@ router.post('/:id/proposals/:kind/bulk', (req, res) => {
   const list = (project.proposals[kind] || []).map((proposal) => {
     if (proposal.decision !== 'proposed') return proposal;
     if (only && proposal.source !== only) return proposal;
+    // "Author your own" is an invitation, not a proposal — accepting it in bulk would put a
+    // placeholder in the graph and call it a decision.
+    if (proposal.authorRequired) return proposal;
     return { ...proposal, decision: action === 'accept' ? 'accepted' : 'rejected' };
   });
 
@@ -275,7 +312,8 @@ router.post('/:id/proposals/:kind/:proposalId', (req, res) => {
 router.post('/:id/proposals/:kind', (req, res) => {
   const project = must(req.params.id);
   const kind = req.params.kind === 'agents' ? 'agents' : 'guardrails';
-  const proposal = kind === 'agents' ? customAgentProposal(req.body || {}) : customGuardrailProposal(req.body || {});
+  const accepted = (project.proposals.agents || []).filter((a) => a.decision === 'accepted');
+  const proposal = kind === 'agents' ? customAgentProposal(req.body || {}, accepted) : customGuardrailProposal(req.body || {});
 
   if (req.body?.saveToRegistry) {
     if (kind === 'agents') {
@@ -287,6 +325,7 @@ router.post('/:id/proposals/:kind', (req, res) => {
         inputs: proposal.inputs,
         outputs: proposal.outputs,
         impl: proposal.impl,
+        authored: proposal.authored,
         tags: ['user'],
         maturity: 'custom',
         source: 'user',
@@ -298,6 +337,9 @@ router.post('/:id/proposals/:kind', (req, res) => {
         risks: proposal.risks,
         severity: proposal.severity,
         description: proposal.description,
+        rule: proposal.rule,
+        appliesTo: proposal.appliesTo,
+        onFailure: proposal.onFailure,
         check: proposal.check,
         params: proposal.params,
         source: 'user',

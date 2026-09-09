@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { Card, Badge, Stat, Empty, Modal, Field, toneForSeverity } from '../lib/ui.jsx';
 
@@ -10,6 +10,11 @@ export default function ProposalsStage({ project, reload, navigate, toast, kind 
   const [editing, setEditing] = useState(null);
   const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState(null);
+  const [options, setOptions] = useState({ inputSources: [], onFailureOptions: [] });
+
+  useEffect(() => {
+    api.registry().then(setOptions).catch(() => {});
+  }, []);
 
   const isAgents = kind === 'agents';
   const list = project.proposals?.[kind] || [];
@@ -104,6 +109,8 @@ export default function ProposalsStage({ project, reload, navigate, toast, kind 
       {creating && (
         <CreateModal
           kind={kind}
+          accepted={(project.proposals?.agents || []).filter((a) => a.decision === 'accepted')}
+          options={options}
           onClose={() => setCreating(false)}
           onCreate={async (body) => {
             try {
@@ -166,6 +173,19 @@ function AgentCard({ proposal, busy, onDecide, onEdit }) {
           <span>out: <span className="mono">{(proposal.outputs || []).join(', ') || '—'}</span></span>
           <span>impl: <span className="mono">{proposal.impl}</span></span>
         </div>
+        {proposal.authored?.instructions && (
+          <details style={{ marginTop: 9 }}>
+            <summary className="small" style={{ cursor: 'pointer', color: 'var(--accent)' }}>
+              Instructions this agent will execute
+            </summary>
+            <pre className="code" style={{ marginTop: 8, maxHeight: 220, whiteSpace: 'pre-wrap' }}>{proposal.authored.instructions}</pre>
+            <div className="tiny faint" style={{ marginTop: 6 }}>
+              Runs {proposal.authored.runAfterLabel || `in phase ${proposal.phase}`} · reads{' '}
+              {(proposal.authored.inputSelections || []).join(', ') || 'nothing selected'}
+              {proposal.authored.outputDescription ? ` · returns ${proposal.authored.outputDescription}` : ''}
+            </div>
+          </details>
+        )}
         {proposal.alternatives?.length > 0 && (
           <div className="tiny faint" style={{ marginTop: 6 }}>
             Alternatives in the registry: {proposal.alternatives.map((a) => a.name).join(', ')}
@@ -193,8 +213,22 @@ function GuardrailCard({ proposal, busy, onDecide, onEdit }) {
       </div>
       <div className="proposal-body">
         <div className="proposal-why">{proposal.rationale}</div>
+        {proposal.rule && (
+          <div className="small" style={{ marginTop: 9 }}>
+            <span className="faint">rule: </span>“{proposal.rule}”
+          </div>
+        )}
         <div className="row wrap small faint" style={{ marginTop: 9, gap: 14 }}>
           <span>covers: <span className="mono">{(proposal.risks || []).join(', ')}</span></span>
+          <span>
+            applies to: <b>{proposal.appliesToLabel || (proposal.appliesTo && proposal.appliesTo !== 'workflow' ? proposal.appliesTo : 'the whole workflow')}</b>
+          </span>
+          <span>
+            on failure:{' '}
+            <b style={{ color: proposal.onFailure === 'stop' ? 'var(--fail)' : undefined }}>
+              {proposal.onFailure === 'stop' ? 'stop and request review' : proposal.onFailure === 'continue' ? 'record only' : 'flag and carry on'}
+            </b>
+          </span>
           {Object.keys(proposal.params || {}).length > 0 && (
             <span>params: <span className="mono">{JSON.stringify(proposal.params)}</span></span>
           )}
@@ -268,50 +302,168 @@ function EditModal({ kind, proposal, onClose, onSave }) {
   );
 }
 
-function CreateModal({ kind, onClose, onCreate }) {
+/**
+ * "Create my own" — the human authors the agent or the guardrail in full: purpose, inputs,
+ * output, instructions, and where it runs. An agent with instructions is executed by the
+ * instruction agent, not filed as a note.
+ */
+function CreateModal({ kind, onClose, onCreate, accepted, options }) {
   const isAgents = kind === 'agents';
   const [form, setForm] = useState(
     isAgents
-      ? { name: '', capability: '', description: '', impl: 'genericAdapter', phase: 25, saveToRegistry: true }
-      : { name: '', description: '', severity: 'major', check: 'manualSignOff', saveToRegistry: true },
+      ? {
+          name: '',
+          purpose: '',
+          inputSelections: ['requirements', 'artifacts'],
+          artifactFilter: '',
+          outputDescription: '',
+          instructions: '',
+          runAfter: 'end',
+          capability: '',
+          saveToRegistry: true,
+        }
+      : {
+          name: '',
+          rule: '',
+          severity: 'blocker',
+          appliesTo: 'workflow',
+          onFailure: 'stop',
+          saveToRegistry: true,
+        },
   );
+
+  const toggleInput = (id) =>
+    setForm((prev) => ({
+      ...prev,
+      inputSelections: prev.inputSelections.includes(id)
+        ? prev.inputSelections.filter((x) => x !== id)
+        : [...prev.inputSelections, id],
+    }));
+
+  const runAfterChoices = [
+    { value: 'start', label: 'Before everything else' },
+    ...accepted.map((agent) => ({ value: agent.agentId, label: `After ${agent.name}` })),
+    { value: 'end', label: 'At the very end' },
+  ];
+
+  const canSave = form.name.trim() && (isAgents ? true : form.rule.trim());
 
   return (
     <Modal
-      title={isAgents ? 'Create your own agent' : 'Create your own guardrail'}
+      title={isAgents ? 'Create agent' : 'Create guardrail'}
       onClose={onClose}
+      wide
       footer={
         <>
           <button className="btn" onClick={onClose}>Cancel</button>
-          <button className="btn primary" disabled={!form.name.trim()} onClick={() => onCreate(form)}>Add</button>
+          <button className="btn primary" disabled={!canSave} onClick={() => onCreate({ ...form, appliesToLabel: labelFor(form.appliesTo, accepted) })}>
+            {isAgents ? 'Save agent' : 'Save guardrail'}
+          </button>
         </>
       }
     >
-      <Field label="Name"><input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} autoFocus /></Field>
-      <Field label="Description"><textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
-
       {isAgents ? (
-        <div className="grid cols-2">
-          <Field label="Capability" hint="e.g. mapping.command.custom">
-            <input className="mono" type="text" value={form.capability} onChange={(e) => setForm({ ...form, capability: e.target.value })} />
+        <>
+          <Field label="Name">
+            <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Database Validation Agent" autoFocus />
           </Field>
-          <Field label="Phase" hint="10 analyse · 20 prepare · 30 generate · 40 trace · 50 validate">
-            <input type="number" value={form.phase} onChange={(e) => setForm({ ...form, phase: Number(e.target.value) })} />
+
+          <Field label="Purpose" hint="One line. It becomes the agent's description everywhere it appears.">
+            <input type="text" value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })} placeholder="Validate database checks carried over from Selenium" />
           </Field>
-        </div>
+
+          <Field label="Input" hint="Exactly what this agent gets to read. Nothing else reaches it.">
+            <div className="chip-row" style={{ gap: 10, marginTop: 4 }}>
+              {(options.inputSources || []).map((source) => (
+                <label key={source.id} className="row small" style={{ gap: 6, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    style={{ width: 'auto' }}
+                    checked={form.inputSelections.includes(source.id)}
+                    onChange={() => toggleInput(source.id)}
+                  />
+                  {source.label}
+                </label>
+              ))}
+            </div>
+          </Field>
+
+          {form.inputSelections.includes('artifacts') && (
+            <Field label="Limit source artifacts to these file types" hint="Comma separated, e.g. java, xml, xlsx. Leave blank for every file.">
+              <input className="mono" type="text" value={form.artifactFilter} onChange={(e) => setForm({ ...form, artifactFilter: e.target.value })} placeholder="java, xml, csv" />
+            </Field>
+          )}
+
+          <Field label="Output" hint="What this agent should hand back.">
+            <input type="text" value={form.outputDescription} onChange={(e) => setForm({ ...form, outputDescription: e.target.value })} placeholder="DB validation Playwright steps" />
+          </Field>
+
+          <Field label="Instructions" hint="Written as you would brief a colleague. With a model configured these are executed; without one the agent writes the resolved brief and says it did not run.">
+            <textarea
+              rows={6}
+              value={form.instructions}
+              onChange={(e) => setForm({ ...form, instructions: e.target.value })}
+              placeholder="Preserve every database assertion from the source. For each one, emit a Playwright step that queries the same table and asserts the same expected value. If a query cannot be translated, emit a failing test naming the original SQL."
+            />
+          </Field>
+
+          <div className="grid cols-2">
+            <Field label="When should it run?">
+              <select value={form.runAfter} onChange={(e) => setForm({ ...form, runAfter: e.target.value })}>
+                {runAfterChoices.map((choice) => <option key={choice.value} value={choice.value}>{choice.label}</option>)}
+              </select>
+            </Field>
+            <Field label="Capability id" hint="Optional. Give it one and future projects can reuse this agent by capability.">
+              <input className="mono" type="text" value={form.capability} onChange={(e) => setForm({ ...form, capability: e.target.value })} placeholder="custom.db-validation" />
+            </Field>
+          </div>
+        </>
       ) : (
-        <div className="grid cols-2">
-          <Field label="Severity">
-            <select value={form.severity} onChange={(e) => setForm({ ...form, severity: e.target.value })}>
-              <option value="blocker">blocker</option>
-              <option value="major">major</option>
-              <option value="minor">minor</option>
+        <>
+          <Field label="Name">
+            <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Database Assertion Preservation" autoFocus />
+          </Field>
+
+          <Field label="Rule" hint="Plain English. With a model configured this is evaluated against the artifacts in scope; without one it becomes a required human sign-off.">
+            <textarea
+              rows={4}
+              value={form.rule}
+              onChange={(e) => setForm({ ...form, rule: e.target.value })}
+              placeholder="Every DB assertion from the Selenium suite must map to a Playwright validation or be explicitly flagged."
+            />
+          </Field>
+
+          <div className="grid cols-2">
+            <Field label="Severity">
+              <select value={form.severity} onChange={(e) => setForm({ ...form, severity: e.target.value })}>
+                <option value="blocker">Blocker</option>
+                <option value="major">Major</option>
+                <option value="minor">Minor</option>
+              </select>
+            </Field>
+            <Field label="Applies to">
+              <select value={form.appliesTo} onChange={(e) => setForm({ ...form, appliesTo: e.target.value })}>
+                <option value="workflow">The whole workflow</option>
+                {accepted.map((agent) => <option key={agent.agentId} value={agent.agentId}>{agent.name}</option>)}
+              </select>
+            </Field>
+          </div>
+
+          <Field label="On failure" hint="“Stop” halts the run at that agent — later agents are skipped and the run waits for review.">
+            <select value={form.onFailure} onChange={(e) => setForm({ ...form, onFailure: e.target.value })}>
+              {(options.onFailureOptions || []).map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
             </select>
           </Field>
-          <Field label="Check" hint="manualSignOff forces a human decision.">
-            <input className="mono" type="text" value={form.check} onChange={(e) => setForm({ ...form, check: e.target.value })} />
-          </Field>
-        </div>
+
+          {form.appliesTo !== 'workflow' && form.onFailure === 'stop' && (
+            <div className="proposal-why" style={{ marginBottom: 12 }}>
+              This rule runs the moment <b>{labelFor(form.appliesTo, accepted)}</b> finishes. If it fails, the
+              workflow stops there rather than carrying on and reporting the problem afterwards.
+            </div>
+          )}
+        </>
       )}
 
       <label className="row small" style={{ gap: 8 }}>
@@ -320,4 +472,9 @@ function CreateModal({ kind, onClose, onCreate }) {
       </label>
     </Modal>
   );
+}
+
+function labelFor(appliesTo, accepted) {
+  if (!appliesTo || appliesTo === 'workflow') return 'The whole workflow';
+  return accepted.find((agent) => agent.agentId === appliesTo)?.name || appliesTo;
 }

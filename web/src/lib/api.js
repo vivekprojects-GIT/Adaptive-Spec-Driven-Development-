@@ -51,6 +51,13 @@ export const api = {
   reportUrl: (runId) => `/api/runs/${runId}/report.md`,
   bundleUrl: (runId) => `/api/runs/${runId}/bundle.json`,
 
+  dashboard: () => call('/dashboard'),
+  logs: (params = {}) => call(`/logs?${new URLSearchParams(Object.entries(params).filter(([, v]) => v && v !== 'all')).toString()}`),
+  clearLogs: () => call('/logs', { method: 'DELETE' }),
+
+  importRequirements: (projectId, body) => call(`/projects/${projectId}/requirements/import`, { method: 'POST', body }),
+  approve: (runId, body) => call(`/runs/${runId}/approval`, { method: 'POST', body }),
+
   registry: () => call('/registry'),
   addAgent: (body) => call('/registry/agents', { method: 'POST', body }),
   deleteAgent: (agentId) => call(`/registry/agents/${agentId}`, { method: 'DELETE' }),
