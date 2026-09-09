@@ -1,0 +1,22 @@
+{
+  "name": "adaptive-spec-driven-development",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "ASDD - Adaptive Spec Driven Development: a migration-adaptive AI control plane built on the BMAD method.",
+  "workspaces": ["server", "web"],
+  "engines": { "node": ">=18.17" },
+  "scripts": {
+    "setup": "npm install",
+    "dev": "concurrently -n server,web -c cyan,magenta \"npm:dev:server\" \"npm:dev:web\"",
+    "dev:server": "npm --workspace server run dev",
+    "dev:web": "npm --workspace web run dev",
+    "build": "npm --workspace web run build",
+    "start": "npm --workspace server run start",
+    "seed": "npm --workspace server run seed",
+    "test": "npm --workspace server run test"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

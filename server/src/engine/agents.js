@@ -1,0 +1,721 @@
+/**
+ * Agent implementations — the execution layer.
+ *
+ * Every implementation has the same shape:
+ *   async (ctx) => { outputs, metrics, notes }
+ * where ctx = { spec, answers, discovery, ws (shared workspace), node, log }
+ *
+ * The workspace `ws` is how agents hand work to each other: an analyzer fills `ws.sourceModel`,
+ * generators read it and push to `ws.generated`. No agent talks to another agent directly, which
+ * is what lets the composer reorder them freely.
+ */
+import {
+  buildSourceModel,
+  toPlaywrightSelector,
+} from './parsers.js';
+import { slug, pascal, camel, id } from '../lib/util.js';
+
+/* ------------------------------------------------------------------ output */
+
+function artifact(path, content, extra = {}) {
+  return {
+    id: id('art'),
+    path,
+    content,
+    bytes: Buffer.byteLength(content, 'utf8'),
+    lines: content.split('\n').length,
+    kind: extra.kind || 'code',
+    language: extra.language || guessLanguage(path),
+    traces: extra.traces || [],
+    producedBy: extra.producedBy || null,
+  };
+}
+
+function guessLanguage(path) {
+  if (path.endsWith('.ts')) return 'typescript';
+  if (path.endsWith('.py')) return 'python';
+  if (path.endsWith('.json')) return 'json';
+  if (path.endsWith('.feature')) return 'gherkin';
+  if (path.endsWith('.md')) return 'markdown';
+  return 'text';
+}
+
+/* ------------------------------------------------------------- sanitisers */
+
+const REAL_EMAIL = /[\w.+-]+@(?!example\.(?:com|org))[\w-]+\.[\w.]{2,}/g;
+
+function sanitiseValue(value, ctx) {
+  if (typeof value !== 'string') return value;
+  let out = value.replace(REAL_EMAIL, 'user@example.com');
+  out = out.replace(/\b(?:\d[ -]*?){13,16}\b/g, '4111111111111111');
+  out = out.replace(/\b\d{3}-\d{2}-\d{4}\b/g, '000-00-0000');
+  if (out !== value) ctx.notes.push(`Sanitised a value that matched a PII pattern (${value.slice(0, 12)}…).`);
+  return out;
+}
+
+function isSecretish(raw = '') {
+  return /(password|passwd|pwd|api[_-]?key|secret|token)/i.test(raw);
+}
+
+/** Secret handling follows the interview answer, defaulting to env vars. */
+function secretExpression(raw, value, ctx) {
+  const policy = ctx.answers?.secrets || 'Environment variables (process.env)';
+  const name = (raw.match(/(password|passwd|pwd|api[_-]?key|secret|token)/i) || ['SECRET'])[0].toUpperCase().replace(/[^A-Z0-9]/g, '_');
+  ctx.notes.push(`Moved a hardcoded ${name.toLowerCase()} out of generated code (policy: ${policy}).`);
+  if (policy.startsWith('A secrets manager')) return `/* TODO: read ${name} from the secrets manager */ ''`;
+  return `process.env.${name} ?? ''`;
+}
+
+/* ------------------------------------------------------------- analyzers */
+
+function analyzerFor(technologyId) {
+  return async (ctx) => {
+    const model = buildSourceModel(technologyId, ctx.spec.artifacts || []);
+    ctx.ws.sourceModel = model;
+    ctx.log(`Parsed ${model.totals.suites} suite(s), ${model.totals.tests} test(s), ${model.totals.assertions} assertion(s), ${model.totals.locators} locator(s).`);
+    if (model.unmapped.length) ctx.log(`${model.unmapped.length} construct(s) have no direct target equivalent.`);
+    return {
+      outputs: [artifact('analysis/source-model.json', JSON.stringify(model, null, 2), { kind: 'analysis' })],
+      metrics: { ...model.totals, unmapped: model.unmapped.length },
+      notes: model.unmapped.map((u) => `Unmapped: ${u.construct} in ${u.file}`),
+    };
+  };
+}
+
+/* ------------------------------------------------------------------- BDD */
+
+async function bddGenerator(ctx) {
+  const model = ctx.ws.sourceModel;
+  const requirements = ctx.discovery.requirements;
+  const outputs = [];
+
+  for (const suite of model.suites) {
+    const lines = [`Feature: ${humanise(suite.name)}`, `  # Source: ${suite.file}`, ''];
+    for (const test of suite.tests) {
+      const requirement = matchRequirement(test, requirements);
+      if (requirement) lines.push(`  @${requirement.id}`);
+      lines.push(`  Scenario: ${humanise(test.name)}`);
+      const first = test.steps[0];
+      lines.push(`    Given the application is open${first?.type === 'goto' ? ` at "${first.value}"` : ''}`);
+      for (const step of test.steps.filter((s) => s.type !== 'goto')) {
+        lines.push(`    When ${describeStep(step)}`);
+      }
+      for (const assertion of test.assertions) {
+        lines.push(`    Then ${describeAssertion(assertion)}`);
+      }
+      if (!test.assertions.length) lines.push('    Then the step completes without error');
+      lines.push('');
+    }
+    outputs.push(artifact(`features/${slug(suite.name)}.feature`, lines.join('\n'), { kind: 'spec', traces: suite.tests.map((t) => t.id) }));
+  }
+
+  ctx.ws.features = outputs.map((o) => o.path);
+  ctx.log(`Wrote ${outputs.length} feature file(s) covering ${model.totals.tests} scenario(s).`);
+  return { outputs, metrics: { features: outputs.length }, notes: [] };
+}
+
+function humanise(name) {
+  return String(name)
+    .replace(/[_-]+/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^./, (c) => c.toUpperCase());
+}
+
+function describeStep(step) {
+  const target = step.locator ? `"${step.locator.value}"` : 'the page';
+  switch (step.type) {
+    case 'click': return `the user clicks ${target}`;
+    case 'fill': return `the user enters "${step.value}" into ${target}`;
+    case 'select': return `the user selects "${step.value}" in ${target}`;
+    case 'clear': return `the user clears ${target}`;
+    case 'wait': return `the user waits ${step.value}ms`;
+    case 'waitFor': return `${target} becomes available`;
+    case 'press': return `the user presses ${step.value} on ${target}`;
+    case 'request': return `a ${step.method} request is sent to "${step.value}"`;
+    case 'dialog': return 'the browser dialog is handled';
+    default: return `the step "${(step.raw || step.type).slice(0, 80)}" runs`;
+  }
+}
+
+function describeAssertion(assertion) {
+  const target = assertion.locator ? `"${assertion.locator.value}"` : 'the page';
+  switch (assertion.subject) {
+    case 'title': return `the page title is "${assertion.expected ?? ''}"`;
+    case 'url': return `the URL is "${assertion.expected ?? ''}"`;
+    case 'visible': return `${target} is visible`;
+    case 'enabled': return `${target} is enabled`;
+    case 'status': return `the response status is ${assertion.expected}`;
+    case 'body': return 'the response body matches the expected shape';
+    default: return `${target} shows "${assertion.expected ?? 'the expected value'}"`;
+  }
+}
+
+function matchRequirement(test, requirements) {
+  if (!requirements?.length) return null;
+  const words = new Set(humanise(test.name).toLowerCase().split(/\W+/).filter((w) => w.length > 3));
+  let best = null;
+  let bestScore = 0;
+  for (const requirement of requirements) {
+    const reqWords = requirement.text.toLowerCase().split(/\W+/).filter((w) => w.length > 3);
+    const score = reqWords.filter((w) => words.has(w)).length;
+    if (score > bestScore) {
+      bestScore = score;
+      best = requirement;
+    }
+  }
+  return bestScore >= 1 ? best : null;
+}
+
+/* ------------------------------------------------- playwright typescript */
+
+async function playwrightTsGenerator(ctx) {
+  const model = ctx.ws.sourceModel;
+  const outputs = [];
+  const usePom = String(ctx.answers?.pom || '').startsWith('Page Objects');
+  const dropSleeps = !String(ctx.answers?.waits || '').startsWith('Keep');
+  const unmappedPolicy = ctx.answers?.unmappedPolicy || 'Emit a skipped test with a TODO';
+  let assertionCount = 0;
+
+  for (const suite of model.suites) {
+    const className = `${pascal(suite.name)}Page`;
+    const pageLocators = new Map();
+    const body = [];
+
+    body.push(`test.describe('${escape(humanise(suite.name))}', () => {`);
+    for (const test of suite.tests) {
+      const requirement = matchRequirement(test, ctx.discovery.requirements);
+      if (requirement) body.push(`  // traces: ${requirement.id} — ${escape(requirement.text.slice(0, 90))}`);
+      body.push(`  // source: ${suite.file} :: ${test.name}`);
+      body.push(`  test('${escape(humanise(test.name))}', async ({ page }) => {`);
+
+      for (const step of test.steps) {
+        const line = tsStep(step, ctx, usePom, className, pageLocators, dropSleeps);
+        if (line) body.push(`    ${line}`);
+      }
+      for (const assertion of test.assertions) {
+        const line = tsAssertion(assertion, ctx, usePom, className, pageLocators);
+        if (line) {
+          body.push(`    ${line}`);
+          assertionCount += 1;
+        }
+      }
+      if (!test.steps.length && !test.assertions.length) {
+        body.push('    // TODO: source test body had no recognised statements');
+      }
+      body.push('  });');
+      body.push('');
+    }
+    body.push('});');
+
+    const imports = [`import { test, expect } from '@playwright/test';`];
+    if (usePom && pageLocators.size) imports.push(`import { ${className} } from '../pages/${slug(suite.name)}.page';`);
+
+    outputs.push(
+      artifact(`tests/${slug(suite.name)}.spec.ts`, `${imports.join('\n')}\n\n${body.join('\n')}\n`, {
+        kind: 'code',
+        traces: suite.tests.map((t) => t.id),
+      }),
+    );
+
+    if (usePom && pageLocators.size) {
+      const fields = [...pageLocators.entries()].map(([name, selector]) => `  readonly ${name} = () => this.page.locator('${escape(selector)}');`);
+      outputs.push(
+        artifact(
+          `pages/${slug(suite.name)}.page.ts`,
+          `import type { Page } from '@playwright/test';\n\nexport class ${className} {\n  constructor(readonly page: Page) {}\n\n${fields.join('\n')}\n}\n`,
+          { kind: 'code' },
+        ),
+      );
+    }
+  }
+
+  // Unmapped constructs are never dropped silently.
+  if (model.unmapped.length && !unmappedPolicy.startsWith('List them')) {
+    const skip = unmappedPolicy.startsWith('Emit a skipped');
+    const lines = [`import { test } from '@playwright/test';`, '', `test.describe('Unmapped source constructs', () => {`];
+    for (const item of model.unmapped) {
+      lines.push(`  test${skip ? '.skip' : ''}('${escape(item.construct)} — ${escape(item.file)}', async () => {`);
+      lines.push(`    // ${escape(item.reason)}`);
+      lines.push(`    // source: ${escape((item.raw || '').slice(0, 160))}`);
+      lines.push(skip ? '    // TODO: port this construct by hand.' : `    throw new Error('Unmapped construct requires a human decision: ${escape(item.construct)}');`);
+      lines.push('  });');
+    }
+    lines.push('});');
+    outputs.push(artifact('tests/_unmapped.spec.ts', `${lines.join('\n')}\n`, { kind: 'code' }));
+  }
+
+  outputs.push(
+    artifact(
+      'playwright.config.ts',
+      `import { defineConfig, devices } from '@playwright/test';\n\nexport default defineConfig({\n  testDir: './tests',\n  fullyParallel: true,\n  reporter: [['html'], ['list']],\n  use: {\n    baseURL: process.env.BASE_URL,\n    trace: 'on-first-retry',\n    screenshot: 'only-on-failure',\n  },\n  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],\n});\n`,
+      { kind: 'config' },
+    ),
+  );
+
+  ctx.ws.generatedAssertions = assertionCount;
+  ctx.log(`Emitted ${outputs.length} file(s) with ${assertionCount} assertion(s) across ${model.totals.tests} test(s).`);
+  return { outputs, metrics: { files: outputs.length, tests: model.totals.tests, assertions: assertionCount, pageObjects: usePom }, notes: ctx.notes.splice(0) };
+}
+
+function escape(text) {
+  return String(text ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, ' ');
+}
+
+function locatorExpression(loc, usePom, className, pageLocators) {
+  const selector = toPlaywrightSelector(loc);
+  if (!selector) return null;
+  if (usePom) {
+    const name = camel(loc.value) || 'element';
+    pageLocators.set(name, selector);
+  }
+  return `page.locator('${escape(selector)}')`;
+}
+
+function tsStep(step, ctx, usePom, className, pageLocators, dropSleeps) {
+  const target = step.locator ? locatorExpression(step.locator, usePom, className, pageLocators) : null;
+  switch (step.type) {
+    case 'goto':
+      return `await page.goto('${escape(step.value || '/')}');`;
+    case 'click':
+      return target ? `await ${target}.click();` : '// TODO: click with no resolvable locator';
+    case 'fill': {
+      const value = isSecretish(step.raw) ? secretExpression(step.raw, step.value, ctx) : `'${escape(sanitiseValue(step.value, ctx))}'`;
+      return target ? `await ${target}.fill(${value});` : `// TODO: fill with no resolvable locator (${escape(step.raw).slice(0, 60)})`;
+    }
+    case 'clear':
+      return target ? `await ${target}.clear();` : null;
+    case 'select':
+      return target ? `await ${target}.selectOption('${escape(step.value ?? '')}');` : null;
+    case 'press':
+      return target ? `await ${target}.press('${escape(step.value || 'Enter')}');` : `await page.keyboard.press('${escape(step.value || 'Enter')}');`;
+    case 'wait':
+      return dropSleeps
+        ? `// auto-waiting replaces an explicit ${step.value}ms sleep`
+        : `await page.waitForTimeout(${Number(step.value) || 500});`;
+    case 'waitFor':
+      return target ? `await ${target}.waitFor({ state: 'visible' });` : `await page.waitForLoadState('networkidle');`;
+    case 'dialog':
+      return `page.once('dialog', (dialog) => dialog.accept());`;
+    case 'route':
+      return `// TODO: port the intercepted route (${escape(step.raw).slice(0, 60)})`;
+    case 'fixture':
+      return `// fixture '${escape(step.value)}' is available under data/`;
+    case 'statement':
+      return `// ${escape(step.raw).slice(0, 120)}`;
+    default:
+      return `// TODO: ${escape(step.raw || step.type).slice(0, 120)}`;
+  }
+}
+
+function tsAssertion(assertion, ctx, usePom, className, pageLocators) {
+  const target = assertion.locator ? locatorExpression(assertion.locator, usePom, className, pageLocators) : null;
+  const expected = escape(sanitiseValue(assertion.expected ?? '', ctx));
+
+  switch (assertion.subject) {
+    case 'title':
+      return `await expect(page).toHaveTitle('${expected}');`;
+    case 'url':
+      return `await expect(page).toHaveURL('${expected}');`;
+    case 'visible':
+      return target ? `await expect(${target}).${assertion.type === 'false' ? 'not.' : ''}toBeVisible();` : `await expect(page.locator('body')).toBeVisible();`;
+    case 'enabled':
+      return target ? `await expect(${target}).toBeEnabled();` : null;
+    case 'attribute':
+      return target ? `await expect(${target}).toHaveAttribute('value', '${expected}');` : null;
+    case 'status':
+      return `expect(response.status()).toBe(${Number(assertion.expected) || 200});`;
+    default:
+      if (target && expected) return `await expect(${target}).toHaveText('${expected}');`;
+      if (target) return `await expect(${target}).toBeVisible();`;
+      if (expected) return `expect(await page.content()).toContain('${expected}');`;
+      return `// TODO: assertion could not be resolved — ${escape(assertion.raw).slice(0, 100)}`;
+  }
+}
+
+/* ---------------------------------------------------- playwright python */
+
+async function playwrightPythonGenerator(ctx) {
+  const model = ctx.ws.sourceModel;
+  const outputs = [];
+  let assertionCount = 0;
+
+  for (const suite of model.suites) {
+    const lines = ['import re', 'from playwright.sync_api import Page, expect', '', ''];
+    for (const test of suite.tests) {
+      lines.push(`def test_${slug(test.name).replace(/-/g, '_')}(page: Page):`);
+      lines.push(`    """source: ${suite.file} :: ${test.name}"""`);
+      let wrote = false;
+      for (const step of test.steps) {
+        const sel = step.locator ? toPlaywrightSelector(step.locator) : null;
+        if (step.type === 'goto') { lines.push(`    page.goto("${step.value || '/'}")`); wrote = true; }
+        else if (step.type === 'click' && sel) { lines.push(`    page.locator("${sel}").click()`); wrote = true; }
+        else if (step.type === 'fill' && sel) { lines.push(`    page.locator("${sel}").fill("${sanitiseValue(step.value ?? '', ctx)}")`); wrote = true; }
+        else if (step.type === 'select' && sel) { lines.push(`    page.locator("${sel}").select_option("${step.value ?? ''}")`); wrote = true; }
+        else if (step.type === 'wait') { lines.push(`    # auto-waiting replaces a ${step.value}ms sleep`); }
+      }
+      for (const assertion of test.assertions) {
+        const sel = assertion.locator ? toPlaywrightSelector(assertion.locator) : null;
+        if (assertion.subject === 'title') lines.push(`    expect(page).to_have_title("${assertion.expected ?? ''}")`);
+        else if (assertion.subject === 'url') lines.push(`    expect(page).to_have_url("${assertion.expected ?? ''}")`);
+        else if (sel && assertion.expected) lines.push(`    expect(page.locator("${sel}")).to_have_text("${sanitiseValue(assertion.expected, ctx)}")`);
+        else if (sel) lines.push(`    expect(page.locator("${sel}")).to_be_visible()`);
+        else continue;
+        assertionCount += 1;
+        wrote = true;
+      }
+      if (!wrote) lines.push('    pass  # TODO: no recognised statements in the source test');
+      lines.push('');
+    }
+    outputs.push(artifact(`tests/test_${slug(suite.name).replace(/-/g, '_')}.py`, `${lines.join('\n')}\n`, { kind: 'code', traces: suite.tests.map((t) => t.id) }));
+  }
+
+  outputs.push(artifact('conftest.py', 'import pytest\n\n\n@pytest.fixture(scope="session")\ndef browser_context_args(browser_context_args):\n    return {**browser_context_args, "ignore_https_errors": True}\n', { kind: 'config' }));
+  ctx.ws.generatedAssertions = assertionCount;
+  ctx.log(`Emitted ${outputs.length} Python file(s) with ${assertionCount} assertion(s).`);
+  return { outputs, metrics: { files: outputs.length, assertions: assertionCount }, notes: [] };
+}
+
+/* -------------------------------------------------------------- pytest */
+
+async function pytestGenerator(ctx) {
+  const model = ctx.ws.sourceModel;
+  const outputs = [];
+  let assertionCount = 0;
+
+  for (const suite of model.suites) {
+    const lines = ['import pytest', '', ''];
+    for (const test of suite.tests) {
+      lines.push(`def test_${slug(test.name).replace(/-/g, '_')}():`);
+      lines.push(`    """source: ${suite.file} :: ${test.name}"""`);
+      for (const step of test.steps) lines.push(`    # ${(step.raw || '').slice(0, 110)}`);
+      for (const assertion of test.assertions) {
+        const expected = assertion.expected ? `"${sanitiseValue(assertion.expected, ctx)}"` : 'True';
+        if (assertion.type === 'true') lines.push(`    assert ${expected} is not None  # ${(assertion.raw || '').slice(0, 60)}`);
+        else if (assertion.type === 'false') lines.push(`    assert not ${expected}  # ${(assertion.raw || '').slice(0, 60)}`);
+        else lines.push(`    assert ${expected} == ${expected}  # TODO: bind actual — ${(assertion.raw || '').slice(0, 60)}`);
+        assertionCount += 1;
+      }
+      if (!test.assertions.length) lines.push('    pytest.skip("source test had no assertions")');
+      lines.push('');
+    }
+    outputs.push(artifact(`tests/test_${slug(suite.name).replace(/-/g, '_')}.py`, `${lines.join('\n')}\n`, { kind: 'code', traces: suite.tests.map((t) => t.id) }));
+  }
+
+  ctx.ws.generatedAssertions = assertionCount;
+  ctx.log(`Emitted ${outputs.length} PyTest module(s) with ${assertionCount} assertion(s).`);
+  return { outputs, metrics: { files: outputs.length, assertions: assertionCount }, notes: ['JUnit assertions map to plain asserts; actual-value binding needs review.'] };
+}
+
+/* --------------------------------------------------------- playwright api */
+
+async function playwrightApiGenerator(ctx) {
+  const model = ctx.ws.sourceModel;
+  const outputs = [];
+  let assertionCount = 0;
+
+  for (const suite of model.suites) {
+    const lines = [`import { test, expect } from '@playwright/test';`, '', `test.describe('${escape(humanise(suite.name))} API', () => {`];
+    for (const test of suite.tests) {
+      const request = test.steps.find((s) => s.type === 'request');
+      if (!request) continue;
+      const status = Number(test.assertions.find((a) => a.subject === 'status')?.expected) || 200;
+      lines.push(`  test('${escape(test.name)}', async ({ request }) => {`);
+      lines.push(`    const response = await request.${request.method.toLowerCase()}('${escape(request.value)}'${['POST', 'PUT', 'PATCH'].includes(request.method) ? ', { data: {} }' : ''});`);
+      lines.push(`    expect(response.status()).toBe(${status});`);
+      assertionCount += 1;
+      for (const assertion of test.assertions.filter((a) => a.subject === 'body')) {
+        lines.push(`    // TODO: port body assertion — ${escape((assertion.raw || '').slice(0, 90))}`);
+      }
+      lines.push('  });');
+    }
+    lines.push('});');
+    outputs.push(artifact(`tests/api/${slug(suite.name)}.spec.ts`, `${lines.join('\n')}\n`, { kind: 'code', traces: suite.tests.map((t) => t.id) }));
+  }
+
+  ctx.ws.generatedAssertions = assertionCount;
+  ctx.log(`Emitted ${outputs.length} API spec file(s) preserving ${assertionCount} status assertion(s).`);
+  return { outputs, metrics: { files: outputs.length, assertions: assertionCount, requests: model.requests.length }, notes: [] };
+}
+
+/* ------------------------------------------------------------- mapping */
+
+const CY_MAP = {
+  'cy.visit': 'page.goto',
+  'cy.get': 'page.locator',
+  'cy.contains': 'page.getByText',
+  '.type': '.fill',
+  '.click': '.click',
+  '.select': '.selectOption',
+  '.check': '.check',
+  'cy.wait': 'page.waitForTimeout',
+  'cy.intercept': 'page.route',
+  'cy.fixture': 'JSON import from data/',
+  'should(be.visible)': 'expect(locator).toBeVisible()',
+  'should(contain)': 'expect(locator).toContainText()',
+  'should(have.value)': 'expect(locator).toHaveValue()',
+  'cy.request': 'request.fetch',
+};
+
+async function commandMapper(ctx) {
+  const model = ctx.ws.sourceModel;
+  const used = new Set();
+  for (const suite of model.suites) {
+    for (const test of suite.tests) {
+      for (const step of [...test.steps, ...test.assertions]) {
+        const raw = step.raw || '';
+        for (const key of Object.keys(CY_MAP)) if (raw.includes(key.replace(/\(.*\)/, ''))) used.add(key);
+      }
+    }
+  }
+  const table = [...used].map((key) => ({ cypress: key, playwright: CY_MAP[key], status: 'mapped' }));
+  for (const item of model.unmapped) table.push({ cypress: item.construct, playwright: null, status: 'unmapped', reason: item.reason });
+
+  ctx.ws.commandMap = table;
+  ctx.log(`Mapped ${table.filter((r) => r.status === 'mapped').length} command(s); ${table.filter((r) => r.status === 'unmapped').length} have no equivalent.`);
+  return {
+    outputs: [artifact('analysis/command-map.json', JSON.stringify(table, null, 2), { kind: 'analysis' })],
+    metrics: { mapped: table.filter((r) => r.status === 'mapped').length, unmapped: table.filter((r) => r.status === 'unmapped').length },
+    notes: [],
+  };
+}
+
+/* ----------------------------------------------------------- data agent */
+
+async function testDataMigrator(ctx) {
+  const policy = ctx.answers?.dataPolicy || 'Convert to JSON fixtures and keep every record';
+  const anonymise = policy.startsWith('Anonymise');
+  const outputs = [];
+  let recordsIn = 0;
+  let recordsOut = 0;
+
+  const sources = (ctx.spec.artifacts || []).filter((a) => (ctx.ws.sourceModel?.dataFiles || []).some((d) => d.path === a.path));
+
+  for (const source of sources) {
+    const declared = ctx.ws.sourceModel.dataFiles.find((d) => d.path === source.path);
+    recordsIn += declared.records;
+    let rows = [];
+
+    if (declared.format === 'csv') {
+      const [header, ...body] = source.content.split('\n').map((r) => r.trim()).filter(Boolean);
+      const columns = header.split(',').map((c) => c.trim());
+      rows = body.map((line) => {
+        const cells = line.split(',');
+        return Object.fromEntries(columns.map((col, i) => [col, (cells[i] ?? '').trim()]));
+      });
+    } else if (declared.format === 'json') {
+      try {
+        const parsed = JSON.parse(source.content);
+        rows = Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        rows = [];
+      }
+    } else if (declared.format === 'properties') {
+      rows = source.content
+        .split('\n')
+        .filter((line) => line.includes('=') && !line.trim().startsWith('#'))
+        .map((line) => {
+          const [key, ...rest] = line.split('=');
+          return { key: key.trim(), value: rest.join('=').trim() };
+        });
+    } else {
+      rows = source.content.split('\n').filter(Boolean).map((value, index) => ({ index, value }));
+    }
+
+    if (anonymise) {
+      rows = rows.map((row) =>
+        Object.fromEntries(
+          Object.entries(row).map(([key, value]) => [key, typeof value === 'string' ? sanitiseValue(value, ctx) : value]),
+        ),
+      );
+    } else {
+      rows = rows.map((row) =>
+        Object.fromEntries(Object.entries(row).map(([key, value]) => [key, typeof value === 'string' ? sanitiseValue(value, ctx) : value])),
+      );
+    }
+
+    recordsOut += rows.length;
+    const target = policy.startsWith('Keep the original format')
+      ? artifact(`data/${source.path.split('/').pop()}`, source.content, { kind: 'data' })
+      : artifact(`data/${slug(source.path.split('/').pop().replace(/\.\w+$/, ''))}.json`, JSON.stringify(rows, null, 2), { kind: 'data' });
+    outputs.push(target);
+  }
+
+  ctx.ws.dataParity = { recordsIn, recordsOut };
+  ctx.log(`Migrated ${sources.length} fixture file(s): ${recordsIn} records in, ${recordsOut} records out (policy: ${policy}).`);
+  return { outputs, metrics: { files: sources.length, recordsIn, recordsOut }, notes: recordsIn === recordsOut ? [] : [`Record count changed: ${recordsIn} → ${recordsOut}.`] };
+}
+
+/* ----------------------------------------------------------- auth agent */
+
+async function authMigrator(ctx) {
+  const schemes = ctx.ws.sourceModel?.auth || [];
+  const lines = [`import { test as setup, expect } from '@playwright/test';`, '', `const authFile = '.auth/user.json';`, ''];
+
+  for (const scheme of schemes) {
+    lines.push(`// detected scheme: ${scheme.scheme} (${scheme.evidence})`);
+  }
+  lines.push(`setup('authenticate', async ({ page, request }) => {`);
+  if (schemes.some((s) => /basic/i.test(s.scheme))) {
+    lines.push(`  // basic auth — credentials come from the environment, never from generated code`);
+    lines.push(`  await page.context().setHTTPCredentials({ username: process.env.AUTH_USER ?? '', password: process.env.AUTH_PASSWORD ?? '' });`);
+  }
+  if (schemes.some((s) => /bearer|oauth|token/i.test(s.scheme))) {
+    lines.push(`  const token = process.env.AUTH_TOKEN ?? '';`);
+    lines.push(`  await page.context().setExtraHTTPHeaders({ Authorization: \`Bearer \${token}\` });`);
+  }
+  if (!schemes.length) lines.push(`  // no auth scheme detected in the source suite — this file is a placeholder`);
+  lines.push(`  await page.context().storageState({ path: authFile });`);
+  lines.push('});');
+
+  ctx.ws.authSchemes = schemes.map((s) => s.scheme);
+  ctx.log(schemes.length ? `Generated auth setup for: ${ctx.ws.authSchemes.join(', ')}.` : 'No auth scheme detected; emitted a placeholder setup.');
+  return {
+    outputs: [artifact('auth/auth.setup.ts', `${lines.join('\n')}\n`, { kind: 'code' })],
+    metrics: { schemes: schemes.length },
+    notes: schemes.length ? ['Credentials must be provided as AUTH_USER / AUTH_PASSWORD / AUTH_TOKEN.'] : [],
+  };
+}
+
+/* -------------------------------------------------------- traceability */
+
+async function traceabilityAgent(ctx) {
+  const model = ctx.ws.sourceModel || { suites: [] };
+  const requirements = ctx.discovery.requirements || [];
+  const generated = ctx.ws.generated.filter((a) => a.kind === 'code' || a.kind === 'spec');
+
+  const rows = [];
+  for (const suite of model.suites) {
+    for (const test of suite.tests) {
+      const requirement = matchRequirement(test, requirements);
+      const artifacts = generated.filter((a) => a.traces.includes(test.id));
+      rows.push({
+        requirementId: requirement?.id || null,
+        requirementText: requirement?.text || null,
+        sourceSuite: suite.name,
+        sourceFile: suite.file,
+        sourceTest: test.name,
+        testId: test.id,
+        steps: test.steps.length,
+        assertions: test.assertions.length,
+        artifacts: artifacts.map((a) => a.path),
+        status: artifacts.length ? 'migrated' : 'not-migrated',
+      });
+    }
+  }
+
+  const covered = new Set(rows.filter((r) => r.status === 'migrated' && r.requirementId).map((r) => r.requirementId));
+  const orphanRequirements = requirements.filter((r) => !covered.has(r.id)).map((r) => ({ id: r.id, text: r.text }));
+
+  const matrix = {
+    requirements: requirements.length,
+    coveredRequirements: covered.size,
+    orphanRequirements,
+    rows,
+    generatedArtifacts: generated.map((a) => a.path),
+  };
+
+  ctx.ws.traceability = matrix;
+  ctx.log(`Traced ${rows.length} test(s); ${covered.size}/${requirements.length} requirement(s) covered, ${orphanRequirements.length} orphan(s).`);
+  return {
+    outputs: [artifact('analysis/traceability.json', JSON.stringify(matrix, null, 2), { kind: 'analysis' })],
+    metrics: { rows: rows.length, covered: covered.size, orphans: orphanRequirements.length },
+    notes: orphanRequirements.map((r) => `Requirement ${r.id} has no migrated test.`),
+  };
+}
+
+/* ---------------------------------------------------- structure checks */
+
+async function structureValidator(ctx) {
+  const files = ctx.ws.generated.filter((a) => a.kind === 'code' || a.kind === 'config');
+  const findings = [];
+
+  for (const file of files) {
+    const text = file.content;
+    if (file.language === 'typescript') {
+      if (countChar(text, '{') !== countChar(text, '}')) findings.push({ file: file.path, issue: 'Unbalanced braces', severity: 'blocker' });
+      if (countChar(text, '(') !== countChar(text, ')')) findings.push({ file: file.path, issue: 'Unbalanced parentheses', severity: 'blocker' });
+      if (/\btest\(/.test(text) && !/@playwright\/test/.test(text)) findings.push({ file: file.path, issue: 'Uses test() without importing @playwright/test', severity: 'blocker' });
+      if (/test\('[^']*',\s*async\s*\([^)]*\)\s*=>\s*\{\s*\}\s*\)/.test(text)) findings.push({ file: file.path, issue: 'Empty test body', severity: 'major' });
+    }
+    if (file.language === 'python') {
+      const bad = text.split('\n').find((line) => /^\s*def\s+test_/.test(line) && line.trim().endsWith(':') === false);
+      if (bad) findings.push({ file: file.path, issue: 'Malformed test definition', severity: 'blocker' });
+    }
+    const todos = (text.match(/TODO/g) || []).length;
+    if (todos) findings.push({ file: file.path, issue: `${todos} TODO marker(s) left for a human`, severity: 'minor' });
+    if (!text.trim()) findings.push({ file: file.path, issue: 'Empty file', severity: 'blocker' });
+  }
+
+  const report = {
+    filesChecked: files.length,
+    blockers: findings.filter((f) => f.severity === 'blocker').length,
+    majors: findings.filter((f) => f.severity === 'major').length,
+    minors: findings.filter((f) => f.severity === 'minor').length,
+    findings,
+  };
+  ctx.ws.structureReport = report;
+  ctx.log(`Checked ${files.length} generated file(s): ${report.blockers} blocker(s), ${report.majors} major, ${report.minors} minor.`);
+  return {
+    outputs: [artifact('analysis/structure-report.json', JSON.stringify(report, null, 2), { kind: 'analysis' })],
+    metrics: report,
+    notes: findings.filter((f) => f.severity !== 'minor').map((f) => `${f.file}: ${f.issue}`),
+  };
+}
+
+function countChar(text, char) {
+  let count = 0;
+  for (const c of text) if (c === char) count += 1;
+  return count;
+}
+
+/* --------------------------------------------------------- fallback */
+
+async function genericAdapter(ctx) {
+  const node = ctx.node;
+  const body = {
+    agent: node.name,
+    capability: node.capability,
+    status: 'placeholder',
+    explanation:
+      'This agent was synthesised by the Agent Factory because no registry agent provides this capability. It runs on the generic adapter, which records intent and hands the work to a human rather than inventing output.',
+    inputsSeen: {
+      sourceModel: Boolean(ctx.ws.sourceModel),
+      generatedSoFar: ctx.ws.generated.length,
+    },
+    suggestedNextStep: `Implement ${node.capability} as a real agent and register it, then re-run this project — the composed graph will pick the implementation up automatically.`,
+  };
+  ctx.log(`Generic adapter ran for "${node.name}" — placeholder output, no real work performed.`);
+  ctx.ws.placeholders = (ctx.ws.placeholders || 0) + 1;
+  return {
+    outputs: [artifact(`analysis/${slug(node.capability)}-placeholder.json`, JSON.stringify(body, null, 2), { kind: 'analysis' })],
+    metrics: { placeholder: true },
+    notes: [`"${node.name}" produced placeholder output — it has no implementation yet.`],
+  };
+}
+
+/* ------------------------------------------------------------- registry */
+
+export const AGENT_IMPLS = {
+  seleniumJavaAnalyzer: analyzerFor('selenium-java'),
+  seleniumPythonAnalyzer: analyzerFor('selenium-python'),
+  cypressAnalyzer: analyzerFor('cypress'),
+  junitAnalyzer: analyzerFor('junit'),
+  restCollectionAnalyzer: analyzerFor('rest-collection'),
+  bddGenerator,
+  playwrightTsGenerator,
+  playwrightPythonGenerator,
+  playwrightApiGenerator,
+  pytestGenerator,
+  commandMapper,
+  testDataMigrator,
+  authMigrator,
+  traceabilityAgent,
+  structureValidator,
+  genericAdapter,
+};
+
+export function resolveImpl(name) {
+  return AGENT_IMPLS[name] || genericAdapter;
+}
