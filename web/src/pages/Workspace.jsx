@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
-import { Badge, useToast, Spinner } from '../lib/ui.jsx';
+import { Badge, Dot, useToast, Spinner } from '../lib/ui.jsx';
 import SpecStage from '../stages/Spec.jsx';
 import InterviewStage from '../stages/Interview.jsx';
 import DiscoveryStage from '../stages/Discovery.jsx';
@@ -22,7 +22,7 @@ const STEPS = [
   { key: 'report', label: 'Report', done: (p) => (p.runs || []).some((r) => r.verdict) },
 ];
 
-export default function Workspace({ projectId, tab, navigate, onChanged, projectName }) {
+export default function Workspace({ projectId, tab, navigate, onChanged, projectName, pendingApprovals = [] }) {
   const [project, setProject] = useState(null);
   const [error, setError] = useState(null);
   const toast = useToast();
@@ -83,17 +83,55 @@ export default function Workspace({ projectId, tab, navigate, onChanged, project
       </div>
 
       <div className="stepper">
-        {STEPS.map((step, index) => (
-          <div
-            key={step.key}
-            className={`step ${tab === step.key ? 'active' : ''} ${step.done(project) ? 'done' : ''}`}
-            onClick={() => go(step.key)}
-          >
-            <span className="num">{step.done(project) ? '✓' : index + 1}</span>
-            {step.label}
-          </div>
-        ))}
+        {STEPS.map((step, index) => {
+          const waiting = pendingApprovals.filter((item) => item.stage === step.key);
+          return (
+            <div
+              key={step.key}
+              className={`step ${tab === step.key ? 'active' : ''} ${step.done(project) ? 'done' : ''}`}
+              onClick={() => go(step.key)}
+              title={waiting.map((item) => item.title).join(' · ')}
+            >
+              <span className="num">{step.done(project) ? '✓' : index + 1}</span>
+              {step.label}
+              {waiting.length > 0 && (
+                <span title="waiting on you">
+                  <Dot tone={waiting.some((w) => w.severity === 'blocker') ? 'fail' : 'warn'} pulse />
+                </span>
+              )}
+            </div>
+          );
+        })}
       </div>
+
+      {/* Waiting work is announced on every screen of the project, not only the one that owns it. */}
+      {pendingApprovals.length > 0 && (
+        <div style={{ padding: '10px 22px 0' }}>
+          <div
+            className="row"
+            style={{
+              gap: 10,
+              padding: '9px 13px',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid rgba(245, 179, 66, 0.35)',
+              background: 'var(--warn-soft)',
+              flexWrap: 'wrap',
+            }}
+          >
+            <Dot tone={pendingApprovals.some((i) => i.severity === 'blocker') ? 'fail' : 'warn'} pulse />
+            <span className="small">
+              <b>{pendingApprovals.reduce((sum, item) => sum + item.count, 0)} thing(s) waiting on you:</b>{' '}
+              {pendingApprovals.map((item) => item.title).join(' · ')}
+            </span>
+            <div className="spacer" />
+            {[...new Set(pendingApprovals.map((item) => item.stage))].map((stage) => (
+              <button key={stage} className="btn sm" onClick={() => go(stage)}>
+                Go to {stage} →
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="page wide">
         {tab === 'spec' && <SpecStage {...shared} />}

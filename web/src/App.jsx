@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { api } from './lib/api.js';
 import { Badge, Dot, useToast } from './lib/ui.jsx';
 import Dashboard from './pages/Dashboard.jsx';
+import Approvals from './pages/Approvals.jsx';
 import Projects from './pages/Projects.jsx';
 import Workspace from './pages/Workspace.jsx';
 import Registry from './pages/Registry.jsx';
@@ -25,7 +26,26 @@ export default function App() {
   const [route, navigate] = useRoute();
   const [projects, setProjects] = useState([]);
   const [health, setHealth] = useState(null);
+  const [approvals, setApprovals] = useState({ total: 0, blocking: 0, byProject: {} });
   const toast = useToast();
+
+  /**
+   * Polled globally rather than per-screen: a run waiting on a human is waiting no matter which
+   * page you happen to be on, so the count has to follow you.
+   */
+  const refreshApprovals = useCallback(async () => {
+    try {
+      setApprovals(await api.approvals());
+    } catch {
+      /* the sidebar badge is not worth a toast */
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshApprovals();
+    const timer = setInterval(refreshApprovals, 5000);
+    return () => clearInterval(timer);
+  }, [refreshApprovals, route]);
 
   const refreshProjects = useCallback(async () => {
     try {
@@ -66,6 +86,14 @@ export default function App() {
         <div className={`nav-item ${section === 'dashboard' ? 'active' : ''}`} onClick={() => navigate('/dashboard')}>
           <span className="ico">◱</span> Dashboard
         </div>
+        <div className={`nav-item ${section === 'approvals' ? 'active' : ''}`} onClick={() => navigate('/approvals')}>
+          <span className="ico">✋</span> Approvals
+          {approvals.total > 0 && (
+            <span className="nav-count" style={{ color: approvals.blocking ? 'var(--fail)' : 'var(--warn)', fontWeight: 700 }}>
+              {approvals.total}
+            </span>
+          )}
+        </div>
         <div className={`nav-item ${section === 'projects' && !projectId ? 'active' : ''}`} onClick={() => navigate('/projects')}>
           <span className="ico">▤</span> Projects
           <span className="nav-count">{projects.length}</span>
@@ -86,9 +114,10 @@ export default function App() {
             title={`${project.source || '?'} → ${project.target || '?'}`}
           >
             <span className="ico">
-              <Dot tone={project.stage === 'run' ? 'pass' : project.readiness >= 70 ? 'info' : ''} />
+              <Dot tone={approvals.byProject[project.id] ? 'warn' : project.stage === 'run' ? 'pass' : ''} pulse={Boolean(approvals.byProject[project.id])} />
             </span>
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{project.name}</span>
+            {approvals.byProject[project.id] > 0 && <span className="nav-count" style={{ color: 'var(--warn)' }}>{approvals.byProject[project.id]}</span>}
           </div>
         ))}
 
@@ -109,6 +138,7 @@ export default function App() {
 
       <main className="main">
         {section === 'dashboard' && <Dashboard navigate={navigate} />}
+        {section === 'approvals' && <Approvals navigate={navigate} />}
         {section === 'projects' && !projectId && (
           <Projects projects={projects} onChanged={refreshProjects} navigate={navigate} />
         )}
@@ -120,6 +150,7 @@ export default function App() {
             navigate={navigate}
             onChanged={refreshProjects}
             projectName={activeProject?.name}
+            pendingApprovals={approvals.items?.filter((item) => item.projectId === projectId) || []}
           />
         )}
         {section === 'registry' && <Registry />}

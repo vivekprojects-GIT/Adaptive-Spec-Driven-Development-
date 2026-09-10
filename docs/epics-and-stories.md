@@ -30,6 +30,8 @@
 | | S7.2 Failure-first dashboard with live log feed | FR-20 | done |
 | **E8 BMAD handover** | S8.1 BMAD Artifact Agent emitting brief / PRD / architecture / epics | FR-21 | done |
 | | S8.2 Templates that start empty and hold the run until you supply content | FR-22 | done |
+| **E9 Human visibility** | S9.1 Approvals inbox aggregating every pending decision | FR-23 | done |
+| | S9.2 Waiting counts in the sidebar, project list, stepper and an in-project banner | FR-23 | done |
 
 ## Definition of done (applied to every story)
 

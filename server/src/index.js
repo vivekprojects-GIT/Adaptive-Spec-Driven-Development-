@@ -9,6 +9,7 @@ import runsRouter from './routes/runs.js';
 import registryRouter from './routes/registry.js';
 import settingsRouter from './routes/settings.js';
 import observabilityRouter from './routes/observability.js';
+import approvalsRouter from './routes/approvals.js';
 import { TEMPLATES, findTemplate, starterSpec, exampleSpec } from './templates.js';
 import { ensureSeeded as seedAgents } from './registry/agents.js';
 import { ensureSeeded as seedGuardrails } from './registry/guardrails.js';
@@ -28,7 +29,7 @@ app.use(express.json({ limit: '25mb' }));
 
 // Every API call is logged, so the dashboard can always show the last thing that happened.
 app.use((req, res, next) => {
-  if (!req.path.startsWith('/api') || req.path === '/api/logs' || req.path === '/api/dashboard') return next();
+  if (!req.path.startsWith('/api') || req.path === '/api/logs' || req.path === '/api/dashboard' || req.path === '/api/approvals') return next();
   const started = Date.now();
   res.on('finish', () => {
     const ms = Date.now() - started;
@@ -85,6 +86,7 @@ app.use('/api/projects', projectsRouter);
 app.use('/api/runs', runsRouter);
 app.use('/api/registry', registryRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api/approvals', approvalsRouter);
 app.use('/api', observabilityRouter);
 
 // Production: serve the built UI from the same origin so `npm start` is a single process.

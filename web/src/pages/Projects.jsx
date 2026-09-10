@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
-import { Card, Badge, Modal, Field, Empty, useToast, relTime, Bar } from '../lib/ui.jsx';
+import { Card, Badge, Modal, Field, Empty, useToast, relTime, Bar, Dot } from '../lib/ui.jsx';
 
 const STAGE_LABEL = {
   spec: 'Spec',
@@ -16,10 +16,12 @@ export default function Projects({ projects, onChanged, navigate }) {
   const [templates, setTemplates] = useState([]);
   const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState(null);
+  const [waiting, setWaiting] = useState({});
   const toast = useToast();
 
   useEffect(() => {
     api.templates().then(setTemplates).catch(() => setTemplates([]));
+    api.approvals().then((data) => setWaiting(data.byProject || {})).catch(() => {});
   }, []);
 
   /**
@@ -75,6 +77,7 @@ export default function Projects({ projects, onChanged, navigate }) {
                   <th>Stage</th>
                   <th style={{ width: 150 }}>Readiness</th>
                   <th>Runs</th>
+                  <th>Waiting on you</th>
                   <th>Updated</th>
                   <th />
                 </tr>
@@ -96,6 +99,16 @@ export default function Projects({ projects, onChanged, navigate }) {
                       <div className="tiny faint mono" style={{ marginTop: 3 }}>{project.readiness}%</div>
                     </td>
                     <td className="mono">{project.runs}</td>
+                    <td>
+                      {waiting[project.id] ? (
+                        <span className="row" style={{ gap: 6 }}>
+                          <Dot tone="warn" pulse />
+                          <Badge tone="warn">{waiting[project.id]}</Badge>
+                        </span>
+                      ) : (
+                        <span className="faint tiny">—</span>
+                      )}
+                    </td>
                     <td className="tiny faint">{relTime(project.updatedAt)}</td>
                     <td onClick={(event) => event.stopPropagation()}>
                       <button

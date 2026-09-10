@@ -51,6 +51,7 @@ export const api = {
   reportUrl: (runId) => `/api/runs/${runId}/report.md`,
   bundleUrl: (runId) => `/api/runs/${runId}/bundle.json`,
 
+  approvals: () => call('/approvals'),
   dashboard: () => call('/dashboard'),
   logs: (params = {}) => call(`/logs?${new URLSearchParams(Object.entries(params).filter(([, v]) => v && v !== 'all')).toString()}`),
   clearLogs: () => call('/logs', { method: 'DELETE' }),

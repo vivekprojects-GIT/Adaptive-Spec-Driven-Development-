@@ -71,8 +71,14 @@ Everything. There is no step that requires curl or editing a file by hand.
 | **8 Trace** | Five-column lineage — requirement → source test → agent → artifact → guardrail. Click any node and its whole chain lights up. Plus the traceability matrix and a full decision trail |
 | **9 Report** | Acceptance summary and a Markdown report, downloadable, plus a JSON bundle of the entire run |
 
-Three more screens in the sidebar:
+Four more screens in the sidebar:
 
+- **Approvals** — every decision waiting on a human, across every project, in one list: unanswered
+  blocking questions, undecided agent and guardrail proposals, halted runs, finished runs nobody has
+  signed off, and guardrails that asked for a person because they could not be evaluated. Blockers
+  sort first, each row says what is waiting and why, and each row's button takes you straight to the
+  screen that resolves it. The count follows you in the sidebar, on each project row, and as a banner
+  inside the project itself — so a run cannot sit `pending` unnoticed.
 - **Dashboard** — built to answer one question: *where did it fail?* It ranks failing guardrails with
   their evidence, agents that threw and what they threw, agents that produced placeholders instead of
   real work, requirements that never reached an artifact, capability gaps still open, and projects
@@ -117,7 +123,8 @@ it never invents output and lets a guardrail call it a success.
 halts *there* — later agents are marked skipped, the verdict is `blocked`, and the run waits for you.
 
 And every run ends the same way: **pending your approval**. Approve it, or request changes with a
-note. Nothing is accepted just because the machine finished.
+note. Nothing is accepted just because the machine finished — and because the platform waits on you
+by design, the **Approvals** inbox exists so you always know what it is waiting for.
 
 ---
 
