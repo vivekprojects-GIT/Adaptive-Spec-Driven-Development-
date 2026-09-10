@@ -10,6 +10,25 @@ const STATUS_LABEL = {
   blocked: 'blocked',
 };
 
+/** Remembering the folder is useful; remembering a stale plan is not. Only the path persists. */
+const rememberedKey = (projectId) => `asdd:export-folder:${projectId || 'default'}`;
+
+function readRemembered(projectId) {
+  try {
+    return window.localStorage.getItem(rememberedKey(projectId)) || '';
+  } catch {
+    return '';
+  }
+}
+
+function remember(projectId, value) {
+  try {
+    window.localStorage.setItem(rememberedKey(projectId), value);
+  } catch {
+    /* private browsing — the convenience is optional */
+  }
+}
+
 /**
  * Export a run's artifacts into a folder on disk.
  *
@@ -17,14 +36,17 @@ const STATUS_LABEL = {
  * so the user sees the exact file list — what is new, what already exists, what was blocked — and
  * has to tick a box before anything overwrites work they already have.
  */
-export default function ExportModal({ run, onClose }) {
-  const [targetDir, setTargetDir] = useState('');
+export default function ExportModal({ run, projectId, onClose }) {
+  // Mounted fresh on every open (RunStage keys it), so plan, result and overwrite always start
+  // clean — a stale preview must never be mistaken for the current state of the folder.
+  const [targetDir, setTargetDir] = useState(() => readRemembered(projectId));
   const [include, setInclude] = useState(['code', 'spec', 'data', 'config']);
   const [overwrite, setOverwrite] = useState(false);
   const [plan, setPlan] = useState(null);
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const wasRemembered = Boolean(readRemembered(projectId));
   const toast = useToast();
 
   const kinds = plan?.kinds || [
@@ -57,6 +79,7 @@ export default function ExportModal({ run, onClose }) {
     try {
       const outcome = await api.exportRun(run.id, { targetDir, include, overwrite, dryRun: false });
       setResult(outcome);
+      remember(projectId, targetDir);
       toast(`Wrote ${outcome.written.length} file(s) to ${outcome.root}.`, 'ok');
     } catch (err) {
       setError(err.message);
@@ -125,7 +148,11 @@ export default function ExportModal({ run, onClose }) {
         <>
           <Field
             label="Target folder"
-            hint="An absolute path, so there is no doubt where the files land. The folder is created if it does not exist."
+            hint={
+              wasRemembered && targetDir
+                ? 'Your last export folder for this project. Change it freely — the folder is created if it does not exist.'
+                : 'An absolute path, so there is no doubt where the files land. The folder is created if it does not exist.'
+            }
           >
             <input
               className="mono"

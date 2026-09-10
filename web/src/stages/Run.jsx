@@ -12,6 +12,7 @@ export default function RunStage({ project, reload, navigate, toast }) {
   const [selectedArtifact, setSelectedArtifact] = useState(null);
   const [approvalNote, setApprovalNote] = useState('');
   const [exporting, setExporting] = useState(false);
+  const [exportKey, setExportKey] = useState(0);
   const consoleRef = useRef(null);
 
   const load = useCallback(async (targetId) => {
@@ -53,6 +54,12 @@ export default function RunStage({ project, reload, navigate, toast }) {
   useEffect(() => {
     if (consoleRef.current) consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
   }, [events]);
+
+  /** Bumping the key remounts the modal, so every open starts from a clean slate. */
+  function openExport() {
+    setExportKey((n) => n + 1);
+    setExporting(true);
+  }
 
   async function start() {
     setBusy(true);
@@ -109,6 +116,13 @@ export default function RunStage({ project, reload, navigate, toast }) {
         </select>
         <div className="spacer" />
         <button className="btn" disabled={busy || live} onClick={start}>▶ New run</button>
+        {/* Getting the files out is the point of the run, so it belongs here rather than only at
+            the bottom of the page next to the artifact list. */}
+        {artifacts.length > 0 && (
+          <button className="btn" disabled={live} onClick={() => openExport()} title={`Write ${artifacts.length} file(s) into a folder`}>
+            ⤓ Export {artifacts.length} file(s)
+          </button>
+        )}
         {run?.report && <button className="btn primary" onClick={() => navigate('report')}>Report →</button>}
       </div>
 
@@ -279,7 +293,7 @@ export default function RunStage({ project, reload, navigate, toast }) {
           sub="Real files. Copy them straight into the target repository."
           right={
             <div className="row">
-              <button className="btn sm primary" onClick={() => setExporting(true)}>⤓ Export to folder</button>
+              <button className="btn sm primary" onClick={() => openExport()}>⤓ Export to folder</button>
               <a className="btn sm" href={api.bundleUrl(run.id)} download={`${run.id}-bundle.json`}>⬇ Download bundle</a>
             </div>
           }
@@ -324,7 +338,7 @@ export default function RunStage({ project, reload, navigate, toast }) {
         </Card>
       )}
 
-      {exporting && <ExportModal run={run} onClose={() => setExporting(false)} />}
+      {exporting && <ExportModal key={exportKey} run={run} projectId={project.id} onClose={() => setExporting(false)} />}
 
       {live && !events.length && (
         <div className="row" style={{ marginTop: 14 }}><Spinner /> <span className="muted small">Connecting to the run stream…</span></div>

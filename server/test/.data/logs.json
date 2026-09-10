@@ -1,0 +1,4786 @@
+[
+  {
+    "id": "log_299",
+    "seq": 299,
+    "at": "2026-09-10T00:27:38.557Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Structure & Compilation Validator (validate.compile-structure)",
+    "projectId": "prj_42f17f9c167a",
+    "runId": "run_498210dde877",
+    "nodeId": "n6",
+    "event": "node:start",
+    "detail": {
+      "agent": "Structure & Compilation Validator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_298",
+    "seq": 298,
+    "at": "2026-09-10T00:27:38.552Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ BMAD Artifact Agent finished in 138ms — 4 artifact(s).",
+    "projectId": "prj_42f17f9c167a",
+    "runId": "run_498210dde877",
+    "nodeId": "n5",
+    "event": "node:done",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_297",
+    "seq": 297,
+    "at": "2026-09-10T00:27:38.546Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Wrote the BMAD document set: product-brief.md, prd.md, architecture.md, epics-and-stories.md.",
+    "projectId": "prj_42f17f9c167a",
+    "runId": "run_498210dde877",
+    "nodeId": "n5",
+    "event": "node:log",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_296",
+    "seq": 296,
+    "at": "2026-09-10T00:27:38.414Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ BMAD Artifact Agent (docs.bmad.generate)",
+    "projectId": "prj_42f17f9c167a",
+    "runId": "run_498210dde877",
+    "nodeId": "n5",
+    "event": "node:start",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_295",
+    "seq": 295,
+    "at": "2026-09-10T00:27:38.410Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Traceability Agent finished in 135ms — 1 artifact(s).",
+    "projectId": "prj_42f17f9c167a",
+    "runId": "run_498210dde877",
+    "nodeId": "n4",
+    "event": "node:done",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_294",
+    "seq": 294,
+    "at": "2026-09-10T00:27:38.405Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Traced 3 test(s); 3/3 requirement(s) covered, 0 orphan(s).",
+    "projectId": "prj_42f17f9c167a",
+    "runId": "run_498210dde877",
+    "nodeId": "n4",
+    "event": "node:log",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_293",
+    "seq": 293,
+    "at": "2026-09-10T00:27:38.275Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Traceability Agent (traceability.build)",
+    "projectId": "prj_42f17f9c167a",
+    "runId": "run_498210dde877",
+    "nodeId": "n4",
+    "event": "node:start",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_292",
+    "seq": 292,
+    "at": "2026-09-10T00:27:38.270Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ PyTest Generator finished in 135ms — 1 artifact(s).",
+    "projectId": "prj_42f17f9c167a",
+    "runId": "run_498210dde877",
+    "nodeId": "n3",
+    "event": "node:done",
+    "detail": {
+      "agent": "PyTest Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_291",
+    "seq": 291,
+    "at": "2026-09-10T00:27:38.263Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Emitted 1 PyTest module(s) with 3 assertion(s).",
+    "projectId": "prj_42f17f9c167a",
+    "runId": "run_498210dde877",
+    "nodeId": "n3",
+    "event": "node:log",
+    "detail": {
+      "agent": "PyTest Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_290",
+    "seq": 290,
+    "at": "2026-09-10T00:27:38.135Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ PyTest Generator (target.generate.pytest)",
+    "projectId": "prj_42f17f9c167a",
+    "runId": "run_498210dde877",
+    "nodeId": "n3",
+    "event": "node:start",
+    "detail": {
+      "agent": "PyTest Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_289",
+    "seq": 289,
+    "at": "2026-09-10T00:27:38.129Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ BDD Specification Agent finished in 137ms — 1 artifact(s).",
+    "projectId": "prj_42f17f9c167a",
+    "runId": "run_498210dde877",
+    "nodeId": "n2",
+    "event": "node:done",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_288",
+    "seq": 288,
+    "at": "2026-09-10T00:27:38.123Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Wrote 1 feature file(s) covering 3 scenario(s).",
+    "projectId": "prj_42f17f9c167a",
+    "runId": "run_498210dde877",
+    "nodeId": "n2",
+    "event": "node:log",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_287",
+    "seq": 287,
+    "at": "2026-09-10T00:27:37.992Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ BDD Specification Agent (spec.bdd.generate)",
+    "projectId": "prj_42f17f9c167a",
+    "runId": "run_498210dde877",
+    "nodeId": "n2",
+    "event": "node:start",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_286",
+    "seq": 286,
+    "at": "2026-09-10T00:27:37.987Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ JUnit Analyzer finished in 135ms — 1 artifact(s).",
+    "projectId": "prj_42f17f9c167a",
+    "runId": "run_498210dde877",
+    "nodeId": "n1",
+    "event": "node:done",
+    "detail": {
+      "agent": "JUnit Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_285",
+    "seq": 285,
+    "at": "2026-09-10T00:27:37.981Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Parsed 1 suite(s), 3 test(s), 3 assertion(s), 0 locator(s).",
+    "projectId": "prj_42f17f9c167a",
+    "runId": "run_498210dde877",
+    "nodeId": "n1",
+    "event": "node:log",
+    "detail": {
+      "agent": "JUnit Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_284",
+    "seq": 284,
+    "at": "2026-09-10T00:27:37.852Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ JUnit Analyzer (source.analyze.junit)",
+    "projectId": "prj_42f17f9c167a",
+    "runId": "run_498210dde877",
+    "nodeId": "n1",
+    "event": "node:start",
+    "detail": {
+      "agent": "JUnit Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_283",
+    "seq": 283,
+    "at": "2026-09-10T00:27:37.847Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Executing 6 agent(s) for JUnit (Java unit tests) → PyTest.",
+    "projectId": "prj_42f17f9c167a",
+    "runId": "run_498210dde877",
+    "nodeId": null,
+    "event": "run:start",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_282",
+    "seq": 282,
+    "at": "2026-09-10T00:27:37.831Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Run completed. Verdict: passed. 10 artifact(s), 35 trace link(s). Awaiting human approval.",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": null,
+    "event": "run:end",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_281",
+    "seq": 281,
+    "at": "2026-09-10T00:27:37.826Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Authentication Validation: Auth setup covers: bearer.",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.auth-validation"
+    }
+  },
+  {
+    "id": "log_280",
+    "seq": 280,
+    "at": "2026-09-10T00:27:37.820Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Unsupported Feature Detection: No unmappable source constructs were found.",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.unsupported-feature-detection"
+    }
+  },
+  {
+    "id": "log_279",
+    "seq": 279,
+    "at": "2026-09-10T00:27:37.815Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Requirement Traceability: 3/3 requirement(s) reach a generated test. Orphans: none.",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.requirement-traceability"
+    }
+  },
+  {
+    "id": "log_278",
+    "seq": 278,
+    "at": "2026-09-10T00:27:37.811Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Coverage Threshold: 3/3 source test(s) migrated (100%), threshold 95%.",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.coverage-threshold"
+    }
+  },
+  {
+    "id": "log_277",
+    "seq": 277,
+    "at": "2026-09-10T00:27:37.806Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ API Contract Preservation: All 3 request contract(s) (method, path, expected status) preserved.",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.api-contract-preservation"
+    }
+  },
+  {
+    "id": "log_276",
+    "seq": 276,
+    "at": "2026-09-10T00:27:37.802Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Compilation / Structure Check: 2 file(s) structurally sound (0 minor note(s)).",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.structure-compilation"
+    }
+  },
+  {
+    "id": "log_275",
+    "seq": 275,
+    "at": "2026-09-10T00:27:37.797Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ No Test Case Loss: 3 source test case(s), 3 generated test(s).",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.no-test-case-loss"
+    }
+  },
+  {
+    "id": "log_274",
+    "seq": 274,
+    "at": "2026-09-10T00:27:37.791Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ No Assertion Loss: 3 assertion(s) in the source, 3 in the generated output.",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.no-assertion-loss"
+    }
+  },
+  {
+    "id": "log_273",
+    "seq": 273,
+    "at": "2026-09-10T00:27:37.786Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Running 8 workflow-level guardrail(s) against 10 artifact(s).",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": null,
+    "event": "validation:start",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_272",
+    "seq": 272,
+    "at": "2026-09-10T00:27:37.782Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Structure & Compilation Validator finished in 137ms — 1 artifact(s).",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": "n7",
+    "event": "node:done",
+    "detail": {
+      "agent": "Structure & Compilation Validator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_271",
+    "seq": 271,
+    "at": "2026-09-10T00:27:37.776Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Checked 2 generated file(s): 0 blocker(s), 0 major, 0 minor.",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": "n7",
+    "event": "node:log",
+    "detail": {
+      "agent": "Structure & Compilation Validator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_270",
+    "seq": 270,
+    "at": "2026-09-10T00:27:37.645Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Structure & Compilation Validator (validate.compile-structure)",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": "n7",
+    "event": "node:start",
+    "detail": {
+      "agent": "Structure & Compilation Validator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_269",
+    "seq": 269,
+    "at": "2026-09-10T00:27:37.640Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ BMAD Artifact Agent finished in 141ms — 4 artifact(s).",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": "n6",
+    "event": "node:done",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_268",
+    "seq": 268,
+    "at": "2026-09-10T00:27:37.634Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Wrote the BMAD document set: product-brief.md, prd.md, architecture.md, epics-and-stories.md.",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": "n6",
+    "event": "node:log",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_267",
+    "seq": 267,
+    "at": "2026-09-10T00:27:37.500Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ BMAD Artifact Agent (docs.bmad.generate)",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": "n6",
+    "event": "node:start",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_266",
+    "seq": 266,
+    "at": "2026-09-10T00:27:37.495Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Traceability Agent finished in 136ms — 1 artifact(s).",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": "n5",
+    "event": "node:done",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_265",
+    "seq": 265,
+    "at": "2026-09-10T00:27:37.490Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Traced 3 test(s); 3/3 requirement(s) covered, 0 orphan(s).",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": "n5",
+    "event": "node:log",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_264",
+    "seq": 264,
+    "at": "2026-09-10T00:27:37.359Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Traceability Agent (traceability.build)",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": "n5",
+    "event": "node:start",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_263",
+    "seq": 263,
+    "at": "2026-09-10T00:27:37.355Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Playwright API Generator finished in 139ms — 1 artifact(s).",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": "n4",
+    "event": "node:done",
+    "detail": {
+      "agent": "Playwright API Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_262",
+    "seq": 262,
+    "at": "2026-09-10T00:27:37.349Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Emitted 1 API spec file(s) preserving 3 status assertion(s).",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": "n4",
+    "event": "node:log",
+    "detail": {
+      "agent": "Playwright API Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_261",
+    "seq": 261,
+    "at": "2026-09-10T00:27:37.215Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Playwright API Generator (target.generate.playwright-api)",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": "n4",
+    "event": "node:start",
+    "detail": {
+      "agent": "Playwright API Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_260",
+    "seq": 260,
+    "at": "2026-09-10T00:27:37.210Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Authentication Agent finished in 137ms — 1 artifact(s).",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": "n3",
+    "event": "node:done",
+    "detail": {
+      "agent": "Authentication Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_259",
+    "seq": 259,
+    "at": "2026-09-10T00:27:37.205Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Generated auth setup for: bearer.",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": "n3",
+    "event": "node:log",
+    "detail": {
+      "agent": "Authentication Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_258",
+    "seq": 258,
+    "at": "2026-09-10T00:27:37.073Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Authentication Agent (auth.migrate)",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": "n3",
+    "event": "node:start",
+    "detail": {
+      "agent": "Authentication Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_257",
+    "seq": 257,
+    "at": "2026-09-10T00:27:37.069Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ BDD Specification Agent finished in 136ms — 1 artifact(s).",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": "n2",
+    "event": "node:done",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_256",
+    "seq": 256,
+    "at": "2026-09-10T00:27:37.063Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Wrote 1 feature file(s) covering 3 scenario(s).",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": "n2",
+    "event": "node:log",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_255",
+    "seq": 255,
+    "at": "2026-09-10T00:27:36.932Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ BDD Specification Agent (spec.bdd.generate)",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": "n2",
+    "event": "node:start",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_254",
+    "seq": 254,
+    "at": "2026-09-10T00:27:36.928Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ REST Collection Analyzer finished in 141ms — 1 artifact(s).",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": "n1",
+    "event": "node:done",
+    "detail": {
+      "agent": "REST Collection Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_253",
+    "seq": 253,
+    "at": "2026-09-10T00:27:36.923Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Parsed 1 suite(s), 3 test(s), 3 assertion(s), 0 locator(s).",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": "n1",
+    "event": "node:log",
+    "detail": {
+      "agent": "REST Collection Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_252",
+    "seq": 252,
+    "at": "2026-09-10T00:27:36.787Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ REST Collection Analyzer (source.analyze.rest-collection)",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": "n1",
+    "event": "node:start",
+    "detail": {
+      "agent": "REST Collection Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_251",
+    "seq": 251,
+    "at": "2026-09-10T00:27:36.781Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Executing 7 agent(s) for Legacy REST API test collection → Playwright API testing (TypeScript).",
+    "projectId": "prj_8bd8eb7a3acb",
+    "runId": "run_c80626d312f5",
+    "nodeId": null,
+    "event": "run:start",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_250",
+    "seq": 250,
+    "at": "2026-09-10T00:27:36.762Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Run completed. Verdict: passed-with-warnings. 12 artifact(s), 33 trace link(s). Awaiting human approval.",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": null,
+    "event": "run:end",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_249",
+    "seq": 249,
+    "at": "2026-09-10T00:27:36.758Z",
+    "level": "warn",
+    "scope": "run",
+    "message": "▲ Unsupported Feature Detection: 1 construct(s) have no target equivalent; they are surfaced for a human: Cypress custom command / task.",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.unsupported-feature-detection"
+    }
+  },
+  {
+    "id": "log_248",
+    "seq": 248,
+    "at": "2026-09-10T00:27:36.754Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Requirement Traceability: 3/3 requirement(s) reach a generated test. Orphans: none.",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.requirement-traceability"
+    }
+  },
+  {
+    "id": "log_247",
+    "seq": 247,
+    "at": "2026-09-10T00:27:36.749Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Coverage Threshold: 3/3 source test(s) migrated (100%), threshold 95%.",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.coverage-threshold"
+    }
+  },
+  {
+    "id": "log_246",
+    "seq": 246,
+    "at": "2026-09-10T00:27:36.745Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Compilation / Structure Check: 3 file(s) structurally sound (1 minor note(s)).",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.structure-compilation"
+    }
+  },
+  {
+    "id": "log_245",
+    "seq": 245,
+    "at": "2026-09-10T00:27:36.741Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ No Test Case Loss: 3 source test case(s), 3 generated test(s).",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.no-test-case-loss"
+    }
+  },
+  {
+    "id": "log_244",
+    "seq": 244,
+    "at": "2026-09-10T00:27:36.733Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ No Assertion Loss: 3 assertion(s) in the source, 3 in the generated output.",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.no-assertion-loss"
+    }
+  },
+  {
+    "id": "log_243",
+    "seq": 243,
+    "at": "2026-09-10T00:27:36.728Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Running 6 workflow-level guardrail(s) against 12 artifact(s).",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": null,
+    "event": "validation:start",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_242",
+    "seq": 242,
+    "at": "2026-09-10T00:27:36.724Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Structure & Compilation Validator finished in 140ms — 1 artifact(s).",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": "n7",
+    "event": "node:done",
+    "detail": {
+      "agent": "Structure & Compilation Validator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_241",
+    "seq": 241,
+    "at": "2026-09-10T00:27:36.718Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Checked 3 generated file(s): 0 blocker(s), 0 major, 1 minor.",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": "n7",
+    "event": "node:log",
+    "detail": {
+      "agent": "Structure & Compilation Validator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_240",
+    "seq": 240,
+    "at": "2026-09-10T00:27:36.584Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Structure & Compilation Validator (validate.compile-structure)",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": "n7",
+    "event": "node:start",
+    "detail": {
+      "agent": "Structure & Compilation Validator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_239",
+    "seq": 239,
+    "at": "2026-09-10T00:27:36.580Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ BMAD Artifact Agent finished in 137ms — 4 artifact(s).",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": "n6",
+    "event": "node:done",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_238",
+    "seq": 238,
+    "at": "2026-09-10T00:27:36.576Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Wrote the BMAD document set: product-brief.md, prd.md, architecture.md, epics-and-stories.md.",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": "n6",
+    "event": "node:log",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_237",
+    "seq": 237,
+    "at": "2026-09-10T00:27:36.443Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ BMAD Artifact Agent (docs.bmad.generate)",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": "n6",
+    "event": "node:start",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_236",
+    "seq": 236,
+    "at": "2026-09-10T00:27:36.438Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Traceability Agent finished in 137ms — 1 artifact(s).",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": "n5",
+    "event": "node:done",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_235",
+    "seq": 235,
+    "at": "2026-09-10T00:27:36.433Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Traced 3 test(s); 3/3 requirement(s) covered, 0 orphan(s).",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": "n5",
+    "event": "node:log",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_234",
+    "seq": 234,
+    "at": "2026-09-10T00:27:36.301Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Traceability Agent (traceability.build)",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": "n5",
+    "event": "node:start",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_233",
+    "seq": 233,
+    "at": "2026-09-10T00:27:36.296Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Playwright TypeScript Generator finished in 137ms — 3 artifact(s).",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": "n4",
+    "event": "node:done",
+    "detail": {
+      "agent": "Playwright TypeScript Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_232",
+    "seq": 232,
+    "at": "2026-09-10T00:27:36.291Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Emitted 3 file(s) with 3 assertion(s) across 3 test(s).",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": "n4",
+    "event": "node:log",
+    "detail": {
+      "agent": "Playwright TypeScript Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_231",
+    "seq": 231,
+    "at": "2026-09-10T00:27:36.159Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Playwright TypeScript Generator (target.generate.playwright-ts)",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": "n4",
+    "event": "node:start",
+    "detail": {
+      "agent": "Playwright TypeScript Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_230",
+    "seq": 230,
+    "at": "2026-09-10T00:27:36.154Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ BDD Specification Agent finished in 135ms — 1 artifact(s).",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": "n3",
+    "event": "node:done",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_229",
+    "seq": 229,
+    "at": "2026-09-10T00:27:36.150Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Wrote 1 feature file(s) covering 3 scenario(s).",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": "n3",
+    "event": "node:log",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_228",
+    "seq": 228,
+    "at": "2026-09-10T00:27:36.019Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ BDD Specification Agent (spec.bdd.generate)",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": "n3",
+    "event": "node:start",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_227",
+    "seq": 227,
+    "at": "2026-09-10T00:27:36.014Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Command Mapping Agent finished in 146ms — 1 artifact(s).",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": "n2",
+    "event": "node:done",
+    "detail": {
+      "agent": "Command Mapping Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_226",
+    "seq": 226,
+    "at": "2026-09-10T00:27:36.009Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Mapped 7 command(s); 1 have no equivalent.",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": "n2",
+    "event": "node:log",
+    "detail": {
+      "agent": "Command Mapping Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_225",
+    "seq": 225,
+    "at": "2026-09-10T00:27:35.869Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Command Mapping Agent (mapping.command.cypress-playwright)",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": "n2",
+    "event": "node:start",
+    "detail": {
+      "agent": "Command Mapping Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_224",
+    "seq": 224,
+    "at": "2026-09-10T00:27:35.862Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Cypress Analyzer finished in 147ms — 1 artifact(s).",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": "n1",
+    "event": "node:done",
+    "detail": {
+      "agent": "Cypress Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_223",
+    "seq": 223,
+    "at": "2026-09-10T00:27:35.857Z",
+    "level": "info",
+    "scope": "run",
+    "message": "1 construct(s) have no direct target equivalent.",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": "n1",
+    "event": "node:log",
+    "detail": {
+      "agent": "Cypress Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_222",
+    "seq": 222,
+    "at": "2026-09-10T00:27:35.852Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Parsed 1 suite(s), 3 test(s), 3 assertion(s), 10 locator(s).",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": "n1",
+    "event": "node:log",
+    "detail": {
+      "agent": "Cypress Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_221",
+    "seq": 221,
+    "at": "2026-09-10T00:27:35.715Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Cypress Analyzer (source.analyze.cypress)",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": "n1",
+    "event": "node:start",
+    "detail": {
+      "agent": "Cypress Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_220",
+    "seq": 220,
+    "at": "2026-09-10T00:27:35.710Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Executing 7 agent(s) for Cypress → Playwright (TypeScript).",
+    "projectId": "prj_aba84ea8772a",
+    "runId": "run_e48b0f2fb70d",
+    "nodeId": null,
+    "event": "run:start",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_219",
+    "seq": 219,
+    "at": "2026-09-10T00:27:35.694Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Run completed. Verdict: passed-with-warnings. 14 artifact(s), 61 trace link(s). Awaiting human approval.",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": null,
+    "event": "run:end",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_218",
+    "seq": 218,
+    "at": "2026-09-10T00:27:35.690Z",
+    "level": "warn",
+    "scope": "run",
+    "message": "▲ Unsupported Feature Detection: 1 construct(s) have no target equivalent; they are surfaced for a human: JavascriptExecutor.",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.unsupported-feature-detection"
+    }
+  },
+  {
+    "id": "log_217",
+    "seq": 217,
+    "at": "2026-09-10T00:27:35.687Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Requirement Traceability: 5/5 requirement(s) reach a generated test. Orphans: none.",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.requirement-traceability"
+    }
+  },
+  {
+    "id": "log_216",
+    "seq": 216,
+    "at": "2026-09-10T00:27:35.682Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Coverage Threshold: 5/5 source test(s) migrated (100%), threshold 95%.",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.coverage-threshold"
+    }
+  },
+  {
+    "id": "log_215",
+    "seq": 215,
+    "at": "2026-09-10T00:27:35.679Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ No Hardcoded Secrets: No hardcoded credentials in generated output; secrets read from the environment.",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.no-secret-leakage"
+    }
+  },
+  {
+    "id": "log_214",
+    "seq": 214,
+    "at": "2026-09-10T00:27:35.675Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Compilation / Structure Check: 4 file(s) structurally sound (1 minor note(s)).",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.structure-compilation"
+    }
+  },
+  {
+    "id": "log_213",
+    "seq": 213,
+    "at": "2026-09-10T00:27:35.672Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Test Data Preservation: 4 record(s) in, 4 record(s) out.",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.test-data-preservation"
+    }
+  },
+  {
+    "id": "log_212",
+    "seq": 212,
+    "at": "2026-09-10T00:27:35.667Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ No Test Case Loss: 5 source test case(s), 5 generated test(s).",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.no-test-case-loss"
+    }
+  },
+  {
+    "id": "log_211",
+    "seq": 211,
+    "at": "2026-09-10T00:27:35.664Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ No Assertion Loss: 6 assertion(s) in the source, 6 in the generated output.",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.no-assertion-loss"
+    }
+  },
+  {
+    "id": "log_210",
+    "seq": 210,
+    "at": "2026-09-10T00:27:35.660Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Running 8 workflow-level guardrail(s) against 14 artifact(s).",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": null,
+    "event": "validation:start",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_209",
+    "seq": 209,
+    "at": "2026-09-10T00:27:35.655Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Structure & Compilation Validator finished in 135ms — 1 artifact(s).",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": "n7",
+    "event": "node:done",
+    "detail": {
+      "agent": "Structure & Compilation Validator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_208",
+    "seq": 208,
+    "at": "2026-09-10T00:27:35.649Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Checked 4 generated file(s): 0 blocker(s), 0 major, 1 minor.",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": "n7",
+    "event": "node:log",
+    "detail": {
+      "agent": "Structure & Compilation Validator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_207",
+    "seq": 207,
+    "at": "2026-09-10T00:27:35.520Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Structure & Compilation Validator (validate.compile-structure)",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": "n7",
+    "event": "node:start",
+    "detail": {
+      "agent": "Structure & Compilation Validator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_206",
+    "seq": 206,
+    "at": "2026-09-10T00:27:35.516Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ BMAD Artifact Agent finished in 138ms — 4 artifact(s).",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": "n6",
+    "event": "node:done",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_205",
+    "seq": 205,
+    "at": "2026-09-10T00:27:35.511Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Wrote the BMAD document set: product-brief.md, prd.md, architecture.md, epics-and-stories.md.",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": "n6",
+    "event": "node:log",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_204",
+    "seq": 204,
+    "at": "2026-09-10T00:27:35.378Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ BMAD Artifact Agent (docs.bmad.generate)",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": "n6",
+    "event": "node:start",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_203",
+    "seq": 203,
+    "at": "2026-09-10T00:27:35.374Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Traceability Agent finished in 147ms — 1 artifact(s).",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": "n5",
+    "event": "node:done",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_202",
+    "seq": 202,
+    "at": "2026-09-10T00:27:35.369Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Traced 5 test(s); 5/5 requirement(s) covered, 0 orphan(s).",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": "n5",
+    "event": "node:log",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_201",
+    "seq": 201,
+    "at": "2026-09-10T00:27:35.227Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Traceability Agent (traceability.build)",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": "n5",
+    "event": "node:start",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_200",
+    "seq": 200,
+    "at": "2026-09-10T00:27:35.222Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Playwright TypeScript Generator finished in 143ms — 4 artifact(s).",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": "n4",
+    "event": "node:done",
+    "detail": {
+      "agent": "Playwright TypeScript Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_199",
+    "seq": 199,
+    "at": "2026-09-10T00:27:35.214Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Emitted 4 file(s) with 6 assertion(s) across 5 test(s).",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": "n4",
+    "event": "node:log",
+    "detail": {
+      "agent": "Playwright TypeScript Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_198",
+    "seq": 198,
+    "at": "2026-09-10T00:27:35.079Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Playwright TypeScript Generator (target.generate.playwright-ts)",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": "n4",
+    "event": "node:start",
+    "detail": {
+      "agent": "Playwright TypeScript Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_197",
+    "seq": 197,
+    "at": "2026-09-10T00:27:35.075Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Test Data Migration Agent finished in 135ms — 1 artifact(s).",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": "n3",
+    "event": "node:done",
+    "detail": {
+      "agent": "Test Data Migration Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_196",
+    "seq": 196,
+    "at": "2026-09-10T00:27:35.070Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Migrated 1 fixture file(s): 4 records in, 4 records out (policy: Convert to JSON fixtures and keep every record).",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": "n3",
+    "event": "node:log",
+    "detail": {
+      "agent": "Test Data Migration Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_195",
+    "seq": 195,
+    "at": "2026-09-10T00:27:34.940Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Test Data Migration Agent (data.migrate.testdata)",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": "n3",
+    "event": "node:start",
+    "detail": {
+      "agent": "Test Data Migration Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_194",
+    "seq": 194,
+    "at": "2026-09-10T00:27:34.937Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ BDD Specification Agent finished in 135ms — 2 artifact(s).",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": "n2",
+    "event": "node:done",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_193",
+    "seq": 193,
+    "at": "2026-09-10T00:27:34.932Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Wrote 2 feature file(s) covering 5 scenario(s).",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": "n2",
+    "event": "node:log",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_192",
+    "seq": 192,
+    "at": "2026-09-10T00:27:34.802Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ BDD Specification Agent (spec.bdd.generate)",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": "n2",
+    "event": "node:start",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_191",
+    "seq": 191,
+    "at": "2026-09-10T00:27:34.798Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Selenium Java Analyzer finished in 141ms — 1 artifact(s).",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": "n1",
+    "event": "node:done",
+    "detail": {
+      "agent": "Selenium Java Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_190",
+    "seq": 190,
+    "at": "2026-09-10T00:27:34.793Z",
+    "level": "info",
+    "scope": "run",
+    "message": "1 construct(s) have no direct target equivalent.",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": "n1",
+    "event": "node:log",
+    "detail": {
+      "agent": "Selenium Java Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_189",
+    "seq": 189,
+    "at": "2026-09-10T00:27:34.789Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Parsed 2 suite(s), 5 test(s), 6 assertion(s), 15 locator(s).",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": "n1",
+    "event": "node:log",
+    "detail": {
+      "agent": "Selenium Java Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_188",
+    "seq": 188,
+    "at": "2026-09-10T00:27:34.656Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Selenium Java Analyzer (source.analyze.selenium-java)",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": "n1",
+    "event": "node:start",
+    "detail": {
+      "agent": "Selenium Java Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_187",
+    "seq": 187,
+    "at": "2026-09-10T00:27:34.650Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Executing 7 agent(s) for Selenium WebDriver (Java) → Playwright (TypeScript).",
+    "projectId": "prj_1dfb7687ff44",
+    "runId": "run_c2c614d46c90",
+    "nodeId": null,
+    "event": "run:start",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_186",
+    "seq": 186,
+    "at": "2026-09-10T00:27:34.011Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Traceability Agent (traceability.build)",
+    "projectId": "prj_e7405eebc491",
+    "runId": "run_e2dd6c085479",
+    "nodeId": "n4",
+    "event": "node:start",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_185",
+    "seq": 185,
+    "at": "2026-09-10T00:27:34.008Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Playwright TypeScript Generator finished in 136ms — 1 artifact(s).",
+    "projectId": "prj_e7405eebc491",
+    "runId": "run_e2dd6c085479",
+    "nodeId": "n3",
+    "event": "node:done",
+    "detail": {
+      "agent": "Playwright TypeScript Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_184",
+    "seq": 184,
+    "at": "2026-09-10T00:27:34.002Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Emitted 1 file(s) with 0 assertion(s) across 0 test(s).",
+    "projectId": "prj_e7405eebc491",
+    "runId": "run_e2dd6c085479",
+    "nodeId": "n3",
+    "event": "node:log",
+    "detail": {
+      "agent": "Playwright TypeScript Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_183",
+    "seq": 183,
+    "at": "2026-09-10T00:27:33.872Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Playwright TypeScript Generator (target.generate.playwright-ts)",
+    "projectId": "prj_e7405eebc491",
+    "runId": "run_e2dd6c085479",
+    "nodeId": "n3",
+    "event": "node:start",
+    "detail": {
+      "agent": "Playwright TypeScript Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_182",
+    "seq": 182,
+    "at": "2026-09-10T00:27:33.867Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ BDD Specification Agent finished in 139ms — 0 artifact(s).",
+    "projectId": "prj_e7405eebc491",
+    "runId": "run_e2dd6c085479",
+    "nodeId": "n2",
+    "event": "node:done",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_181",
+    "seq": 181,
+    "at": "2026-09-10T00:27:33.862Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Wrote 0 feature file(s) covering 0 scenario(s).",
+    "projectId": "prj_e7405eebc491",
+    "runId": "run_e2dd6c085479",
+    "nodeId": "n2",
+    "event": "node:log",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_180",
+    "seq": 180,
+    "at": "2026-09-10T00:27:33.729Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ BDD Specification Agent (spec.bdd.generate)",
+    "projectId": "prj_e7405eebc491",
+    "runId": "run_e2dd6c085479",
+    "nodeId": "n2",
+    "event": "node:start",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_179",
+    "seq": 179,
+    "at": "2026-09-10T00:27:33.725Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Selenium Java Analyzer finished in 140ms — 1 artifact(s).",
+    "projectId": "prj_e7405eebc491",
+    "runId": "run_e2dd6c085479",
+    "nodeId": "n1",
+    "event": "node:done",
+    "detail": {
+      "agent": "Selenium Java Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_178",
+    "seq": 178,
+    "at": "2026-09-10T00:27:33.721Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Parsed 0 suite(s), 0 test(s), 0 assertion(s), 0 locator(s).",
+    "projectId": "prj_e7405eebc491",
+    "runId": "run_e2dd6c085479",
+    "nodeId": "n1",
+    "event": "node:log",
+    "detail": {
+      "agent": "Selenium Java Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_177",
+    "seq": 177,
+    "at": "2026-09-10T00:27:33.585Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Selenium Java Analyzer (source.analyze.selenium-java)",
+    "projectId": "prj_e7405eebc491",
+    "runId": "run_e2dd6c085479",
+    "nodeId": "n1",
+    "event": "node:start",
+    "detail": {
+      "agent": "Selenium Java Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_176",
+    "seq": 176,
+    "at": "2026-09-10T00:27:33.581Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Executing 6 agent(s) for Selenium WebDriver (Java) → Playwright (TypeScript).",
+    "projectId": "prj_e7405eebc491",
+    "runId": "run_e2dd6c085479",
+    "nodeId": null,
+    "event": "run:start",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_175",
+    "seq": 175,
+    "at": "2026-09-10T00:27:33.567Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Run completed. Verdict: passed-with-warnings. 14 artifact(s), 61 trace link(s). Awaiting human approval.",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": null,
+    "event": "run:end",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_174",
+    "seq": 174,
+    "at": "2026-09-10T00:27:33.564Z",
+    "level": "warn",
+    "scope": "run",
+    "message": "▲ Unsupported Feature Detection: 1 construct(s) have no target equivalent; they are surfaced for a human: JavascriptExecutor.",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.unsupported-feature-detection"
+    }
+  },
+  {
+    "id": "log_173",
+    "seq": 173,
+    "at": "2026-09-10T00:27:33.561Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Requirement Traceability: 5/5 requirement(s) reach a generated test. Orphans: none.",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.requirement-traceability"
+    }
+  },
+  {
+    "id": "log_172",
+    "seq": 172,
+    "at": "2026-09-10T00:27:33.559Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Coverage Threshold: 5/5 source test(s) migrated (100%), threshold 95%.",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.coverage-threshold"
+    }
+  },
+  {
+    "id": "log_171",
+    "seq": 171,
+    "at": "2026-09-10T00:27:33.556Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ No Hardcoded Secrets: No hardcoded credentials in generated output; secrets read from the environment.",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.no-secret-leakage"
+    }
+  },
+  {
+    "id": "log_170",
+    "seq": 170,
+    "at": "2026-09-10T00:27:33.553Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Compilation / Structure Check: 4 file(s) structurally sound (1 minor note(s)).",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.structure-compilation"
+    }
+  },
+  {
+    "id": "log_169",
+    "seq": 169,
+    "at": "2026-09-10T00:27:33.550Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Test Data Preservation: 4 record(s) in, 4 record(s) out.",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.test-data-preservation"
+    }
+  },
+  {
+    "id": "log_168",
+    "seq": 168,
+    "at": "2026-09-10T00:27:33.547Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ No Test Case Loss: 5 source test case(s), 5 generated test(s).",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.no-test-case-loss"
+    }
+  },
+  {
+    "id": "log_167",
+    "seq": 167,
+    "at": "2026-09-10T00:27:33.544Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ No Assertion Loss: 6 assertion(s) in the source, 6 in the generated output.",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.no-assertion-loss"
+    }
+  },
+  {
+    "id": "log_166",
+    "seq": 166,
+    "at": "2026-09-10T00:27:33.541Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Running 8 workflow-level guardrail(s) against 14 artifact(s).",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": null,
+    "event": "validation:start",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_165",
+    "seq": 165,
+    "at": "2026-09-10T00:27:33.537Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Structure & Compilation Validator finished in 138ms — 1 artifact(s).",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": "n7",
+    "event": "node:done",
+    "detail": {
+      "agent": "Structure & Compilation Validator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_164",
+    "seq": 164,
+    "at": "2026-09-10T00:27:33.533Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Checked 4 generated file(s): 0 blocker(s), 0 major, 1 minor.",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": "n7",
+    "event": "node:log",
+    "detail": {
+      "agent": "Structure & Compilation Validator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_163",
+    "seq": 163,
+    "at": "2026-09-10T00:27:33.399Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Structure & Compilation Validator (validate.compile-structure)",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": "n7",
+    "event": "node:start",
+    "detail": {
+      "agent": "Structure & Compilation Validator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_162",
+    "seq": 162,
+    "at": "2026-09-10T00:27:33.397Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ BMAD Artifact Agent finished in 139ms — 4 artifact(s).",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": "n6",
+    "event": "node:done",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_161",
+    "seq": 161,
+    "at": "2026-09-10T00:27:33.393Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Wrote the BMAD document set: product-brief.md, prd.md, architecture.md, epics-and-stories.md.",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": "n6",
+    "event": "node:log",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_160",
+    "seq": 160,
+    "at": "2026-09-10T00:27:33.258Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ BMAD Artifact Agent (docs.bmad.generate)",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": "n6",
+    "event": "node:start",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_159",
+    "seq": 159,
+    "at": "2026-09-10T00:27:33.255Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Traceability Agent finished in 135ms — 1 artifact(s).",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": "n5",
+    "event": "node:done",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_158",
+    "seq": 158,
+    "at": "2026-09-10T00:27:33.251Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Traced 5 test(s); 5/5 requirement(s) covered, 0 orphan(s).",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": "n5",
+    "event": "node:log",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_157",
+    "seq": 157,
+    "at": "2026-09-10T00:27:33.120Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Traceability Agent (traceability.build)",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": "n5",
+    "event": "node:start",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_156",
+    "seq": 156,
+    "at": "2026-09-10T00:27:33.116Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Playwright TypeScript Generator finished in 137ms — 4 artifact(s).",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": "n4",
+    "event": "node:done",
+    "detail": {
+      "agent": "Playwright TypeScript Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_155",
+    "seq": 155,
+    "at": "2026-09-10T00:27:33.112Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Emitted 4 file(s) with 6 assertion(s) across 5 test(s).",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": "n4",
+    "event": "node:log",
+    "detail": {
+      "agent": "Playwright TypeScript Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_154",
+    "seq": 154,
+    "at": "2026-09-10T00:27:32.979Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Playwright TypeScript Generator (target.generate.playwright-ts)",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": "n4",
+    "event": "node:start",
+    "detail": {
+      "agent": "Playwright TypeScript Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_153",
+    "seq": 153,
+    "at": "2026-09-10T00:27:32.976Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Test Data Migration Agent finished in 138ms — 1 artifact(s).",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": "n3",
+    "event": "node:done",
+    "detail": {
+      "agent": "Test Data Migration Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_152",
+    "seq": 152,
+    "at": "2026-09-10T00:27:32.973Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Migrated 1 fixture file(s): 4 records in, 4 records out (policy: Convert to JSON fixtures and keep every record).",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": "n3",
+    "event": "node:log",
+    "detail": {
+      "agent": "Test Data Migration Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_151",
+    "seq": 151,
+    "at": "2026-09-10T00:27:32.838Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Test Data Migration Agent (data.migrate.testdata)",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": "n3",
+    "event": "node:start",
+    "detail": {
+      "agent": "Test Data Migration Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_150",
+    "seq": 150,
+    "at": "2026-09-10T00:27:32.835Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ BDD Specification Agent finished in 134ms — 2 artifact(s).",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": "n2",
+    "event": "node:done",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_149",
+    "seq": 149,
+    "at": "2026-09-10T00:27:32.832Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Wrote 2 feature file(s) covering 5 scenario(s).",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": "n2",
+    "event": "node:log",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_148",
+    "seq": 148,
+    "at": "2026-09-10T00:27:32.701Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ BDD Specification Agent (spec.bdd.generate)",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": "n2",
+    "event": "node:start",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_147",
+    "seq": 147,
+    "at": "2026-09-10T00:27:32.699Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Selenium Java Analyzer finished in 147ms — 1 artifact(s).",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": "n1",
+    "event": "node:done",
+    "detail": {
+      "agent": "Selenium Java Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_146",
+    "seq": 146,
+    "at": "2026-09-10T00:27:32.695Z",
+    "level": "info",
+    "scope": "run",
+    "message": "1 construct(s) have no direct target equivalent.",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": "n1",
+    "event": "node:log",
+    "detail": {
+      "agent": "Selenium Java Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_145",
+    "seq": 145,
+    "at": "2026-09-10T00:27:32.691Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Parsed 2 suite(s), 5 test(s), 6 assertion(s), 15 locator(s).",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": "n1",
+    "event": "node:log",
+    "detail": {
+      "agent": "Selenium Java Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_144",
+    "seq": 144,
+    "at": "2026-09-10T00:27:32.552Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Selenium Java Analyzer (source.analyze.selenium-java)",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": "n1",
+    "event": "node:start",
+    "detail": {
+      "agent": "Selenium Java Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_143",
+    "seq": 143,
+    "at": "2026-09-10T00:27:32.548Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Executing 7 agent(s) for Selenium WebDriver (Java) → Playwright (TypeScript).",
+    "projectId": "prj_58e9f4f75b2f",
+    "runId": "run_fc4258302c71",
+    "nodeId": null,
+    "event": "run:start",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_142",
+    "seq": 142,
+    "at": "2026-09-10T00:27:32.536Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Run completed. Verdict: passed-with-warnings. 14 artifact(s), 61 trace link(s). Awaiting human approval.",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": null,
+    "event": "run:end",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_141",
+    "seq": 141,
+    "at": "2026-09-10T00:27:32.532Z",
+    "level": "warn",
+    "scope": "run",
+    "message": "▲ Unsupported Feature Detection: 1 construct(s) have no target equivalent; they are surfaced for a human: JavascriptExecutor.",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.unsupported-feature-detection"
+    }
+  },
+  {
+    "id": "log_140",
+    "seq": 140,
+    "at": "2026-09-10T00:27:32.529Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Requirement Traceability: 5/5 requirement(s) reach a generated test. Orphans: none.",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.requirement-traceability"
+    }
+  },
+  {
+    "id": "log_139",
+    "seq": 139,
+    "at": "2026-09-10T00:27:32.527Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Coverage Threshold: 5/5 source test(s) migrated (100%), threshold 95%.",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.coverage-threshold"
+    }
+  },
+  {
+    "id": "log_138",
+    "seq": 138,
+    "at": "2026-09-10T00:27:32.525Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ No Hardcoded Secrets: No hardcoded credentials in generated output; secrets read from the environment.",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.no-secret-leakage"
+    }
+  },
+  {
+    "id": "log_137",
+    "seq": 137,
+    "at": "2026-09-10T00:27:32.522Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Compilation / Structure Check: 4 file(s) structurally sound (1 minor note(s)).",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.structure-compilation"
+    }
+  },
+  {
+    "id": "log_136",
+    "seq": 136,
+    "at": "2026-09-10T00:27:32.520Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Test Data Preservation: 4 record(s) in, 4 record(s) out.",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.test-data-preservation"
+    }
+  },
+  {
+    "id": "log_135",
+    "seq": 135,
+    "at": "2026-09-10T00:27:32.517Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ No Test Case Loss: 5 source test case(s), 5 generated test(s).",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.no-test-case-loss"
+    }
+  },
+  {
+    "id": "log_134",
+    "seq": 134,
+    "at": "2026-09-10T00:27:32.514Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ No Assertion Loss: 6 assertion(s) in the source, 6 in the generated output.",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.no-assertion-loss"
+    }
+  },
+  {
+    "id": "log_133",
+    "seq": 133,
+    "at": "2026-09-10T00:27:32.510Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Running 8 workflow-level guardrail(s) against 14 artifact(s).",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": null,
+    "event": "validation:start",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_132",
+    "seq": 132,
+    "at": "2026-09-10T00:27:32.507Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Structure & Compilation Validator finished in 137ms — 1 artifact(s).",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": "n7",
+    "event": "node:done",
+    "detail": {
+      "agent": "Structure & Compilation Validator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_131",
+    "seq": 131,
+    "at": "2026-09-10T00:27:32.504Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Checked 4 generated file(s): 0 blocker(s), 0 major, 1 minor.",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": "n7",
+    "event": "node:log",
+    "detail": {
+      "agent": "Structure & Compilation Validator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_130",
+    "seq": 130,
+    "at": "2026-09-10T00:27:32.370Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Structure & Compilation Validator (validate.compile-structure)",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": "n7",
+    "event": "node:start",
+    "detail": {
+      "agent": "Structure & Compilation Validator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_129",
+    "seq": 129,
+    "at": "2026-09-10T00:27:32.366Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ BMAD Artifact Agent finished in 140ms — 4 artifact(s).",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": "n6",
+    "event": "node:done",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_128",
+    "seq": 128,
+    "at": "2026-09-10T00:27:32.363Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Wrote the BMAD document set: product-brief.md, prd.md, architecture.md, epics-and-stories.md.",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": "n6",
+    "event": "node:log",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_127",
+    "seq": 127,
+    "at": "2026-09-10T00:27:32.226Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ BMAD Artifact Agent (docs.bmad.generate)",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": "n6",
+    "event": "node:start",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_126",
+    "seq": 126,
+    "at": "2026-09-10T00:27:32.223Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Traceability Agent finished in 137ms — 1 artifact(s).",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": "n5",
+    "event": "node:done",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_125",
+    "seq": 125,
+    "at": "2026-09-10T00:27:32.220Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Traced 5 test(s); 5/5 requirement(s) covered, 0 orphan(s).",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": "n5",
+    "event": "node:log",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_124",
+    "seq": 124,
+    "at": "2026-09-10T00:27:32.086Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Traceability Agent (traceability.build)",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": "n5",
+    "event": "node:start",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_123",
+    "seq": 123,
+    "at": "2026-09-10T00:27:32.083Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Playwright TypeScript Generator finished in 137ms — 4 artifact(s).",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": "n4",
+    "event": "node:done",
+    "detail": {
+      "agent": "Playwright TypeScript Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_122",
+    "seq": 122,
+    "at": "2026-09-10T00:27:32.080Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Emitted 4 file(s) with 6 assertion(s) across 5 test(s).",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": "n4",
+    "event": "node:log",
+    "detail": {
+      "agent": "Playwright TypeScript Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_121",
+    "seq": 121,
+    "at": "2026-09-10T00:27:31.946Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Playwright TypeScript Generator (target.generate.playwright-ts)",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": "n4",
+    "event": "node:start",
+    "detail": {
+      "agent": "Playwright TypeScript Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_120",
+    "seq": 120,
+    "at": "2026-09-10T00:27:31.944Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Test Data Migration Agent finished in 136ms — 1 artifact(s).",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": "n3",
+    "event": "node:done",
+    "detail": {
+      "agent": "Test Data Migration Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_119",
+    "seq": 119,
+    "at": "2026-09-10T00:27:31.941Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Migrated 1 fixture file(s): 4 records in, 4 records out (policy: Convert to JSON fixtures and keep every record).",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": "n3",
+    "event": "node:log",
+    "detail": {
+      "agent": "Test Data Migration Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_118",
+    "seq": 118,
+    "at": "2026-09-10T00:27:31.808Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Test Data Migration Agent (data.migrate.testdata)",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": "n3",
+    "event": "node:start",
+    "detail": {
+      "agent": "Test Data Migration Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_117",
+    "seq": 117,
+    "at": "2026-09-10T00:27:31.804Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ BDD Specification Agent finished in 132ms — 2 artifact(s).",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": "n2",
+    "event": "node:done",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_116",
+    "seq": 116,
+    "at": "2026-09-10T00:27:31.801Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Wrote 2 feature file(s) covering 5 scenario(s).",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": "n2",
+    "event": "node:log",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_115",
+    "seq": 115,
+    "at": "2026-09-10T00:27:31.672Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ BDD Specification Agent (spec.bdd.generate)",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": "n2",
+    "event": "node:start",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_114",
+    "seq": 114,
+    "at": "2026-09-10T00:27:31.669Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Selenium Java Analyzer finished in 139ms — 1 artifact(s).",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": "n1",
+    "event": "node:done",
+    "detail": {
+      "agent": "Selenium Java Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_113",
+    "seq": 113,
+    "at": "2026-09-10T00:27:31.666Z",
+    "level": "info",
+    "scope": "run",
+    "message": "1 construct(s) have no direct target equivalent.",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": "n1",
+    "event": "node:log",
+    "detail": {
+      "agent": "Selenium Java Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_112",
+    "seq": 112,
+    "at": "2026-09-10T00:27:31.662Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Parsed 2 suite(s), 5 test(s), 6 assertion(s), 15 locator(s).",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": "n1",
+    "event": "node:log",
+    "detail": {
+      "agent": "Selenium Java Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_111",
+    "seq": 111,
+    "at": "2026-09-10T00:27:31.530Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Selenium Java Analyzer (source.analyze.selenium-java)",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": "n1",
+    "event": "node:start",
+    "detail": {
+      "agent": "Selenium Java Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_110",
+    "seq": 110,
+    "at": "2026-09-10T00:27:31.527Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Executing 7 agent(s) for Selenium WebDriver (Java) → Playwright (TypeScript).",
+    "projectId": "prj_a5b1b7cbe390",
+    "runId": "run_04dd4fcde0a1",
+    "nodeId": null,
+    "event": "run:start",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_109",
+    "seq": 109,
+    "at": "2026-09-10T00:27:31.132Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ BMAD Artifact Agent (docs.bmad.generate)",
+    "projectId": "prj_47759e36e01e",
+    "runId": "run_09ab58ec6d42",
+    "nodeId": "n6",
+    "event": "node:start",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_108",
+    "seq": 108,
+    "at": "2026-09-10T00:27:31.130Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Traceability Agent finished in 139ms — 1 artifact(s).",
+    "projectId": "prj_47759e36e01e",
+    "runId": "run_09ab58ec6d42",
+    "nodeId": "n5",
+    "event": "node:done",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_107",
+    "seq": 107,
+    "at": "2026-09-10T00:27:31.127Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Traced 3 test(s); 3/3 requirement(s) covered, 0 orphan(s).",
+    "projectId": "prj_47759e36e01e",
+    "runId": "run_09ab58ec6d42",
+    "nodeId": "n5",
+    "event": "node:log",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_106",
+    "seq": 106,
+    "at": "2026-09-10T00:27:30.991Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Traceability Agent (traceability.build)",
+    "projectId": "prj_47759e36e01e",
+    "runId": "run_09ab58ec6d42",
+    "nodeId": "n5",
+    "event": "node:start",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_105",
+    "seq": 105,
+    "at": "2026-09-10T00:27:30.988Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Playwright API Generator finished in 138ms — 1 artifact(s).",
+    "projectId": "prj_47759e36e01e",
+    "runId": "run_09ab58ec6d42",
+    "nodeId": "n4",
+    "event": "node:done",
+    "detail": {
+      "agent": "Playwright API Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_104",
+    "seq": 104,
+    "at": "2026-09-10T00:27:30.986Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Emitted 1 API spec file(s) preserving 3 status assertion(s).",
+    "projectId": "prj_47759e36e01e",
+    "runId": "run_09ab58ec6d42",
+    "nodeId": "n4",
+    "event": "node:log",
+    "detail": {
+      "agent": "Playwright API Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_103",
+    "seq": 103,
+    "at": "2026-09-10T00:27:30.850Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Playwright API Generator (target.generate.playwright-api)",
+    "projectId": "prj_47759e36e01e",
+    "runId": "run_09ab58ec6d42",
+    "nodeId": "n4",
+    "event": "node:start",
+    "detail": {
+      "agent": "Playwright API Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_102",
+    "seq": 102,
+    "at": "2026-09-10T00:27:30.848Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Authentication Agent finished in 139ms — 1 artifact(s).",
+    "projectId": "prj_47759e36e01e",
+    "runId": "run_09ab58ec6d42",
+    "nodeId": "n3",
+    "event": "node:done",
+    "detail": {
+      "agent": "Authentication Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_101",
+    "seq": 101,
+    "at": "2026-09-10T00:27:30.845Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Generated auth setup for: bearer.",
+    "projectId": "prj_47759e36e01e",
+    "runId": "run_09ab58ec6d42",
+    "nodeId": "n3",
+    "event": "node:log",
+    "detail": {
+      "agent": "Authentication Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_100",
+    "seq": 100,
+    "at": "2026-09-10T00:27:30.709Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Authentication Agent (auth.migrate)",
+    "projectId": "prj_47759e36e01e",
+    "runId": "run_09ab58ec6d42",
+    "nodeId": "n3",
+    "event": "node:start",
+    "detail": {
+      "agent": "Authentication Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_99",
+    "seq": 99,
+    "at": "2026-09-10T00:27:30.707Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ BDD Specification Agent finished in 135ms — 1 artifact(s).",
+    "projectId": "prj_47759e36e01e",
+    "runId": "run_09ab58ec6d42",
+    "nodeId": "n2",
+    "event": "node:done",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_98",
+    "seq": 98,
+    "at": "2026-09-10T00:27:30.704Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Wrote 1 feature file(s) covering 3 scenario(s).",
+    "projectId": "prj_47759e36e01e",
+    "runId": "run_09ab58ec6d42",
+    "nodeId": "n2",
+    "event": "node:log",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_97",
+    "seq": 97,
+    "at": "2026-09-10T00:27:30.572Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ BDD Specification Agent (spec.bdd.generate)",
+    "projectId": "prj_47759e36e01e",
+    "runId": "run_09ab58ec6d42",
+    "nodeId": "n2",
+    "event": "node:start",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_96",
+    "seq": 96,
+    "at": "2026-09-10T00:27:30.569Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ REST Collection Analyzer finished in 138ms — 1 artifact(s).",
+    "projectId": "prj_47759e36e01e",
+    "runId": "run_09ab58ec6d42",
+    "nodeId": "n1",
+    "event": "node:done",
+    "detail": {
+      "agent": "REST Collection Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_95",
+    "seq": 95,
+    "at": "2026-09-10T00:27:30.566Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Parsed 1 suite(s), 3 test(s), 3 assertion(s), 0 locator(s).",
+    "projectId": "prj_47759e36e01e",
+    "runId": "run_09ab58ec6d42",
+    "nodeId": "n1",
+    "event": "node:log",
+    "detail": {
+      "agent": "REST Collection Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_94",
+    "seq": 94,
+    "at": "2026-09-10T00:27:30.431Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ REST Collection Analyzer (source.analyze.rest-collection)",
+    "projectId": "prj_47759e36e01e",
+    "runId": "run_09ab58ec6d42",
+    "nodeId": "n1",
+    "event": "node:start",
+    "detail": {
+      "agent": "REST Collection Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_93",
+    "seq": 93,
+    "at": "2026-09-10T00:27:30.429Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Executing 7 agent(s) for Legacy REST API test collection → Playwright API testing (TypeScript).",
+    "projectId": "prj_47759e36e01e",
+    "runId": "run_09ab58ec6d42",
+    "nodeId": null,
+    "event": "run:start",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_92",
+    "seq": 92,
+    "at": "2026-09-10T00:27:30.420Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Run completed. Verdict: passed. 14 artifact(s), 29 trace link(s). Awaiting human approval.",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": null,
+    "event": "run:end",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_91",
+    "seq": 91,
+    "at": "2026-09-10T00:27:30.418Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Running 0 workflow-level guardrail(s) against 14 artifact(s).",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": null,
+    "event": "validation:start",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_90",
+    "seq": 90,
+    "at": "2026-09-10T00:27:30.416Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Structure & Compilation Validator finished in 126ms — 1 artifact(s).",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": "n7",
+    "event": "node:done",
+    "detail": {
+      "agent": "Structure & Compilation Validator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_89",
+    "seq": 89,
+    "at": "2026-09-10T00:27:30.413Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Checked 4 generated file(s): 0 blocker(s), 0 major, 1 minor.",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": "n7",
+    "event": "node:log",
+    "detail": {
+      "agent": "Structure & Compilation Validator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_88",
+    "seq": 88,
+    "at": "2026-09-10T00:27:30.290Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Structure & Compilation Validator (validate.compile-structure)",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": "n7",
+    "event": "node:start",
+    "detail": {
+      "agent": "Structure & Compilation Validator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_87",
+    "seq": 87,
+    "at": "2026-09-10T00:27:30.288Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ BMAD Artifact Agent finished in 136ms — 4 artifact(s).",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": "n6",
+    "event": "node:done",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_86",
+    "seq": 86,
+    "at": "2026-09-10T00:27:30.286Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Wrote the BMAD document set: product-brief.md, prd.md, architecture.md, epics-and-stories.md.",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": "n6",
+    "event": "node:log",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_85",
+    "seq": 85,
+    "at": "2026-09-10T00:27:30.152Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ BMAD Artifact Agent (docs.bmad.generate)",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": "n6",
+    "event": "node:start",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_84",
+    "seq": 84,
+    "at": "2026-09-10T00:27:30.150Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Traceability Agent finished in 140ms — 1 artifact(s).",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": "n5",
+    "event": "node:done",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_83",
+    "seq": 83,
+    "at": "2026-09-10T00:27:30.147Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Traced 5 test(s); 5/5 requirement(s) covered, 0 orphan(s).",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": "n5",
+    "event": "node:log",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_82",
+    "seq": 82,
+    "at": "2026-09-10T00:27:30.010Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Traceability Agent (traceability.build)",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": "n5",
+    "event": "node:start",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_81",
+    "seq": 81,
+    "at": "2026-09-10T00:27:30.008Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Playwright TypeScript Generator finished in 138ms — 4 artifact(s).",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": "n4",
+    "event": "node:done",
+    "detail": {
+      "agent": "Playwright TypeScript Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_80",
+    "seq": 80,
+    "at": "2026-09-10T00:27:30.006Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Emitted 4 file(s) with 6 assertion(s) across 5 test(s).",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": "n4",
+    "event": "node:log",
+    "detail": {
+      "agent": "Playwright TypeScript Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_79",
+    "seq": 79,
+    "at": "2026-09-10T00:27:29.870Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Playwright TypeScript Generator (target.generate.playwright-ts)",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": "n4",
+    "event": "node:start",
+    "detail": {
+      "agent": "Playwright TypeScript Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_78",
+    "seq": 78,
+    "at": "2026-09-10T00:27:29.869Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Test Data Migration Agent finished in 136ms — 1 artifact(s).",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": "n3",
+    "event": "node:done",
+    "detail": {
+      "agent": "Test Data Migration Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_77",
+    "seq": 77,
+    "at": "2026-09-10T00:27:29.866Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Migrated 1 fixture file(s): 4 records in, 4 records out (policy: Convert to JSON fixtures and keep every record).",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": "n3",
+    "event": "node:log",
+    "detail": {
+      "agent": "Test Data Migration Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_76",
+    "seq": 76,
+    "at": "2026-09-10T00:27:29.732Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Test Data Migration Agent (data.migrate.testdata)",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": "n3",
+    "event": "node:start",
+    "detail": {
+      "agent": "Test Data Migration Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_75",
+    "seq": 75,
+    "at": "2026-09-10T00:27:29.730Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ BDD Specification Agent finished in 139ms — 2 artifact(s).",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": "n2",
+    "event": "node:done",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_74",
+    "seq": 74,
+    "at": "2026-09-10T00:27:29.726Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Wrote 2 feature file(s) covering 5 scenario(s).",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": "n2",
+    "event": "node:log",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_73",
+    "seq": 73,
+    "at": "2026-09-10T00:27:29.591Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ BDD Specification Agent (spec.bdd.generate)",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": "n2",
+    "event": "node:start",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_72",
+    "seq": 72,
+    "at": "2026-09-10T00:27:29.590Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Selenium Java Analyzer finished in 128ms — 1 artifact(s).",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": "n1",
+    "event": "node:done",
+    "detail": {
+      "agent": "Selenium Java Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_71",
+    "seq": 71,
+    "at": "2026-09-10T00:27:29.587Z",
+    "level": "info",
+    "scope": "run",
+    "message": "1 construct(s) have no direct target equivalent.",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": "n1",
+    "event": "node:log",
+    "detail": {
+      "agent": "Selenium Java Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_70",
+    "seq": 70,
+    "at": "2026-09-10T00:27:29.585Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Parsed 2 suite(s), 5 test(s), 6 assertion(s), 15 locator(s).",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": "n1",
+    "event": "node:log",
+    "detail": {
+      "agent": "Selenium Java Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_69",
+    "seq": 69,
+    "at": "2026-09-10T00:27:29.461Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Selenium Java Analyzer (source.analyze.selenium-java)",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": "n1",
+    "event": "node:start",
+    "detail": {
+      "agent": "Selenium Java Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_68",
+    "seq": 68,
+    "at": "2026-09-10T00:27:29.459Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Executing 7 agent(s) for Selenium WebDriver (Java) → Playwright (TypeScript).",
+    "projectId": "prj_dd3050efebd6",
+    "runId": "run_d536207def91",
+    "nodeId": null,
+    "event": "run:start",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_67",
+    "seq": 67,
+    "at": "2026-09-10T00:27:29.451Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Run completed. Verdict: passed. 9 artifact(s), 18 trace link(s). Awaiting human approval.",
+    "projectId": "prj_729d9f5f30a3",
+    "runId": "run_002cc298300f",
+    "nodeId": null,
+    "event": "run:end",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_66",
+    "seq": 66,
+    "at": "2026-09-10T00:27:29.449Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Running 0 workflow-level guardrail(s) against 9 artifact(s).",
+    "projectId": "prj_729d9f5f30a3",
+    "runId": "run_002cc298300f",
+    "nodeId": null,
+    "event": "validation:start",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_65",
+    "seq": 65,
+    "at": "2026-09-10T00:27:29.448Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Structure & Compilation Validator finished in 138ms — 1 artifact(s).",
+    "projectId": "prj_729d9f5f30a3",
+    "runId": "run_002cc298300f",
+    "nodeId": "n6",
+    "event": "node:done",
+    "detail": {
+      "agent": "Structure & Compilation Validator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_64",
+    "seq": 64,
+    "at": "2026-09-10T00:27:29.445Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Checked 1 generated file(s): 0 blocker(s), 0 major, 1 minor.",
+    "projectId": "prj_729d9f5f30a3",
+    "runId": "run_002cc298300f",
+    "nodeId": "n6",
+    "event": "node:log",
+    "detail": {
+      "agent": "Structure & Compilation Validator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_63",
+    "seq": 63,
+    "at": "2026-09-10T00:27:29.310Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Structure & Compilation Validator (validate.compile-structure)",
+    "projectId": "prj_729d9f5f30a3",
+    "runId": "run_002cc298300f",
+    "nodeId": "n6",
+    "event": "node:start",
+    "detail": {
+      "agent": "Structure & Compilation Validator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_62",
+    "seq": 62,
+    "at": "2026-09-10T00:27:29.309Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ BMAD Artifact Agent finished in 140ms — 4 artifact(s).",
+    "projectId": "prj_729d9f5f30a3",
+    "runId": "run_002cc298300f",
+    "nodeId": "n5",
+    "event": "node:done",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_61",
+    "seq": 61,
+    "at": "2026-09-10T00:27:29.307Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Wrote the BMAD document set: product-brief.md, prd.md, architecture.md, epics-and-stories.md.",
+    "projectId": "prj_729d9f5f30a3",
+    "runId": "run_002cc298300f",
+    "nodeId": "n5",
+    "event": "node:log",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_60",
+    "seq": 60,
+    "at": "2026-09-10T00:27:29.169Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ BMAD Artifact Agent (docs.bmad.generate)",
+    "projectId": "prj_729d9f5f30a3",
+    "runId": "run_002cc298300f",
+    "nodeId": "n5",
+    "event": "node:start",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_59",
+    "seq": 59,
+    "at": "2026-09-10T00:27:29.167Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Traceability Agent finished in 137ms — 1 artifact(s).",
+    "projectId": "prj_729d9f5f30a3",
+    "runId": "run_002cc298300f",
+    "nodeId": "n4",
+    "event": "node:done",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_58",
+    "seq": 58,
+    "at": "2026-09-10T00:27:29.165Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Traced 3 test(s); 3/3 requirement(s) covered, 0 orphan(s).",
+    "projectId": "prj_729d9f5f30a3",
+    "runId": "run_002cc298300f",
+    "nodeId": "n4",
+    "event": "node:log",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_57",
+    "seq": 57,
+    "at": "2026-09-10T00:27:29.030Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Traceability Agent (traceability.build)",
+    "projectId": "prj_729d9f5f30a3",
+    "runId": "run_002cc298300f",
+    "nodeId": "n4",
+    "event": "node:start",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_56",
+    "seq": 56,
+    "at": "2026-09-10T00:27:29.028Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ PyTest Generator finished in 139ms — 1 artifact(s).",
+    "projectId": "prj_729d9f5f30a3",
+    "runId": "run_002cc298300f",
+    "nodeId": "n3",
+    "event": "node:done",
+    "detail": {
+      "agent": "PyTest Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_55",
+    "seq": 55,
+    "at": "2026-09-10T00:27:29.026Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Emitted 1 PyTest module(s) with 3 assertion(s).",
+    "projectId": "prj_729d9f5f30a3",
+    "runId": "run_002cc298300f",
+    "nodeId": "n3",
+    "event": "node:log",
+    "detail": {
+      "agent": "PyTest Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_54",
+    "seq": 54,
+    "at": "2026-09-10T00:27:28.889Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ PyTest Generator (target.generate.pytest)",
+    "projectId": "prj_729d9f5f30a3",
+    "runId": "run_002cc298300f",
+    "nodeId": "n3",
+    "event": "node:start",
+    "detail": {
+      "agent": "PyTest Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_53",
+    "seq": 53,
+    "at": "2026-09-10T00:27:28.888Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ BDD Specification Agent finished in 139ms — 1 artifact(s).",
+    "projectId": "prj_729d9f5f30a3",
+    "runId": "run_002cc298300f",
+    "nodeId": "n2",
+    "event": "node:done",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_52",
+    "seq": 52,
+    "at": "2026-09-10T00:27:28.885Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Wrote 1 feature file(s) covering 3 scenario(s).",
+    "projectId": "prj_729d9f5f30a3",
+    "runId": "run_002cc298300f",
+    "nodeId": "n2",
+    "event": "node:log",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_51",
+    "seq": 51,
+    "at": "2026-09-10T00:27:28.749Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ BDD Specification Agent (spec.bdd.generate)",
+    "projectId": "prj_729d9f5f30a3",
+    "runId": "run_002cc298300f",
+    "nodeId": "n2",
+    "event": "node:start",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_50",
+    "seq": 50,
+    "at": "2026-09-10T00:27:28.747Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ JUnit Analyzer finished in 135ms — 1 artifact(s).",
+    "projectId": "prj_729d9f5f30a3",
+    "runId": "run_002cc298300f",
+    "nodeId": "n1",
+    "event": "node:done",
+    "detail": {
+      "agent": "JUnit Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_49",
+    "seq": 49,
+    "at": "2026-09-10T00:27:28.744Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Parsed 1 suite(s), 3 test(s), 3 assertion(s), 0 locator(s).",
+    "projectId": "prj_729d9f5f30a3",
+    "runId": "run_002cc298300f",
+    "nodeId": "n1",
+    "event": "node:log",
+    "detail": {
+      "agent": "JUnit Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_48",
+    "seq": 48,
+    "at": "2026-09-10T00:27:28.612Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ JUnit Analyzer (source.analyze.junit)",
+    "projectId": "prj_729d9f5f30a3",
+    "runId": "run_002cc298300f",
+    "nodeId": "n1",
+    "event": "node:start",
+    "detail": {
+      "agent": "JUnit Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_47",
+    "seq": 47,
+    "at": "2026-09-10T00:27:28.611Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Executing 6 agent(s) for JUnit (Java unit tests) → PyTest.",
+    "projectId": "prj_729d9f5f30a3",
+    "runId": "run_002cc298300f",
+    "nodeId": null,
+    "event": "run:start",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_46",
+    "seq": 46,
+    "at": "2026-09-10T00:27:28.605Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Run halted. Verdict: blocked. 1 artifact(s), 1 trace link(s). Awaiting human approval.",
+    "projectId": "prj_5513c7c47ff7",
+    "runId": "run_e142d5121385",
+    "nodeId": null,
+    "event": "run:end",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_45",
+    "seq": 45,
+    "at": "2026-09-10T00:27:28.604Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Running 0 workflow-level guardrail(s) against 1 artifact(s).",
+    "projectId": "prj_5513c7c47ff7",
+    "runId": "run_e142d5121385",
+    "nodeId": null,
+    "event": "validation:start",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_44",
+    "seq": 44,
+    "at": "2026-09-10T00:27:28.602Z",
+    "level": "warn",
+    "scope": "run",
+    "message": "⊘ Structure & Compilation Validator skipped — the run was halted.",
+    "projectId": "prj_5513c7c47ff7",
+    "runId": "run_e142d5121385",
+    "nodeId": "n7",
+    "event": "node:skipped",
+    "detail": {
+      "agent": "Structure & Compilation Validator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_43",
+    "seq": 43,
+    "at": "2026-09-10T00:27:28.601Z",
+    "level": "warn",
+    "scope": "run",
+    "message": "⊘ BMAD Artifact Agent skipped — the run was halted.",
+    "projectId": "prj_5513c7c47ff7",
+    "runId": "run_e142d5121385",
+    "nodeId": "n6",
+    "event": "node:skipped",
+    "detail": {
+      "agent": "BMAD Artifact Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_42",
+    "seq": 42,
+    "at": "2026-09-10T00:27:28.600Z",
+    "level": "warn",
+    "scope": "run",
+    "message": "⊘ Traceability Agent skipped — the run was halted.",
+    "projectId": "prj_5513c7c47ff7",
+    "runId": "run_e142d5121385",
+    "nodeId": "n5",
+    "event": "node:skipped",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_41",
+    "seq": 41,
+    "at": "2026-09-10T00:27:28.599Z",
+    "level": "warn",
+    "scope": "run",
+    "message": "⊘ Playwright TypeScript Generator skipped — the run was halted.",
+    "projectId": "prj_5513c7c47ff7",
+    "runId": "run_e142d5121385",
+    "nodeId": "n4",
+    "event": "node:skipped",
+    "detail": {
+      "agent": "Playwright TypeScript Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_40",
+    "seq": 40,
+    "at": "2026-09-10T00:27:28.598Z",
+    "level": "warn",
+    "scope": "run",
+    "message": "⊘ Test Data Migration Agent skipped — the run was halted.",
+    "projectId": "prj_5513c7c47ff7",
+    "runId": "run_e142d5121385",
+    "nodeId": "n3",
+    "event": "node:skipped",
+    "detail": {
+      "agent": "Test Data Migration Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_39",
+    "seq": 39,
+    "at": "2026-09-10T00:27:28.596Z",
+    "level": "warn",
+    "scope": "run",
+    "message": "⊘ BDD Specification Agent skipped — the run was halted.",
+    "projectId": "prj_5513c7c47ff7",
+    "runId": "run_e142d5121385",
+    "nodeId": "n2",
+    "event": "node:skipped",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_38",
+    "seq": 38,
+    "at": "2026-09-10T00:27:28.595Z",
+    "level": "error",
+    "scope": "run",
+    "message": "■ Run halted by \"Nothing may pass the analyzer unmigrated\" — its author asked for the workflow to stop and request review.",
+    "projectId": "prj_5513c7c47ff7",
+    "runId": "run_e142d5121385",
+    "nodeId": null,
+    "event": "run:halted",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_37",
+    "seq": 37,
+    "at": "2026-09-10T00:27:28.593Z",
+    "level": "error",
+    "scope": "run",
+    "message": "✖ Nothing may pass the analyzer unmigrated: 5 source test case(s), 0 generated test(s).",
+    "projectId": "prj_5513c7c47ff7",
+    "runId": "run_e142d5121385",
+    "nodeId": null,
+    "event": "guardrail",
+    "detail": {
+      "agent": null,
+      "guardrailId": "guard.custom.nothing-may-pass-the-analyzer-unmigrated"
+    }
+  },
+  {
+    "id": "log_36",
+    "seq": 36,
+    "at": "2026-09-10T00:27:28.592Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Checking 1 guardrail(s) scoped to Selenium Java Analyzer.",
+    "projectId": "prj_5513c7c47ff7",
+    "runId": "run_e142d5121385",
+    "nodeId": "n1",
+    "event": "validation:start",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_35",
+    "seq": 35,
+    "at": "2026-09-10T00:27:28.591Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Selenium Java Analyzer finished in 128ms — 1 artifact(s).",
+    "projectId": "prj_5513c7c47ff7",
+    "runId": "run_e142d5121385",
+    "nodeId": "n1",
+    "event": "node:done",
+    "detail": {
+      "agent": "Selenium Java Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_34",
+    "seq": 34,
+    "at": "2026-09-10T00:27:28.589Z",
+    "level": "info",
+    "scope": "run",
+    "message": "1 construct(s) have no direct target equivalent.",
+    "projectId": "prj_5513c7c47ff7",
+    "runId": "run_e142d5121385",
+    "nodeId": "n1",
+    "event": "node:log",
+    "detail": {
+      "agent": "Selenium Java Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_33",
+    "seq": 33,
+    "at": "2026-09-10T00:27:28.586Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Parsed 2 suite(s), 5 test(s), 6 assertion(s), 15 locator(s).",
+    "projectId": "prj_5513c7c47ff7",
+    "runId": "run_e142d5121385",
+    "nodeId": "n1",
+    "event": "node:log",
+    "detail": {
+      "agent": "Selenium Java Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_32",
+    "seq": 32,
+    "at": "2026-09-10T00:27:28.463Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Selenium Java Analyzer (source.analyze.selenium-java)",
+    "projectId": "prj_5513c7c47ff7",
+    "runId": "run_e142d5121385",
+    "nodeId": "n1",
+    "event": "node:start",
+    "detail": {
+      "agent": "Selenium Java Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_31",
+    "seq": 31,
+    "at": "2026-09-10T00:27:28.461Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Executing 7 agent(s) for Selenium WebDriver (Java) → Playwright (TypeScript).",
+    "projectId": "prj_5513c7c47ff7",
+    "runId": "run_e142d5121385",
+    "nodeId": null,
+    "event": "run:start",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_30",
+    "seq": 30,
+    "at": "2026-09-10T00:27:28.456Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Run completed. Verdict: passed. 1 artifact(s), 1 trace link(s). Awaiting human approval.",
+    "projectId": "prj_330515dd5b1b",
+    "runId": "run_6c75d5ab3c5b",
+    "nodeId": null,
+    "event": "run:end",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_29",
+    "seq": 29,
+    "at": "2026-09-10T00:27:28.454Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Running 0 workflow-level guardrail(s) against 1 artifact(s).",
+    "projectId": "prj_330515dd5b1b",
+    "runId": "run_6c75d5ab3c5b",
+    "nodeId": null,
+    "event": "validation:start",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_28",
+    "seq": 28,
+    "at": "2026-09-10T00:27:28.453Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Database Validation Agent finished in 141ms — 1 artifact(s).",
+    "projectId": "prj_330515dd5b1b",
+    "runId": "run_6c75d5ab3c5b",
+    "nodeId": "n1",
+    "event": "node:done",
+    "detail": {
+      "agent": "Database Validation Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_27",
+    "seq": 27,
+    "at": "2026-09-10T00:27:28.450Z",
+    "level": "info",
+    "scope": "run",
+    "message": "No model configured — wrote the resolved brief instead of executing the instructions.",
+    "projectId": "prj_330515dd5b1b",
+    "runId": "run_6c75d5ab3c5b",
+    "nodeId": "n1",
+    "event": "node:log",
+    "detail": {
+      "agent": "Database Validation Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_26",
+    "seq": 26,
+    "at": "2026-09-10T00:27:28.447Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Authored agent \"Database Validation Agent\" reading 2 input source(s): Requirements, Source artifacts.",
+    "projectId": "prj_330515dd5b1b",
+    "runId": "run_6c75d5ab3c5b",
+    "nodeId": "n1",
+    "event": "node:log",
+    "detail": {
+      "agent": "Database Validation Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_25",
+    "seq": 25,
+    "at": "2026-09-10T00:27:28.312Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Database Validation Agent (custom.database-validation-agent)",
+    "projectId": "prj_330515dd5b1b",
+    "runId": "run_6c75d5ab3c5b",
+    "nodeId": "n1",
+    "event": "node:start",
+    "detail": {
+      "agent": "Database Validation Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_24",
+    "seq": 24,
+    "at": "2026-09-10T00:27:28.310Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Executing 1 agent(s) for Selenium WebDriver (Java) → Playwright (TypeScript).",
+    "projectId": "prj_330515dd5b1b",
+    "runId": "run_6c75d5ab3c5b",
+    "nodeId": null,
+    "event": "run:start",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_23",
+    "seq": 23,
+    "at": "2026-09-10T00:27:27.835Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Traceability Agent (traceability.build)",
+    "projectId": "prj_167d940947b1",
+    "runId": "run_4bf78ab0971c",
+    "nodeId": "n4",
+    "event": "node:start",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_22",
+    "seq": 22,
+    "at": "2026-09-10T00:27:27.834Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ PyTest Generator finished in 123ms — 1 artifact(s).",
+    "projectId": "prj_167d940947b1",
+    "runId": "run_4bf78ab0971c",
+    "nodeId": "n3",
+    "event": "node:done",
+    "detail": {
+      "agent": "PyTest Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_21",
+    "seq": 21,
+    "at": "2026-09-10T00:27:27.832Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Emitted 1 PyTest module(s) with 3 assertion(s).",
+    "projectId": "prj_167d940947b1",
+    "runId": "run_4bf78ab0971c",
+    "nodeId": "n3",
+    "event": "node:log",
+    "detail": {
+      "agent": "PyTest Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_20",
+    "seq": 20,
+    "at": "2026-09-10T00:27:27.711Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ PyTest Generator (target.generate.pytest)",
+    "projectId": "prj_167d940947b1",
+    "runId": "run_4bf78ab0971c",
+    "nodeId": "n3",
+    "event": "node:start",
+    "detail": {
+      "agent": "PyTest Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_19",
+    "seq": 19,
+    "at": "2026-09-10T00:27:27.710Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ BDD Specification Agent finished in 139ms — 1 artifact(s).",
+    "projectId": "prj_167d940947b1",
+    "runId": "run_4bf78ab0971c",
+    "nodeId": "n2",
+    "event": "node:done",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_18",
+    "seq": 18,
+    "at": "2026-09-10T00:27:27.708Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Wrote 1 feature file(s) covering 3 scenario(s).",
+    "projectId": "prj_167d940947b1",
+    "runId": "run_4bf78ab0971c",
+    "nodeId": "n2",
+    "event": "node:log",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_17",
+    "seq": 17,
+    "at": "2026-09-10T00:27:27.571Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ BDD Specification Agent (spec.bdd.generate)",
+    "projectId": "prj_167d940947b1",
+    "runId": "run_4bf78ab0971c",
+    "nodeId": "n2",
+    "event": "node:start",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_16",
+    "seq": 16,
+    "at": "2026-09-10T00:27:27.570Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ JUnit Analyzer finished in 137ms — 1 artifact(s).",
+    "projectId": "prj_167d940947b1",
+    "runId": "run_4bf78ab0971c",
+    "nodeId": "n1",
+    "event": "node:done",
+    "detail": {
+      "agent": "JUnit Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_15",
+    "seq": 15,
+    "at": "2026-09-10T00:27:27.568Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Parsed 1 suite(s), 3 test(s), 3 assertion(s), 0 locator(s).",
+    "projectId": "prj_167d940947b1",
+    "runId": "run_4bf78ab0971c",
+    "nodeId": "n1",
+    "event": "node:log",
+    "detail": {
+      "agent": "JUnit Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_14",
+    "seq": 14,
+    "at": "2026-09-10T00:27:27.433Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ JUnit Analyzer (source.analyze.junit)",
+    "projectId": "prj_167d940947b1",
+    "runId": "run_4bf78ab0971c",
+    "nodeId": "n1",
+    "event": "node:start",
+    "detail": {
+      "agent": "JUnit Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_13",
+    "seq": 13,
+    "at": "2026-09-10T00:27:27.432Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Executing 6 agent(s) for JUnit (Java unit tests) → PyTest.",
+    "projectId": "prj_167d940947b1",
+    "runId": "run_4bf78ab0971c",
+    "nodeId": null,
+    "event": "run:start",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_12",
+    "seq": 12,
+    "at": "2026-09-10T00:27:26.849Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Traceability Agent (traceability.build)",
+    "projectId": "prj_68cf93e94eb4",
+    "runId": "run_81f08358d9ee",
+    "nodeId": "n4",
+    "event": "node:start",
+    "detail": {
+      "agent": "Traceability Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_11",
+    "seq": 11,
+    "at": "2026-09-10T00:27:26.848Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ Playwright API Generator finished in 126ms — 1 artifact(s).",
+    "projectId": "prj_68cf93e94eb4",
+    "runId": "run_81f08358d9ee",
+    "nodeId": "n3",
+    "event": "node:done",
+    "detail": {
+      "agent": "Playwright API Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_10",
+    "seq": 10,
+    "at": "2026-09-10T00:27:26.847Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Emitted 1 API spec file(s) preserving 7 status assertion(s).",
+    "projectId": "prj_68cf93e94eb4",
+    "runId": "run_81f08358d9ee",
+    "nodeId": "n3",
+    "event": "node:log",
+    "detail": {
+      "agent": "Playwright API Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_9",
+    "seq": 9,
+    "at": "2026-09-10T00:27:26.722Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ Playwright API Generator (target.generate.playwright-api)",
+    "projectId": "prj_68cf93e94eb4",
+    "runId": "run_81f08358d9ee",
+    "nodeId": "n3",
+    "event": "node:start",
+    "detail": {
+      "agent": "Playwright API Generator",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_8",
+    "seq": 8,
+    "at": "2026-09-10T00:27:26.722Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ BDD Specification Agent finished in 125ms — 1 artifact(s).",
+    "projectId": "prj_68cf93e94eb4",
+    "runId": "run_81f08358d9ee",
+    "nodeId": "n2",
+    "event": "node:done",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_7",
+    "seq": 7,
+    "at": "2026-09-10T00:27:26.721Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Wrote 1 feature file(s) covering 1 scenario(s).",
+    "projectId": "prj_68cf93e94eb4",
+    "runId": "run_81f08358d9ee",
+    "nodeId": "n2",
+    "event": "node:log",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_6",
+    "seq": 6,
+    "at": "2026-09-10T00:27:26.597Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ BDD Specification Agent (spec.bdd.generate)",
+    "projectId": "prj_68cf93e94eb4",
+    "runId": "run_81f08358d9ee",
+    "nodeId": "n2",
+    "event": "node:start",
+    "detail": {
+      "agent": "BDD Specification Agent",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_5",
+    "seq": 5,
+    "at": "2026-09-10T00:27:26.596Z",
+    "level": "info",
+    "scope": "run",
+    "message": "✔ REST Collection Analyzer finished in 131ms — 1 artifact(s).",
+    "projectId": "prj_68cf93e94eb4",
+    "runId": "run_81f08358d9ee",
+    "nodeId": "n1",
+    "event": "node:done",
+    "detail": {
+      "agent": "REST Collection Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_4",
+    "seq": 4,
+    "at": "2026-09-10T00:27:26.595Z",
+    "level": "info",
+    "scope": "run",
+    "message": "1 construct(s) have no direct target equivalent.",
+    "projectId": "prj_68cf93e94eb4",
+    "runId": "run_81f08358d9ee",
+    "nodeId": "n1",
+    "event": "node:log",
+    "detail": {
+      "agent": "REST Collection Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_3",
+    "seq": 3,
+    "at": "2026-09-10T00:27:26.594Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Parsed 1 suite(s), 1 test(s), 7 assertion(s), 0 locator(s).",
+    "projectId": "prj_68cf93e94eb4",
+    "runId": "run_81f08358d9ee",
+    "nodeId": "n1",
+    "event": "node:log",
+    "detail": {
+      "agent": "REST Collection Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_2",
+    "seq": 2,
+    "at": "2026-09-10T00:27:26.465Z",
+    "level": "info",
+    "scope": "run",
+    "message": "▶ REST Collection Analyzer (source.analyze.rest-collection)",
+    "projectId": "prj_68cf93e94eb4",
+    "runId": "run_81f08358d9ee",
+    "nodeId": "n1",
+    "event": "node:start",
+    "detail": {
+      "agent": "REST Collection Analyzer",
+      "guardrailId": null
+    }
+  },
+  {
+    "id": "log_1",
+    "seq": 1,
+    "at": "2026-09-10T00:27:26.464Z",
+    "level": "info",
+    "scope": "run",
+    "message": "Executing 6 agent(s) for Legacy REST API test collection → Playwright API testing (TypeScript).",
+    "projectId": "prj_68cf93e94eb4",
+    "runId": "run_81f08358d9ee",
+    "nodeId": null,
+    "event": "run:start",
+    "detail": {
+      "agent": null,
+      "guardrailId": null
+    }
+  }
+]
