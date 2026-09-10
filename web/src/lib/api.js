@@ -20,8 +20,8 @@ async function call(path, options = {}) {
 export const api = {
   health: () => call('/health'),
 
-  samples: () => call('/samples'),
-  sample: (sampleId) => call(`/samples/${sampleId}`),
+  templates: () => call('/templates'),
+  template: (templateId) => call(`/templates/${templateId}`),
 
   projects: () => call('/projects'),
   project: (projectId) => call(`/projects/${projectId}`),

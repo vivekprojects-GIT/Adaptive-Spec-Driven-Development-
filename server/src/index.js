@@ -9,7 +9,7 @@ import runsRouter from './routes/runs.js';
 import registryRouter from './routes/registry.js';
 import settingsRouter from './routes/settings.js';
 import observabilityRouter from './routes/observability.js';
-import { SAMPLES, findSample } from './samples.js';
+import { TEMPLATES, findTemplate, starterSpec, exampleSpec } from './templates.js';
 import { ensureSeeded as seedAgents } from './registry/agents.js';
 import { ensureSeeded as seedGuardrails } from './registry/guardrails.js';
 import { llmStatus } from './lib/settings.js';
@@ -46,25 +46,39 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true, service: 'asdd-control-plane', version: '1.0.0', llm: llmStatus() });
 });
 
-app.get('/api/samples', (req, res) => {
+/**
+ * Templates are starting shapes, not ready-made runs: they set the stacks and say what you need to
+ * provide. The example content is a separate, explicit request.
+ */
+app.get('/api/templates', (req, res) => {
   res.json(
-    SAMPLES.map((sample) => ({
-      id: sample.id,
-      name: sample.name,
-      headline: sample.headline,
-      description: sample.description,
-      source: sample.spec.sourceStack,
-      target: sample.spec.targetStack,
-      artifacts: sample.spec.artifacts.length,
-      requirements: sample.spec.requirements.split('\n').filter(Boolean).length,
+    TEMPLATES.map((template) => ({
+      id: template.id,
+      name: template.name,
+      headline: template.headline,
+      source: template.starter.sourceStack,
+      target: template.starter.targetStack,
+      projectKind: template.starter.projectKind,
+      expects: template.expects,
+      requirementHints: template.requirementHints,
+      hasExample: Boolean(template.example),
     })),
   );
 });
 
-app.get('/api/samples/:sampleId', (req, res) => {
-  const sample = findSample(req.params.sampleId);
-  if (!sample) throw new HttpError(404, 'Sample not found.');
-  res.json(sample);
+app.get('/api/templates/:templateId', (req, res) => {
+  const template = findTemplate(req.params.templateId);
+  if (!template) throw new HttpError(404, 'Template not found.');
+  const example = exampleSpec(template.id);
+  res.json({
+    id: template.id,
+    name: template.name,
+    headline: template.headline,
+    expects: template.expects,
+    requirementHints: template.requirementHints,
+    starterSpec: starterSpec(template.id),
+    example: example ? { ...example, artifacts: example.artifacts.map((a) => ({ ...a })) } : null,
+  });
 });
 
 app.use('/api/projects', projectsRouter);

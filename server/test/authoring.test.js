@@ -12,7 +12,7 @@ import { customGuardrailProposal } from '../src/engine/guardrailDesigner.js';
 import { composeWorkflow } from '../src/engine/workflowComposer.js';
 import { createRun, executeRun, recordApproval, getRun } from '../src/engine/orchestrator.js';
 import { assessSpec } from '../src/engine/interview.js';
-import { SAMPLES } from '../src/samples.js';
+import { TEMPLATES, exampleSpec } from '../src/templates.js';
 import { id } from '../src/lib/util.js';
 
 test('requirements parse from a document, a short list, or a single line', () => {
@@ -98,7 +98,7 @@ test('an authored agent carries its instructions into the graph and executes the
   assert.equal(graph.nodes[0].authored.instructions, proposal.authored.instructions, 'instructions reach the executable node');
 
   // Offline (no API key in the test environment) it must refuse to fake work.
-  const project = { id: id('prj'), name: 'authored', spec: SAMPLES[0].spec, interview: { answers: {}, ready: true } };
+  const project = { id: id('prj'), name: 'authored', spec: exampleSpec('selenium-to-playwright'), interview: { answers: {}, ready: true } };
   project.discovery = runDiscovery(project.spec);
   project.graph = graph;
   project.proposals = { agents: [proposal], guardrails: [] };
@@ -112,7 +112,7 @@ test('an authored agent carries its instructions into the graph and executes the
 });
 
 test('a guardrail set to "stop workflow" actually halts the run at that agent', async () => {
-  const sample = SAMPLES.find((s) => s.id === 'selenium-to-playwright');
+  const sample = { ...TEMPLATES.find((t) => t.id === 'selenium-to-playwright'), spec: exampleSpec('selenium-to-playwright') };
   const project = { id: id('prj'), name: 'halting', spec: sample.spec, interview: { answers: {}, ready: true } };
   project.discovery = runDiscovery(project.spec);
 
@@ -145,7 +145,7 @@ test('a guardrail set to "stop workflow" actually halts the run at that agent', 
 });
 
 test('every run ends pending a human decision, and the decision is recorded', async () => {
-  const sample = SAMPLES.find((s) => s.id === 'junit-to-pytest');
+  const sample = { ...TEMPLATES.find((t) => t.id === 'junit-to-pytest'), spec: exampleSpec('junit-to-pytest') };
   const project = { id: id('prj'), name: 'approval', spec: sample.spec, interview: { answers: {}, ready: true } };
   project.discovery = runDiscovery(project.spec);
   const { proposals } = proposeAgents(project.discovery);
@@ -183,7 +183,7 @@ test('the structure check does not trip over URLs, escaped quotes or truncated c
   // Regression: `//` inside 'https://shop.example.com/login' was read as a line comment, which
   // swallowed the rest of the line — including its closing bracket — and reported clean generated
   // files as structurally broken blockers.
-  const sample = SAMPLES.find((s) => s.id === 'selenium-to-playwright');
+  const sample = { ...TEMPLATES.find((t) => t.id === 'selenium-to-playwright'), spec: exampleSpec('selenium-to-playwright') };
   const project = { id: id('prj'), name: 'structure', spec: sample.spec, interview: { answers: {}, ready: true } };
   project.discovery = runDiscovery(project.spec);
   const { proposals } = proposeAgents(project.discovery);
@@ -199,7 +199,7 @@ test('the structure check does not trip over URLs, escaped quotes or truncated c
 });
 
 test('a REST collection migrates to real Playwright API tests, not broken browser specs', async () => {
-  const sample = SAMPLES.find((s) => s.id === 'rest-to-playwright-api');
+  const sample = { ...TEMPLATES.find((t) => t.id === 'rest-to-playwright-api'), spec: exampleSpec('rest-to-playwright-api') };
   const discovery = runDiscovery(sample.spec);
   assert.equal(discovery.target.id, 'playwright-api');
 

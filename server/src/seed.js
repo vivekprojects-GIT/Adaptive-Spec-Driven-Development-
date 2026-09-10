@@ -3,7 +3,7 @@
  * Safe to run repeatedly: it skips a project whose name already exists.
  */
 import { collection } from './lib/store.js';
-import { SAMPLES } from './samples.js';
+import { TEMPLATES, exampleSpec } from './templates.js';
 import { ensureSeeded as seedAgents } from './registry/agents.js';
 import { ensureSeeded as seedGuardrails } from './registry/guardrails.js';
 import { id, now } from './lib/util.js';
@@ -12,7 +12,8 @@ seedAgents();
 seedGuardrails();
 
 const projects = collection('projects');
-const sample = SAMPLES[0];
+const template = TEMPLATES[0];
+const sample = { name: template.name, description: template.headline, spec: exampleSpec(template.id) };
 
 if (projects.all().some((p) => p.name === sample.name)) {
   console.log(`Sample project "${sample.name}" already exists — nothing to do.`);

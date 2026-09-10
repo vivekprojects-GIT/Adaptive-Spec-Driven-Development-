@@ -73,9 +73,39 @@ export default function SpecStage({ project, reload, navigate, toast }) {
     navigate('interview');
   }
 
+  const expects = project.spec.expects || [];
+  const provided = {
+    requirements: Boolean((spec.requirements || '').trim()),
+    artifacts: (project.spec.artifacts || []).length > 0,
+  };
+
   return (
     <>
-      <div className="grid cols-2">
+      {expects.length > 0 && (
+        <Card
+          title="What this template needs from you"
+          sub="The template sets the stacks. The content is yours — nothing runs until it is here."
+          right={
+            <Badge tone={provided.requirements && provided.artifacts ? 'pass' : 'warn'}>
+              {provided.requirements && provided.artifacts ? 'ready to continue' : 'incomplete'}
+            </Badge>
+          }
+        >
+          <ul className="small" style={{ margin: 0, paddingLeft: 18, color: 'var(--text-dim)' }}>
+            {expects.map((item, index) => <li key={index}>{item}</li>)}
+          </ul>
+          <div className="row small" style={{ marginTop: 12, gap: 18 }}>
+            <span style={{ color: provided.requirements ? 'var(--pass)' : 'var(--text-faint)' }}>
+              {provided.requirements ? '✓' : '○'} requirements
+            </span>
+            <span style={{ color: provided.artifacts ? 'var(--pass)' : 'var(--text-faint)' }}>
+              {provided.artifacts ? '✓' : '○'} source files ({(project.spec.artifacts || []).length})
+            </span>
+          </div>
+        </Card>
+      )}
+
+      <div className="grid cols-2" style={{ marginTop: expects.length ? 14 : 0 }}>
         <div>
           <Card title="1 · The spec" sub="Requirements, source, target. Everything downstream is derived from this.">
             <Field
@@ -116,7 +146,10 @@ export default function SpecStage({ project, reload, navigate, toast }) {
                 rows={9}
                 value={spec.requirements || ''}
                 onChange={(e) => setSpec({ ...spec, requirements: e.target.value })}
-                placeholder={'Convert our Selenium suite to Playwright\nKeep every assertion\n\n…or paste a whole requirements document and click Import.'}
+                placeholder={
+                  (project.spec.requirementHints || []).join('\n') ||
+                  'Convert our Selenium suite to Playwright\nKeep every assertion\n\n…or import a requirements document.'
+                }
               />
               <input ref={reqInput} type="file" accept=".md,.txt,.csv,.json,.rst,.adoc" hidden onChange={onRequirementsDoc} />
             </Field>

@@ -30,10 +30,13 @@ That is the whole setup. No database, no Docker, no API key, no global installs.
 - UI → **http://localhost:5173**
 - API → **http://localhost:5174**
 
-Then click **Create project** on any sample and walk the nine steps across the top. The
-`Selenium (Java) → Playwright (TypeScript)` sample is the one to start with: 2 suites, 5 tests,
-6 assertions, a CSV fixture, a hardcoded password, and one `JavascriptExecutor` call that genuinely
-cannot be migrated.
+Then pick a **template** and walk the nine steps across the top.
+
+A template is a starting shape, not a ready-made run: it sets the source and target stacks and
+lists what you need to provide. It brings none of your content — you add your own files and your
+own requirements, and the interview holds the project until you have. Each template also offers
+**Load demo content**, a separate clearly-labelled action that fills it with sample source files if
+you want to watch the pipeline work end to end first.
 
 Other useful commands:
 
@@ -57,7 +60,7 @@ Everything. There is no step that requires curl or editing a file by hand.
 
 | Step | What happens |
 |---|---|
-| **1 Spec** | Type requirements, name the stacks, upload or paste source files |
+| **1 Spec** | A checklist of what the template needs, then your requirements (typed or imported) and your source files |
 | **2 Interview** | The platform asks what it does not know and **blocks fulfilment until you answer**. Each question says *why* it matters and what changes based on your answer. Blocking questions are the gate — the readiness score is only a quality signal |
 | **3 Discovery** | Classifies source/target, parses the artifacts, counts entities, emits required **capabilities**, **risks**, and honest **capability gaps** |
 | **4 Agents** | Agent Factory proposals — registry hits marked `reused`, synthesised ones marked `generated`. Accept / Reject / Edit / **Create my own** |
@@ -239,7 +242,7 @@ server/
                            orchestrator · agents · parsers · validator · reporter · interview
   src/registry/            agents · guardrails · technologies
   src/routes/              projects · runs · registry · settings · observability
-  src/samples.js           five runnable sample projects
+  src/templates.js         six starting templates, each with optional demo content
   test/smoke.test.js       end-to-end pipeline tests
   test/authoring.test.js   custom projects, authored agents/guardrails, halting, approval
 web/

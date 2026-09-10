@@ -11,7 +11,7 @@ import { proposeGuardrails } from '../src/engine/guardrailDesigner.js';
 import { composeWorkflow } from '../src/engine/workflowComposer.js';
 import { createRun, executeRun } from '../src/engine/orchestrator.js';
 import { assessSpec } from '../src/engine/interview.js';
-import { SAMPLES } from '../src/samples.js';
+import { TEMPLATES, exampleSpec } from '../src/templates.js';
 import { id, now } from '../src/lib/util.js';
 
 function projectFrom(sample, answers = {}) {
@@ -40,7 +40,7 @@ async function pipeline(sample, answers = {}) {
 }
 
 test('selenium java → playwright ts: parses, generates and preserves assertions', async () => {
-  const sample = SAMPLES.find((s) => s.id === 'selenium-to-playwright');
+  const sample = { ...TEMPLATES.find((t) => t.id === 'selenium-to-playwright'), spec: exampleSpec('selenium-to-playwright') };
   const discovery = runDiscovery(sample.spec);
 
   assert.equal(discovery.source.id, 'selenium-java', 'source technology detected');
@@ -80,7 +80,7 @@ test('selenium java → playwright ts: parses, generates and preserves assertion
 });
 
 test('cypress → playwright: the factory swaps the analyzer and adds command mapping', async () => {
-  const sample = SAMPLES.find((s) => s.id === 'cypress-to-playwright');
+  const sample = { ...TEMPLATES.find((t) => t.id === 'cypress-to-playwright'), spec: exampleSpec('cypress-to-playwright') };
   const discovery = runDiscovery(sample.spec);
   assert.equal(discovery.source.id, 'cypress');
   assert.equal(discovery.entities.tests, 3);
@@ -96,7 +96,7 @@ test('cypress → playwright: the factory swaps the analyzer and adds command ma
 });
 
 test('rest collection → playwright api: contract parity is computed, not claimed', async () => {
-  const sample = SAMPLES.find((s) => s.id === 'rest-to-playwright-api');
+  const sample = { ...TEMPLATES.find((t) => t.id === 'rest-to-playwright-api'), spec: exampleSpec('rest-to-playwright-api') };
   const finished = await pipeline(sample);
   assert.equal(finished.discovery.entities.requests, 3);
 
@@ -107,14 +107,14 @@ test('rest collection → playwright api: contract parity is computed, not claim
 });
 
 test('junit → pytest: a language change uses the same control plane', async () => {
-  const sample = SAMPLES.find((s) => s.id === 'junit-to-pytest');
+  const sample = { ...TEMPLATES.find((t) => t.id === 'junit-to-pytest'), spec: exampleSpec('junit-to-pytest') };
   const finished = await pipeline(sample);
   assert.ok(finished.ws.generated.some((a) => a.path.startsWith('tests/test_')));
   assert.equal(finished.discovery.entities.tests, 3);
 });
 
 test('unsupported source raises a capability gap instead of pretending', async () => {
-  const sample = SAMPLES.find((s) => s.id === 'gap-demo');
+  const sample = { ...TEMPLATES.find((t) => t.id === 'gap-demo'), spec: exampleSpec('gap-demo') };
   const discovery = runDiscovery(sample.spec);
   const { gaps } = proposeAgents(discovery);
   assert.ok(gaps.length > 0, 'a gap is raised');
@@ -127,7 +127,7 @@ test('the interview blocks an empty spec and unblocks once answered', async () =
   assert.equal(before.ready, false);
   assert.ok(before.blockingCount >= 3, `expected blocking questions, got ${before.blockingCount}`);
 
-  const sample = SAMPLES.find((s) => s.id === 'selenium-to-playwright');
+  const sample = { ...TEMPLATES.find((t) => t.id === 'selenium-to-playwright'), spec: exampleSpec('selenium-to-playwright') };
   const after = await assessSpec(sample.spec, {}, { withLlm: false });
   assert.equal(after.blockingCount, 0, JSON.stringify(after.questions.map((q) => q.id)));
   assert.equal(after.ready, true);

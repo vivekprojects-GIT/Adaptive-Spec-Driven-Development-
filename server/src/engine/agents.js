@@ -456,6 +456,57 @@ async function pytestGenerator(ctx) {
 
 /* --------------------------------------------------------- playwright api */
 
+/**
+ * One parsed source check → the Playwright lines that assert the same thing.
+ *
+ * A check we cannot translate becomes a *failing* expectation rather than a comment: the migrated
+ * suite goes red until a human ports it, which is the only honest way to not lose an assertion.
+ */
+function apiAssertionLines(assertion, ctx) {
+  const expected = assertion.expected;
+
+  switch (assertion.subject) {
+    case 'status':
+      return [
+        `expect(response.status()).toBe(${Number(expected) || 200});${assertion.inferred ? ' // inferred: the source declared no assertion' : ''}`,
+      ];
+    case 'ok':
+      return ['expect(response.ok()).toBeTruthy();'];
+    case 'header':
+      return expected
+        ? [`expect(response.headers()['${escape(String(assertion.target).toLowerCase())}']).toContain('${escape(expected)}');`]
+        : [`expect(response.headers()['${escape(String(assertion.target).toLowerCase())}']).toBeDefined();`];
+    case 'json':
+      return [`expect(body${assertion.target || ''}).toEqual(${normaliseExpected(expected)});`];
+    case 'property':
+      return [`expect(body).toHaveProperty('${escape(assertion.target)}');`];
+    case 'contains':
+      return [`expect(await response.text()).toContain('${escape(expected)}');`];
+    case 'responseTime':
+      ctx.notes.push(`"${assertion.name}" checks response time, which Playwright does not assert directly — ported as a timing measurement.`);
+      return [
+        '// response-time check ported as an explicit measurement',
+        `expect(Date.now() - startedAt).toBeLessThan(${Number(expected) || 2000});`,
+      ];
+    default:
+      ctx.notes.push(`Could not port the check "${assertion.name || 'unnamed'}" — the generated test fails until a human writes it.`);
+      return [
+        `// TODO: port this check from the source — ${escape((assertion.raw || '').slice(0, 110))}`,
+        `expect(false, 'unported source check: ${escape(assertion.name || 'unnamed')}').toBeTruthy();`,
+      ];
+  }
+}
+
+/** Postman expectations are JS fragments; keep valid literals, quote anything else. */
+function normaliseExpected(expected) {
+  if (expected === null || expected === undefined || expected === '') return 'undefined';
+  const text = String(expected).trim();
+  if (/^-?\d+(\.\d+)?$/.test(text) || text === 'true' || text === 'false' || text === 'null') return text;
+  if (/^["'`].*["'`]$/.test(text)) return `'${escape(text.slice(1, -1))}'`;
+  if (/^[[{]/.test(text)) return text;
+  return `'${escape(text)}'`;
+}
+
 async function playwrightApiGenerator(ctx) {
   const model = ctx.ws.sourceModel;
   const outputs = [];
@@ -466,15 +517,25 @@ async function playwrightApiGenerator(ctx) {
     for (const test of suite.tests) {
       const request = test.steps.find((s) => s.type === 'request');
       if (!request) continue;
-      const status = Number(test.assertions.find((a) => a.subject === 'status')?.expected) || 200;
+
+      const requirement = matchRequirement(test, ctx);
+      if (requirement) lines.push(`  // traces: ${requirement.id} — ${escape(requirement.text.slice(0, 90))}`);
       lines.push(`  test('${escape(test.name)}', async ({ request }) => {`);
+
+      // A response-time assertion needs a clock started before the request goes out.
+      if (test.assertions.some((a) => a.subject === 'responseTime')) lines.push('    const startedAt = Date.now();');
       lines.push(`    const response = await request.${request.method.toLowerCase()}('${escape(request.value)}'${['POST', 'PUT', 'PATCH'].includes(request.method) ? ', { data: {} }' : ''});`);
-      lines.push(`    expect(response.status()).toBe(${status});`);
-      assertionCount += 1;
-      for (const assertion of test.assertions.filter((a) => a.subject === 'body')) {
-        // Name the original check rather than quoting a truncated fragment of its source.
-        const name = (assertion.raw || '').match(/pm\.test\(\s*["']([^"']+)/)?.[1] || (assertion.raw || '').slice(0, 70);
-        lines.push(`    // TODO: port body assertion "${escape(name)}"`);
+
+      // The body is parsed lazily, at the first assertion that needs it — parsing it up front
+      // would throw on a non-JSON response before the status assertion ever ran.
+      let bodyRead = false;
+      for (const assertion of test.assertions) {
+        if (!bodyRead && ['json', 'property'].includes(assertion.subject)) {
+          lines.push('    const body = await response.json();');
+          bodyRead = true;
+        }
+        for (const line of apiAssertionLines(assertion, ctx)) lines.push(`    ${line}`);
+        assertionCount += 1;
       }
       lines.push('  });');
     }

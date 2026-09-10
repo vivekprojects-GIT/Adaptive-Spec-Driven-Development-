@@ -493,10 +493,11 @@ export function parseRestCollection(artifacts) {
         file: req.file,
         tags: ['api'],
         steps: [{ type: 'request', method: req.method, value: req.url, raw: `${req.method} ${req.url}` }],
-        assertions: [
-          { type: 'equals', subject: 'status', expected: String(req.expectedStatus), raw: `expect status ${req.expectedStatus}` },
-          ...req.assertions.map((a) => ({ type: 'equals', subject: 'body', expected: null, raw: a.raw })),
-        ],
+        // The parsed script IS the assertion list. Adding a synthetic status check on top counted
+        // one real `pm.test` twice and made assertion parity unachievable by construction.
+        assertions: req.assertions.length
+          ? req.assertions
+          : [{ type: 'equals', subject: 'status', expected: String(req.expectedStatus), inferred: true, raw: `no assertions in source; expecting ${req.expectedStatus}` }],
       })),
     });
   }
@@ -511,14 +512,114 @@ function walkPostman(node, model, file) {
     const url = typeof req.url === 'string' ? req.url : (req.url?.raw || '/');
     const headers = {};
     for (const h of req.header || []) headers[h.key] = h.value;
+
     const scripts = (node.event || []).flatMap((e) => e.script?.exec || []).join('\n');
-    const expectedStatus = Number((scripts.match(/to\.have\.status\((\d+)\)/) || [])[1] || 200);
-    const assertions = (scripts.match(/pm\.test\(\s*["'][^"']+["']/g) || []).map((raw) => ({ type: 'body', raw }));
-    model.requests.push({ id: id('req'), name: node.name || `${req.method} ${url}`, method: (req.method || 'GET').toUpperCase(), url, headers, body: req.body?.raw || null, expectedStatus, assertions, file });
+    const assertions = parseApiScript(scripts, file, model);
+    const statusAssertion = assertions.find((a) => a.subject === 'status');
+
+    model.requests.push({
+      id: id('req'),
+      name: node.name || `${req.method} ${url}`,
+      method: (req.method || 'GET').toUpperCase(),
+      url,
+      headers,
+      body: req.body?.raw || null,
+      expectedStatus: statusAssertion ? Number(statusAssertion.expected) : 200,
+      statusInferred: !statusAssertion,
+      assertions,
+      file,
+    });
     if (req.auth?.type) model.auth.push({ scheme: req.auth.type, evidence: `${file}: ${node.name || ''}` });
     else if (headers.Authorization) model.auth.push({ scheme: /bearer/i.test(headers.Authorization) ? 'bearer' : 'basic', evidence: `${file}: Authorization header` });
   }
   for (const child of node.item || []) walkPostman(child, model, file);
+}
+
+/**
+ * Reads the assertions out of a Postman test script.
+ *
+ * Previously this recorded "a pm.test exists" and nothing about what it checked, so the generator
+ * had nothing to emit and every body assertion was lost to a TODO comment. Now each check inside
+ * the block is turned into a concrete assertion the emitters can actually produce, and anything
+ * unrecognised is recorded as `custom` so it is counted and surfaced rather than dropped.
+ */
+export function parseApiScript(scripts, file, model) {
+  const assertions = [];
+  if (!scripts?.trim()) return assertions;
+
+  const testRe = /pm\.test\s*\(\s*["'`]([^"'`]+)["'`]\s*,/g;
+  let match;
+  let matchedAnyBlock = false;
+
+  while ((match = testRe.exec(scripts))) {
+    matchedAnyBlock = true;
+    const name = match[1];
+    const { body } = blockBody(scripts, match.index + match[0].length);
+    const found = readApiChecks(name, body);
+    if (found.length) {
+      assertions.push(...found);
+    } else {
+      assertions.push({ type: 'custom', subject: 'custom', name, expected: null, raw: `pm.test("${name}") — ${body.trim().slice(0, 120)}` });
+      model?.unmapped.push({
+        construct: `pm.test("${name}")`,
+        file,
+        raw: body.trim().slice(0, 160),
+        reason: 'The assertion inside this Postman check was not recognised, so it cannot be ported automatically.',
+      });
+    }
+  }
+
+  // Legacy Postman syntax: tests["name"] = responseCode.code === 200;
+  const legacyRe = /tests\s*\[\s*["'`]([^"'`]+)["'`]\s*\]\s*=\s*([^;\n]+)/g;
+  while ((match = legacyRe.exec(scripts))) {
+    matchedAnyBlock = true;
+    const [, name, expression] = match;
+    const status = expression.match(/responseCode\.code\s*===?\s*(\d{3})/);
+    if (status) assertions.push({ type: 'equals', subject: 'status', expected: status[1], name, raw: match[0] });
+    else assertions.push({ type: 'custom', subject: 'custom', name, expected: null, raw: match[0] });
+  }
+
+  // A bare script with no pm.test wrapper still often asserts something.
+  if (!matchedAnyBlock) assertions.push(...readApiChecks('response check', scripts));
+
+  return assertions;
+}
+
+/** The individual checks understood inside one test block. */
+function readApiChecks(name, body) {
+  const checks = [];
+  const add = (subject, extra = {}) => checks.push({ type: 'equals', subject, name, raw: body.trim().slice(0, 160), expected: null, ...extra });
+
+  const status = body.match(/to\.have\.status\s*\(\s*(\d{3})\s*\)/) || body.match(/\.status\s*\)?\s*\.to\.(?:eql|equal|be)\s*\(\s*(\d{3})/);
+  if (status) add('status', { expected: status[1] });
+
+  if (/to\.be\.(?:ok|success)\b/.test(body)) add('ok');
+
+  const header = body.match(/to\.have\.header\s*\(\s*["'`]([^"'`]+)["'`]\s*(?:,\s*["'`]([^"'`]*)["'`])?/);
+  if (header) add('header', { target: header[1], expected: header[2] ?? null });
+
+  // pm.expect(pm.response.json().items.length).to.eql(3) / jsonData.status to.equal("ok")
+  const jsonRe = /(?:pm\.response\.json\(\)|jsonData|responseJson|body)((?:\.[\w$]+|\[\s*\d+\s*\])*)\s*\)?\s*\.to(?:\.be)?\.(eql|equal|deep\.equal)\s*\(\s*([^)]+?)\s*\)/g;
+  let json;
+  while ((json = jsonRe.exec(body))) {
+    add('json', { target: json[1] || '', expected: json[3].trim() });
+  }
+
+  const jsonBody = body.match(/to\.have\.jsonBody\s*\(\s*["'`]([^"'`]+)["'`]\s*(?:,\s*([^)]+))?\)/);
+  if (jsonBody) add('json', { target: `.${jsonBody[1]}`, expected: (jsonBody[2] || '').trim() || null });
+
+  const includes = body.match(/to\.include\s*\(\s*["'`]([^"'`]+)["'`]/);
+  if (includes) add('contains', { expected: includes[1] });
+
+  const property = body.match(/to\.have\.(?:own\.)?property\s*\(\s*["'`]([^"'`]+)["'`]/);
+  if (property) add('property', { target: property[1] });
+
+  if (/responseTime|pm\.response\.responseTime/.test(body)) {
+    const limit = body.match(/below\s*\(\s*(\d+)/) || body.match(/lessThan\s*\(\s*(\d+)/);
+    add('responseTime', { expected: limit ? limit[1] : null });
+  }
+
+  return checks;
 }
 
 /* ------------------------------------------------------------- data files */

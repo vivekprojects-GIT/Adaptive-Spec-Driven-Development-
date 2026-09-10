@@ -13,22 +13,32 @@ const STAGE_LABEL = {
 };
 
 export default function Projects({ projects, onChanged, navigate }) {
-  const [samples, setSamples] = useState([]);
+  const [templates, setTemplates] = useState([]);
   const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState(null);
   const toast = useToast();
 
   useEffect(() => {
-    api.samples().then(setSamples).catch(() => setSamples([]));
+    api.templates().then(setTemplates).catch(() => setTemplates([]));
   }, []);
 
-  async function createFromSample(sampleId) {
-    setBusy(sampleId);
+  /**
+   * A template sets the stacks and lands you on the Spec step to add YOUR files and requirements.
+   * `withExample` is the separate, explicitly-labelled demo path.
+   */
+  async function createFromTemplate(templateId, withExample = false) {
+    setBusy(`${templateId}${withExample ? ':example' : ''}`);
     try {
-      const sample = await api.sample(sampleId);
-      const project = await api.createProject({ name: sample.name, description: sample.description, spec: sample.spec });
+      const template = await api.template(templateId);
+      const spec = withExample ? template.example : template.starterSpec;
+      const project = await api.createProject({ name: template.name, description: template.headline, spec });
       await onChanged();
-      toast(`Created "${project.name}" with ${sample.spec.artifacts.length} artifact(s).`, 'ok');
+      toast(
+        withExample
+          ? `Created "${project.name}" loaded with demo content.`
+          : `Created "${project.name}". Add your files and requirements on the Spec step.`,
+        'ok',
+      );
       navigate(`/projects/${project.id}/spec`);
     } catch (err) {
       toast(err.message, 'err');
@@ -108,31 +118,48 @@ export default function Projects({ projects, onChanged, navigate }) {
         </Card>
 
         <Card
-          title="Start from a sample"
-          sub="Real source files, not lorem ipsum. Each one exercises a different path through the control plane."
+          title="Start from a template"
+          sub="A template sets the stacks and tells you what to provide. It brings no content of its own — you add your files and your requirements, and nothing runs until you do."
         >
           <div className="grid cols-2">
-            {samples.map((sample) => (
-              <div key={sample.id} className="proposal">
+            {templates.map((template) => (
+              <div key={template.id} className="proposal">
                 <div className="proposal-head">
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="row wrap" style={{ gap: 6, marginBottom: 4 }}>
-                      <strong style={{ fontSize: 13.5 }}>{sample.name}</strong>
-                      {sample.id === 'gap-demo' && <Badge tone="warn">honest failure</Badge>}
+                      <strong style={{ fontSize: 13.5 }}>{template.name}</strong>
+                      {template.projectKind === 'custom' && <Badge tone="accent">you author the agents</Badge>}
+                      {template.id === 'gap-demo' && <Badge tone="warn">honest failure</Badge>}
                     </div>
-                    <div className="small muted">{sample.headline}</div>
+                    <div className="small muted">{template.headline}</div>
                   </div>
                 </div>
                 <div className="proposal-body">
-                  <div className="chip-row">
-                    <Badge mono>{sample.artifacts} artifact(s)</Badge>
-                    <Badge mono>{sample.requirements} requirement(s)</Badge>
+                  <div className="tiny faint" style={{ letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 5 }}>
+                    You provide
                   </div>
+                  <ul className="small muted" style={{ margin: 0, paddingLeft: 17 }}>
+                    {(template.expects || []).map((item, index) => <li key={index}>{item}</li>)}
+                  </ul>
                 </div>
                 <div className="proposal-actions">
-                  <button className="btn sm primary" disabled={busy === sample.id} onClick={() => createFromSample(sample.id)}>
-                    {busy === sample.id ? 'Creating…' : 'Create project'}
+                  <button
+                    className="btn sm primary"
+                    disabled={busy?.startsWith(template.id)}
+                    onClick={() => createFromTemplate(template.id, false)}
+                  >
+                    {busy === template.id ? 'Creating…' : 'Use this template'}
                   </button>
+                  {template.hasExample && (
+                    <button
+                      className="btn sm"
+                      disabled={busy?.startsWith(template.id)}
+                      title="Loads sample source files so you can watch the pipeline run before using your own"
+                      onClick={() => createFromTemplate(template.id, true)}
+                    >
+                      {busy === `${template.id}:example` ? 'Loading…' : 'Load demo content'}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
