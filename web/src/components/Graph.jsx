@@ -127,5 +127,6 @@ function statusColour(status) {
     running: 'var(--info)',
     failed: 'var(--fail)',
     skipped: 'var(--warn)',
+    waiting: 'var(--warn)',
   }[status] || 'var(--text-faint)';
 }

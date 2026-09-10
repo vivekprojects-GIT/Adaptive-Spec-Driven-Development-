@@ -19,7 +19,8 @@ and holds them to your rules.
 **It runs on your BMAD.** Point it at your existing BMAD install and your BMAD agents — with your
 team's customisations — become agents ASDD can put in any workflow, read in place on every run and
 never copied. BMAD supplies the agents and the method; ASDD adds the control plane, the tracking
-and the UI. And inside VS Code it can run them on **Copilot's model, with no API key**.
+and the UI. And it runs inside VS Code the way BMAD does — as skills Copilot follows in your
+project folder, with **Copilot as the model and no API key**.
 
 ---
 
@@ -30,7 +31,8 @@ npm install
 npm run dev
 ```
 
-That is the whole setup. No database, no Docker, no API key, no global installs.
+That is the whole setup. No database, no Docker, no API key, no global installs — just
+**Node.js 20.6 or later**.
 
 - UI → **http://localhost:5173**
 - API → **http://127.0.0.1:5174** — loopback only, since it also carries the model bridge. Set
@@ -53,7 +55,45 @@ npm run build     # build the UI
 npm start         # single process on :5174 serving the built UI + API
 ```
 
-### In VS Code — with Copilot, no API key
+### In VS Code, the way BMAD works — Copilot does it, in your project folder
+
+BMAD runs inside VS Code as skills that Copilot's agent mode follows. ASDD works the same way.
+Install it into your project once (after `npm install` in the ASDD folder):
+
+```bash
+node <path-to-ASDD>/server/src/cli.js install --workspace <your-project-folder>
+```
+
+That adds six skills next to your project's other skills — `.github/skills/`, or `.claude/skills/`
+if that is where your BMAD lives — and a small launcher at `_asdd/asdd.mjs`. Open the project in
+VS Code, open Copilot Chat in **Agent** mode, and type **/asdd-start**.
+
+| Skill | What Copilot does with you |
+|---|---|
+| `/asdd-start` | Asks what you want, finds your requirements and source folders, asks the blocking questions |
+| `/asdd-review` | Shows the proposed agents and guardrails, records your accept / reject / edit, adds your own — including your BMAD agents |
+| `/asdd-run` | Runs the workflow, and does the steps ASDD hands to it |
+| `/asdd-decide` | Approve, request changes, continue past a stop, re-run; previews, then writes, the files into your project |
+| `/asdd-status` | Where things stand and what is waiting on you |
+| `/asdd` | The overview and the rules |
+
+- **Everything stays in your project.** ASDD reads your requirements and source files from the
+  folder, keeps its state in `_asdd/`, saves a report per run in `_asdd/reports/`, and writes
+  generated files into the project only after showing you the plan and getting your yes.
+- **Copilot is the model — no API key, no bridge.** The deterministic engine (parsers, generators,
+  guardrail checks, traceability) runs as a command. A step that needs thinking — an agent you
+  wrote, or one of your BMAD agents such as Winston — is handed to Copilot as a `TASK.md`: the BMAD
+  persona with your team's customisations, the task, and the inputs. Copilot does it with your
+  files, can ask you, and hands the files back with `submit`; the run carries on.
+- **You still own every decision.** The skills tell Copilot never to answer, accept, approve,
+  continue, re-run or export on its own judgment — it asks you, then records your words.
+- **The dashboard is optional.** `node _asdd/asdd.mjs ui` gives the address of the same project in
+  the web UI — graph, live console, trace. Whatever you did in the chat is there.
+- VS Code asks before running each terminal command. That is a useful gate; if you would rather not
+  click each time, add `node _asdd/asdd.mjs` to VS Code's terminal auto-approve list.
+- The commands work from any terminal too: `node _asdd/asdd.mjs help`.
+
+### Also in VS Code: ASDD tools, and Copilot's model for the dashboard (MCP)
 
 The repo ships `.vscode/mcp.json`, which registers ASDD as an MCP server. That gives you two things:
 
@@ -198,6 +238,11 @@ place, every time:
 **Where it looks:** the folder in **Settings → Your BMAD install**, else `ASDD_BMAD_ROOT`, else the
 folder ASDD is cloned into and its parent — so clone ASDD inside your BMAD project and it is found
 with no configuration. Deprecated shims are skipped.
+
+**No BMAD yet?** Everything else in ASDD works without it — Settings just says *not found*. To add
+it, install BMAD into your project with `npx bmad-method install` (see
+[BMAD-METHOD](https://github.com/bmad-code-org/BMAD-METHOD)), then clone ASDD inside that project or
+point Settings at it.
 
 **Using one:** on the Agents step choose **Create my own → Start from one of your BMAD agents**.
 Leave *Instructions* blank and it gets the standard task for its role — the architect reviews the
@@ -361,6 +406,7 @@ server/
   src/routes/              projects · runs · registry · settings · observability · approvals
                            bmad · llm-bridge
   src/bmad/loader.js       reads your BMAD install: manifest, SKILL.md, customize.toml merge, facts
+  src/cli.js               the command line the ASDD skills run from a project folder
   src/mcp.js               the MCP server: ASDD tools + the editor model bridge
   src/lib/bridge.js        the queue that lends the editor's model to the engine
   src/templates.js         six starting templates, each with optional demo content
@@ -368,6 +414,8 @@ server/
   test/authoring.test.js   custom projects, authored agents/guardrails, halting, approval
   test/bmad-loader.test.js a fixture laid out like a real BMAD install, and BMAD's merge rules
   test/mcp.e2e.test.js     a real MCP client with sampling runs a BMAD agent with no API key
+  test/workspace.e2e.test.js  the whole flow from a project folder, exactly as the skills run it
+skills/                    the ASDD skills that `asdd install` copies into a project
 .vscode/mcp.json           registers the asdd MCP server in VS Code
 web/
   src/pages/               Dashboard · Projects · Workspace · Registry · Settings
@@ -393,10 +441,11 @@ CORS, the MCP SDK (with zod), and smol-toml to read BMAD's `customize.toml`. Tha
 - **Authored agents need a model.** Free-text instructions cannot be executed by the deterministic
   engine. Without a key they produce a resolved brief and say so; they never pretend to have run.
 - **Requirements import is text only** (`.md`, `.txt`, `.csv`, `.json`). No .docx or PDF parsing.
-- **The editor's model answers one prompt at a time.** MCP sampling is a single completion — no
+- **Through the MCP bridge, the editor's model answers one prompt at a time.** MCP sampling is a single completion — no
   tools, no file access, no follow-up questions. So a BMAD agent inside ASDD does one bounded job per
   run. BMAD's interactive workflows (the step-by-step PRD or architecture sessions) need a
-  conversation: run those in your assistant, where ASDD's tools sit alongside them.
+  conversation: run those in your assistant, where ASDD's tools sit alongside them. Through the skills there is
+  no such limit: Copilot does each handed-over step with its full tools.
 - **Sampling needs a client that supports it, and your consent.** VS Code does. With a client that
   doesn't, you still get the tools, and the model falls back to a key or the rule engine.
 

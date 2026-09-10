@@ -13,11 +13,11 @@
 import { EventEmitter } from 'node:events';
 import { createHash } from 'node:crypto';
 import { collection } from '../lib/store.js';
-import { resolveImpl } from './agents.js';
+import { resolveImpl, makeArtifact, safeOutputPath } from './agents.js';
 import { runGuardrails, verdictOf, shouldHalt } from './validator.js';
 import { buildTrace, buildMarkdown } from './reporter.js';
 import { composeWorkflow } from './workflowComposer.js';
-import { getSettings, resolveModel } from '../lib/settings.js';
+import { getSettings, resolveModel, assistantHandoff } from '../lib/settings.js';
 import { llmAvailable } from '../lib/llm.js';
 import { HttpError, id, now, sleep } from '../lib/util.js';
 import { logger } from '../lib/logger.js';
@@ -82,7 +82,7 @@ export function createRun(project, { rerun = null } = {}) {
     startedAt: now(),
     finishedAt: null,
     // Only claim a model was used when one could actually be reached.
-    modelUsed: llmAvailable() ? resolveModel('generation') : null,
+    modelUsed: llmAvailable() ? resolveModel('generation') : assistantHandoff() ? resolveModel('generation') : null,
     discovery: project.discovery,
     answers: project.interview?.answers || {},
     inputsHash: inputsHash(project),
@@ -238,6 +238,7 @@ const LOG_LEVEL_FOR = {
   'run:halted': 'error',
   'node:skipped': 'warn',
   'run:continued': 'warn',
+  'node:waiting': 'warn',
 };
 
 function emit(run, event) {
@@ -300,6 +301,7 @@ export async function executeRun(runId, project, { resume = false } = {}) {
   );
   const earlyResults = resume ? (run.validation?.results || []).filter((r) => finishedScoped.has(r.guardrailId)) : [];
   let halted = null;
+  let waitingOn = null;
 
   try {
     for (const node of run.nodes) {
@@ -316,6 +318,7 @@ export async function executeRun(runId, project, { resume = false } = {}) {
       }
 
       const reusedHere = node.status === 'reused';
+      const submittedHere = node.status === 'submitted';
       if (reusedHere) {
         node.status = 'done';
         const carry = run.carry || {};
@@ -332,6 +335,18 @@ export async function executeRun(runId, project, { resume = false } = {}) {
           agent: node.name,
           outputs: node.outputs,
           message: `↺ ${node.name} reused from ${node.reusedFrom} — unchanged since that run; ${node.outputs.length} artifact(s) carried over.`,
+        });
+      } else if (submittedHere) {
+        // The coding assistant did this step and handed its files back; its checks run below.
+        node.status = 'done';
+        emit(run, {
+          type: 'node:done',
+          nodeId: node.nodeId,
+          agent: node.name,
+          ms: node.ms,
+          metrics: node.metrics,
+          outputs: node.outputs,
+          message: `✔ ${node.name} finished by your coding assistant — ${node.outputs.length} artifact(s).`,
         });
       } else {
         const started = Date.now();
@@ -355,24 +370,40 @@ export async function executeRun(runId, project, { resume = false } = {}) {
         try {
           const impl = resolveImpl(node.impl);
           const result = await impl(ctx);
-          const outputs = (result.outputs || []).map((artifact) => ({ ...artifact, producedBy: node.nodeId }));
-          ws.generated.push(...outputs);
+          if (result.handoff) {
+            // This step is for the user's coding assistant. The run stops here, unfinished and
+            // unfailed, and carries on when the assistant hands its files back.
+            node.status = 'waiting';
+            node.ms = Date.now() - started;
+            node.notes = notes;
+            node.handoff = { ...result.handoff, at: now() };
+            waitingOn = node;
+            emit(run, {
+              type: 'node:waiting',
+              nodeId: node.nodeId,
+              agent: node.name,
+              message: `⧗ ${node.name} handed to your coding assistant — the run waits for its work.`,
+            });
+          } else {
+            const outputs = (result.outputs || []).map((artifact) => ({ ...artifact, producedBy: node.nodeId }));
+            ws.generated.push(...outputs);
 
-          node.status = 'done';
-          node.ms = Date.now() - started;
-          node.metrics = result.metrics || {};
-          node.notes = [...notes, ...(result.notes || [])];
-          node.outputs = outputs.map((o) => ({ id: o.id, path: o.path, kind: o.kind, lines: o.lines, bytes: o.bytes }));
+            node.status = 'done';
+            node.ms = Date.now() - started;
+            node.metrics = result.metrics || {};
+            node.notes = [...notes, ...(result.notes || [])];
+            node.outputs = outputs.map((o) => ({ id: o.id, path: o.path, kind: o.kind, lines: o.lines, bytes: o.bytes }));
 
-          emit(run, {
-            type: 'node:done',
-            nodeId: node.nodeId,
-            agent: node.name,
-            ms: node.ms,
-            metrics: node.metrics,
-            outputs: node.outputs,
-            message: `✔ ${node.name} finished in ${node.ms}ms — ${outputs.length} artifact(s).`,
-          });
+            emit(run, {
+              type: 'node:done',
+              nodeId: node.nodeId,
+              agent: node.name,
+              ms: node.ms,
+              metrics: node.metrics,
+              outputs: node.outputs,
+              message: `✔ ${node.name} finished in ${node.ms}ms — ${outputs.length} artifact(s).`,
+            });
+          }
         } catch (err) {
           node.status = 'failed';
           node.ms = Date.now() - started;
@@ -384,6 +415,8 @@ export async function executeRun(runId, project, { resume = false } = {}) {
           if (key !== 'generated' && key !== 'placeholders' && ws[key] !== before[key]) run.wsWriters[key] = node.nodeId;
         }
       }
+
+      if (waitingOn) break;
 
       const scoped = scopedFor(node);
       if (scoped.length) {
@@ -407,6 +440,23 @@ export async function executeRun(runId, project, { resume = false } = {}) {
           });
         }
       }
+    }
+
+    if (waitingOn) {
+      // Neither finished nor failed. Nothing is checked or offered for approval until the
+      // assistant's work is back and the rest of the graph has run. Checks already made stand.
+      run.status = 'waiting';
+      run.ws = { ...ws, generated: ws.generated };
+      run.validation = { verdict: null, results: earlyResults, haltedBy: null, overrides: [], partial: true, at: now() };
+      run.approval = null;
+      emit(run, {
+        type: 'run:waiting',
+        nodeId: waitingOn.nodeId,
+        message: `⧗ Waiting on your coding assistant for "${waitingOn.name}". In VS Code it does this step and hands the files back; the run then carries on.`,
+      });
+      runs.update(run.id, run);
+      busFor(run.id).emit('event', { type: 'stream:end', at: now() });
+      return runs.find(run.id);
     }
 
     const remaining = run.guardrails.filter((guardrail) => !earlyResults.some((r) => (guardrail.guardrailId || guardrail.id) === r.guardrailId));
@@ -479,6 +529,9 @@ function emitGuardrail(run, result) {
 }
 
 function assertDecidable(run) {
+  if (run.status === 'waiting') {
+    throw new HttpError(409, 'The run is waiting on your coding assistant for an agent step. Hand its work back first (asdd submit), then decide.');
+  }
   if (run.status === 'running' || run.status === 'queued') throw new HttpError(409, 'The run is still going — decide once it has finished.');
   if (run.approval?.state && run.approval.state !== 'pending') {
     throw new HttpError(409, `This run was already decided: ${run.approval.state} by ${run.approval.by}.`);
@@ -558,6 +611,7 @@ export function prepareRerun(previousId, project, { fromNodeId, note = '', by = 
   let previous = runs.find(previousId);
   if (!previous) throw new HttpError(404, 'Run not found.');
   if (previous.status === 'running' || previous.status === 'queued') throw new HttpError(409, 'The run is still going — wait for it to finish.');
+  if (previous.status === 'waiting') throw new HttpError(409, 'The run is waiting on your coding assistant. Hand its work back first (asdd submit).');
   if (previous.supersededBy) throw new HttpError(409, `This run was already re-run as ${previous.supersededBy}.`);
   if (previous.approval?.state === 'approved') throw new HttpError(409, 'This run was approved. Start a new run instead.');
   if (!project) throw new HttpError(409, 'The project this run belongs to no longer exists.');
@@ -581,6 +635,48 @@ export function prepareRerun(previousId, project, { fromNodeId, note = '', by = 
     message: `↻ Re-run as ${run.id}${plan.fromName ? ` from "${plan.fromName}"` : ''} by ${by} — ${plan.pairs.length} agent(s) reused unchanged.`,
   });
   return { run, plan };
+}
+
+/**
+ * The coding assistant hands back the work for the step the run was waiting on. Its files become
+ * that agent's output, the agent's scoped checks run on them, and the rest of the graph carries on.
+ * Call executeRun(runId, project, { resume: true }) next.
+ */
+export function prepareSubmission(runId, nodeId, { files = [], notes = [], by = 'your coding assistant' } = {}) {
+  const run = runs.find(runId);
+  if (!run) throw new HttpError(404, 'Run not found.');
+  const node = run.nodes.find((n) => n.nodeId === nodeId);
+  if (run.status !== 'waiting' || node?.status !== 'waiting') {
+    throw new HttpError(409, `Run ${runId} is not waiting on ${node ? `"${node.name}"` : `node ${nodeId}`} — it is ${run.status}.`);
+  }
+  const usable = (Array.isArray(files) ? files : []).filter((file) => file && typeof file.content === 'string' && file.content.trim());
+  if (!usable.length) throw new HttpError(400, `Nothing to hand back for "${node.name}": no files with content. Write the files first, then submit.`);
+
+  const outputDir = node.handoff?.outputDir || 'assistant';
+  const outputs = usable.map((file) =>
+    makeArtifact(safeOutputPath(file.path, outputDir), file.content, {
+      kind: /\.(md|txt)$/i.test(file.path) ? 'spec' : 'code',
+      producedBy: node.nodeId,
+    }),
+  );
+
+  run.ws = { ...(run.ws || {}), generated: [...(run.ws?.generated || []), ...outputs] };
+  Object.assign(node, {
+    status: 'submitted',
+    outputs: outputs.map((o) => ({ id: o.id, path: o.path, kind: o.kind, lines: o.lines, bytes: o.bytes })),
+    metrics: { files: outputs.length, model: by, handedOff: true, bmad: node.handoff?.bmad?.id },
+    notes: [...(node.notes || []), ...(Array.isArray(notes) ? notes : [notes]).filter(Boolean).map(String)],
+  });
+  node.handoff = { ...node.handoff, returnedAt: now(), by };
+  run.status = 'queued';
+  runs.update(run.id, run);
+  emit(run, {
+    type: 'node:submitted',
+    nodeId,
+    agent: node.name,
+    message: `↩ ${by} handed back ${outputs.length} file(s) for "${node.name}": ${outputs.map((o) => o.path).join(', ')}.`,
+  });
+  return run;
 }
 
 export function deleteRunsForProject(projectId) {

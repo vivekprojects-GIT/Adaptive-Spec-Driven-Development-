@@ -24,6 +24,13 @@ export const MODELS = [
     description:
       "Always use the model of the editor connected through the ASDD MCP server — your Copilot subscription, no API key. Needs this folder open in VS Code with the \"asdd\" MCP server running.",
   },
+  {
+    id: 'assistant',
+    label: 'Your coding assistant (Copilot in VS Code)',
+    vendor: 'github',
+    description:
+      'For working from VS Code through the ASDD skills: every agent step that needs a model is handed to your coding assistant (Copilot Chat in agent mode), which does it with full access to your files and hands the result back. No API key.',
+  },
   { id: 'claude-opus-5', label: 'Claude Opus 5', vendor: 'anthropic', description: 'Deepest reasoning. Best for discovery on messy legacy suites. Needs an Anthropic key.' },
   { id: 'claude-sonnet-5', label: 'Claude Sonnet 5', vendor: 'anthropic', description: 'Balanced. Good default for generation-heavy runs. Needs an Anthropic key.' },
   { id: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5', vendor: 'anthropic', description: 'Fastest and cheapest. Needs an Anthropic key.' },
@@ -41,7 +48,8 @@ export const AUTO_ROUTES = {
 };
 
 const DEFAULTS = {
-  model: 'auto',
+  // A project folder driven from VS Code starts its server with ASDD_DEFAULT_MODEL=assistant.
+  model: process.env.ASDD_DEFAULT_MODEL || 'auto',
   apiKey: '',
   useEnvKey: true,
   temperature: 0,
@@ -73,11 +81,13 @@ export function activeApiKey() {
 
 /**
  * Which model serves a task right now.
- * @returns {{ kind: 'anthropic', model: string } | { kind: 'bridge', model: string } | null}
+ * @returns {{ kind: 'anthropic', model: string } | { kind: 'bridge', model: string } | { kind: 'assistant', model: string } | null}
  */
 export function resolveProvider(task = 'discovery') {
   const settings = getSettings();
   if (settings.model === 'offline' || !settings.llmAssist) return null;
+  // Not a synchronous model at all: agent steps are handed to the coding assistant through the chat.
+  if (settings.model === 'assistant') return { kind: 'assistant', model: 'your coding assistant' };
   if (settings.model === 'copilot') return bridgeConnected() ? { kind: 'bridge', model: 'editor' } : null;
 
   const key = activeApiKey();
@@ -93,7 +103,13 @@ export function resolveProvider(task = 'discovery') {
 export function resolveModel(task = 'discovery') {
   const provider = resolveProvider(task);
   if (!provider) return null;
+  if (provider.kind === 'assistant') return 'your coding assistant (Copilot in VS Code)';
   return provider.kind === 'bridge' ? "your editor's model (MCP sampling)" : provider.model;
+}
+
+/** True when agent steps that need a model go to the user's coding assistant instead of an API. */
+export function assistantHandoff() {
+  return resolveProvider('generation')?.kind === 'assistant';
 }
 
 /** What the UI shows in the engine status pill. */
@@ -104,6 +120,15 @@ export function llmStatus() {
 
   if (settings.model === 'offline') return { mode: 'offline', provider: null, ready: true, detail: 'Rule engine only — no network calls.', bridge };
   if (!settings.llmAssist) return { mode: 'rules-fallback', provider: null, ready: true, detail: 'Model assistance is switched off in Settings.', bridge };
+  if (settings.model === 'assistant') {
+    return {
+      mode: 'assistant',
+      provider: 'assistant',
+      ready: true,
+      detail: 'Agent steps that need a model are handed to your coding assistant (Copilot in VS Code) through the ASDD skills. It does them with your files and hands the work back — no API key.',
+      bridge,
+    };
+  }
 
   const provider = resolveProvider('generation');
   if (provider?.kind === 'anthropic') {

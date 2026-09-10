@@ -19,10 +19,12 @@ import { ensureSeeded as seedAgents } from './registry/agents.js';
 import { ensureSeeded as seedGuardrails } from './registry/guardrails.js';
 import { llmStatus, getSettings } from './lib/settings.js';
 import { HttpError } from './lib/util.js';
+import { DATA_DIR } from './lib/store.js';
 import { logger } from './lib/logger.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const PORT = Number(process.env.PORT) || 5174;
+// PORT=0 asks the OS for a free port — how the command line starts one server per project folder.
+const PORT = process.env.PORT !== undefined && process.env.PORT !== '' ? Number(process.env.PORT) : 5174;
 // Loopback only by default: the API and the model bridge are for this machine. HOST=0.0.0.0 to share it.
 const HOST = process.env.HOST || '127.0.0.1';
 
@@ -50,7 +52,15 @@ app.use((req, res, next) => {
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({ ok: true, service: 'asdd-control-plane', version: '1.0.0', llm: llmStatus() });
+  res.json({
+    ok: true,
+    service: 'asdd-control-plane',
+    version: '1.0.0',
+    llm: llmStatus(),
+    // Set when this server belongs to one project folder (started by the command line).
+    workspace: process.env.ASDD_WORKSPACE || null,
+    dataDir: DATA_DIR,
+  });
 });
 
 /**
@@ -119,14 +129,20 @@ app.use((err, req, res, next) => {
 bridgeToken();
 const bmadAtStart = loadBmad({ root: getSettings().bmadRoot || undefined });
 
-app.listen(PORT, HOST, () => {
+const server = app.listen(PORT, HOST, () => {
+  const port = server.address().port;
+  if (process.env.ASDD_PORT_FILE) {
+    // How the command line finds the server it started for a project folder.
+    const info = { port, pid: process.pid, host: HOST, workspace: process.env.ASDD_WORKSPACE || null, dataDir: DATA_DIR, startedAt: new Date().toISOString() };
+    fs.writeFileSync(process.env.ASDD_PORT_FILE, JSON.stringify(info, null, 2));
+  }
   console.log(
     bmadAtStart.found
       ? `\n  BMAD: ${bmadAtStart.agents.length} agents, ${bmadAtStart.workflows.length} workflows (v${bmadAtStart.version}) from ${bmadAtStart.root}`
       : '\n  BMAD: no install found — set its folder in Settings, or ASDD_BMAD_ROOT',
   );
   const status = llmStatus();
-  console.log(`\n  ASDD control plane  →  http://${HOST}:${PORT}`);
+  console.log(`\n  ASDD control plane  →  http://${HOST}:${port}`);
   console.log(`  LLM assist: ${status.mode} — ${status.detail}`);
   console.log(fs.existsSync(dist) ? '  Serving the built UI from web/dist\n' : '  UI runs separately on http://localhost:5173 (npm run dev)\n');
 });

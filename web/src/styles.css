@@ -310,6 +310,8 @@ pre.code {
 /* Carried over from an earlier run, not produced again — dashed so it never reads as fresh work. */
 .gnode.reused { fill: rgba(88, 179, 255, 0.07); stroke: rgba(88, 179, 255, 0.5); stroke-dasharray: 5 3; }
 .gnode.skipped { fill: var(--panel); stroke: rgba(245, 179, 66, 0.55); stroke-dasharray: 3 3; }
+/* With the user's coding assistant — not stuck, not failed, waiting on work coming back. */
+.gnode.waiting { fill: rgba(245, 179, 66, 0.1); stroke: var(--warn); }
 .gedge { stroke: #2b374c; stroke-width: 1.4; fill: none; }
 .gedge.active { stroke: var(--accent); }
 .glabel { fill: var(--text); font-size: 11.5px; font-family: var(--sans); }

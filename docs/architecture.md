@@ -108,6 +108,20 @@ The poll and the result are authenticated with a token written to the git-ignore
 on start; the API listens on 127.0.0.1. Sampling is one completion with no tools, so a BMAD agent
 here does one bounded task; BMAD's interactive workflows stay in the assistant.
 
+## 3c. Running from a project folder, BMAD-style
+
+`asdd install` copies the skills in `skills/` into the project's skills folder and writes a launcher,
+`_asdd/asdd.mjs`, that finds this ASDD install. The first command starts a server for that folder
+(`PORT=0`, loopback, `ASDD_DATA_DIR=<project>/_asdd/state`, `ASDD_WORKSPACE`, `ASDD_BMAD_ROOT`)
+and records its port in `_asdd/state/server.json`; every later command is an HTTP client of it, so
+there is still exactly one writer and the dashboard shows the same state.
+
+That server defaults the model to `assistant`. A model-driven agent then returns `{ handoff }`
+instead of calling a model: the node goes `waiting`, the run stops (neither finished nor failed),
+and the command line writes `_asdd/handoff/<run>-<node>/TASK.md`. The assistant writes the files
+under `out/` and runs `submit`; `prepareSubmission` records them as the node's output and marks it
+`submitted`, and `executeRun(…, { resume: true })` runs that node's scoped checks and the rest.
+
 ## 4. Contracts
 
 **Capability** — the unit of matchmaking: `{ id, label, tags[] }`. Agents *provide* capabilities;

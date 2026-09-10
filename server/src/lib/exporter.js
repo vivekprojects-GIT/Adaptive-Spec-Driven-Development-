@@ -82,6 +82,12 @@ export function planExport(run, { targetDir, include = DEFAULT_KINDS, overwrite 
     if (absolute !== root && !absolute.startsWith(root + path.sep)) {
       return { path: artifact.path, absolute, bytes: artifact.bytes, kind: artifact.kind, status: 'blocked', reason: 'The path would escape the target folder.' };
     }
+    // Nor may it land in ASDD's own state. When a project keeps that state in its own folder, the
+    // project root contains it, so this is checked per file, not just for the root.
+    const dataDir = path.resolve(DATA_DIR);
+    if (absolute === dataDir || absolute.startsWith(dataDir + path.sep)) {
+      return { path: artifact.path, absolute, bytes: artifact.bytes, kind: artifact.kind, status: 'blocked', reason: "The path is inside ASDD's own state folder." };
+    }
 
     const exists = fs.existsSync(absolute);
     return {

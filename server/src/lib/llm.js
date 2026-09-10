@@ -17,8 +17,10 @@ import { logger } from './logger.js';
 const API_URL = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_TIMEOUT_MS = 45_000;
 
+/** A model this process can call directly. The coding assistant is reached through the chat instead. */
 export function llmAvailable(task = 'generation') {
-  return Boolean(resolveProvider(task));
+  const provider = resolveProvider(task);
+  return Boolean(provider) && provider.kind !== 'assistant';
 }
 
 async function anthropicComplete({ model, system, prompt, maxTokens, temperature }) {
@@ -65,7 +67,8 @@ async function bridgeComplete({ system, prompt, maxTokens, task }) {
  */
 export async function assist({ task = 'discovery', system, prompt, json = true, maxTokens = 2000 }) {
   const provider = resolveProvider(task);
-  if (!provider) return null;
+  // The coding assistant works through the chat, not a synchronous call: callers keep their rules.
+  if (!provider || provider.kind === 'assistant') return null;
 
   const fullSystem = json ? `${system}\n\nRespond with a single JSON object and nothing else.` : system;
   let text;
@@ -96,6 +99,13 @@ export async function assist({ task = 'discovery', system, prompt, json = true, 
 /** Connection test for the Settings page — exercises whichever provider is active. */
 export async function testConnection() {
   const provider = resolveProvider('interview');
+  if (provider?.kind === 'assistant') {
+    return {
+      ok: true,
+      provider: 'assistant',
+      detail: 'Nothing to reach from here: agent steps are handed to your coding assistant in VS Code when a run gets to them.',
+    };
+  }
   if (!provider) {
     return {
       ok: false,

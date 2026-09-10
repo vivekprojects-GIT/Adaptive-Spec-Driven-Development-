@@ -64,6 +64,26 @@ export function pendingApprovals() {
     }
 
     for (const run of runs) {
+      // A step handed to the user's coding assistant. Nothing moves until its work comes back.
+      if (run.status === 'waiting') {
+        const node = (run.nodes || []).find((n) => n.status === 'waiting');
+        items.push({
+          id: `assistant:${run.id}`,
+          kind: 'assistant-task',
+          severity: 'major',
+          projectId: project.id,
+          projectName: project.name,
+          runId: run.id,
+          stage: 'run',
+          title: `Waiting on your coding assistant: "${node?.name || 'an agent step'}"`,
+          detail: 'In VS Code, ask Copilot to carry on (/asdd-run). It does this step with your files and hands the work back; the run then continues.',
+          count: 1,
+          since: node?.handoff?.at || run.startedAt,
+          action: 'Open the run',
+        });
+        continue;
+      }
+
       // 3. A run that halted mid-way because a guardrail said stop.
       if (run.status === 'halted' && run.approval?.state === 'pending') {
         items.push({

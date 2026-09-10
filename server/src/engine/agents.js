@@ -16,7 +16,7 @@ import {
 import { slug, pascal, camel, id } from '../lib/util.js';
 import { assist, llmAvailable } from '../lib/llm.js';
 import { loadBmad, findBmadAgent, personaPrompt, resolveFacts } from '../bmad/loader.js';
-import { getSettings } from '../lib/settings.js';
+import { getSettings, assistantHandoff } from '../lib/settings.js';
 
 /* ------------------------------------------------------------------ output */
 
@@ -1221,6 +1221,41 @@ async function runModelAgent(ctx, { persona = null, bmadAgent = null } = {}) {
 
   ctx.log(`${who} reading ${sections.length} input source(s): ${sections.map((s) => s.label).join(', ') || 'none'}.`);
 
+  const taskText = [
+    `# Agent: ${node.name}`,
+    `Purpose: ${authored.purpose || node.description || '(not stated)'}`,
+    `Expected output: ${authored.outputDescription || '(not stated)'}`,
+    '',
+    '# Instructions',
+    instructions || '(none given — infer from the purpose)',
+    '',
+    '# Project context',
+    `Source stack: ${ctx.spec.sourceStack || 'unspecified'}`,
+    `Target stack: ${ctx.spec.targetStack || 'unspecified'}`,
+    '',
+    '# Inputs',
+    inputDigest || '(no inputs matched the selected sources)',
+    '',
+    `Write files under "${outputDir}/" unless the instructions name specific paths.`,
+  ].join('\n');
+
+  // Driven from VS Code through the ASDD skills, the user's coding assistant does this step itself —
+  // as the persona, with the project's files, able to ask the user — and hands the files back. The
+  // run waits for it rather than writing a placeholder.
+  if (assistantHandoff()) {
+    ctx.log(`Handing ${who} to your coding assistant — the run waits for its files.`);
+    return {
+      handoff: {
+        who,
+        bmad: bmadAgent ? { id: bmadAgent.id, name: bmadAgent.name, title: bmadAgent.title, icon: bmadAgent.icon, overrides: bmadAgent.overrides } : null,
+        system: persona || AUTHORED_SYSTEM,
+        task: taskText,
+        outputDir,
+        inputs: sections.map((section) => section.label),
+      },
+    };
+  }
+
   if (!llmAvailable()) {
     const brief = [`# ${node.name}`, ''];
     if (bmadAgent) brief.push(`**BMAD agent:** ${who}, customised by ${bmadAgent.overrides.join(' + ')}`);
@@ -1260,23 +1295,7 @@ async function runModelAgent(ctx, { persona = null, bmadAgent = null } = {}) {
     task: 'generation',
     maxTokens: 8000,
     system: `${persona || AUTHORED_SYSTEM}\n\n${AUTHORED_OUTPUT_CONTRACT}`,
-    prompt: [
-      `# Agent: ${node.name}`,
-      `Purpose: ${authored.purpose || node.description || '(not stated)'}`,
-      `Expected output: ${authored.outputDescription || '(not stated)'}`,
-      '',
-      '# Instructions',
-      instructions || '(none given — infer from the purpose)',
-      '',
-      '# Project context',
-      `Source stack: ${ctx.spec.sourceStack || 'unspecified'}`,
-      `Target stack: ${ctx.spec.targetStack || 'unspecified'}`,
-      '',
-      '# Inputs',
-      inputDigest || '(no inputs matched the selected sources)',
-      '',
-      `Write files under "${outputDir}/" unless the instructions name specific paths.`,
-    ].join('\n'),
+    prompt: taskText,
   });
 
   if (!response || response.__error) {
@@ -1348,6 +1367,15 @@ async function bmadPersonaAgent(ctx) {
   ctx.log(`Loaded ${agent.icon} ${agent.name} from the BMAD install at ${bmad.root} (${agent.overrides.join(' + ')}).`);
 
   return runModelAgent(ctx, { persona: personaPrompt(agent, { facts, config: bmad.config }), bmadAgent: agent });
+}
+
+/** For work handed back from outside the engine (the coding assistant): same artifact shape, same path rules. */
+export function makeArtifact(path, content, extra) {
+  return artifact(path, content, extra);
+}
+
+export function safeOutputPath(raw, fallbackDir) {
+  return safePath(raw, fallbackDir);
 }
 
 /* ------------------------------------------------------------- registry */

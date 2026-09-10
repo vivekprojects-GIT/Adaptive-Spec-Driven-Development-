@@ -150,6 +150,7 @@ export default function RunStage({ project, reload, navigate, toast }) {
   const stoppedBy = halted ? results.find((r) => r.guardrailId === run.validation?.haltedBy) : null;
   const skipped = (run?.nodes || []).filter((node) => node.status === 'skipped');
   const approvalState = run?.approval?.state;
+  const waitingNode = run?.status === 'waiting' ? (run.nodes || []).find((node) => node.status === 'waiting') : null;
 
   return (
     <>
@@ -189,7 +190,7 @@ export default function RunStage({ project, reload, navigate, toast }) {
         <Stat
           label="Status"
           value={live ? 'running' : run?.status || '—'}
-          tone={live ? 'accent' : halted || run?.status?.includes('error') || run?.status === 'failed' ? 'fail' : 'pass'}
+          tone={live ? 'accent' : waitingNode ? 'warn' : halted || run?.status?.includes('error') || run?.status === 'failed' ? 'fail' : 'pass'}
           sub={duration ? `${duration}s` : 'in progress'}
         />
         <Stat label="Verdict" value={run?.validation?.verdict || '—'} tone={toneForVerdict(run?.validation?.verdict)} sub={`${results.length} guardrail(s)`} />
@@ -252,6 +253,27 @@ export default function RunStage({ project, reload, navigate, toast }) {
           </div>
         </Card>
       </div>
+
+      {waitingNode && (
+        <Card
+          title="Waiting on your coding assistant"
+          sub="This agent step needs a model. In VS Code, Copilot does it with your files; the run carries on when it hands the work back."
+          right={<Badge tone="warn">waiting</Badge>}
+        >
+          <div className="proposal-why" style={{ marginBottom: 10 }}>
+            <b>{waitingNode.name}</b>
+            {waitingNode.handoff?.bmad ? ` — your BMAD agent ${waitingNode.handoff.bmad.icon} ${waitingNode.handoff.bmad.name}` : ''}. In Copilot Chat run{' '}
+            <span className="mono">/asdd-run</span>, or <span className="mono">node _asdd/asdd.mjs task</span> in the project's terminal, to see the
+            task. The files come back with <span className="mono">node _asdd/asdd.mjs submit</span>.
+          </div>
+          {waitingNode.handoff?.task && (
+            <details>
+              <summary className="small">The task it was given</summary>
+              <pre className="code" style={{ maxHeight: 360, marginTop: 8 }}>{waitingNode.handoff.task}</pre>
+            </details>
+          )}
+        </Card>
+      )}
 
       {run && (run.approval || run.decisions?.length > 0) && (
         <Card
@@ -487,7 +509,8 @@ function consoleTone(event) {
   if (event.type === 'guardrail') return event.status === 'pass' ? 'pass' : event.status === 'warn' ? 'warn' : 'fail';
   if (event.type === 'node:done' || event.type === 'node:reused') return 'pass';
   if (event.type === 'node:failed' || event.type === 'run:halted') return 'fail';
-  if (event.type === 'node:skipped') return 'warn';
+  if (event.type === 'node:skipped' || event.type === 'node:waiting' || event.type === 'run:waiting') return 'warn';
+  if (event.type === 'node:submitted') return 'pass';
   if (event.type === 'node:log') return 'dim';
   return '';
 }

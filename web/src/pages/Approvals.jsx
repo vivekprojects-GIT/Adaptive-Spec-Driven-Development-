@@ -7,6 +7,7 @@ const KIND_LABEL = {
   'agent-proposals': 'Agent proposals',
   'guardrail-proposals': 'Guardrail proposals',
   'halted-run': 'Halted run',
+  'assistant-task': 'Assistant step',
   'run-approval': 'Run approval',
   'sign-off': 'Guardrail sign-off',
 };
@@ -16,6 +17,7 @@ const KIND_ICON = {
   'agent-proposals': '⬡',
   'guardrail-proposals': '⛊',
   'halted-run': '■',
+  'assistant-task': '⧗',
   'run-approval': '✓',
   'sign-off': '✎',
 };

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getRun, busFor, listRuns, recordApproval, prepareContinue, prepareRerun, executeRun } from '../engine/orchestrator.js';
+import { getRun, busFor, listRuns, recordApproval, prepareContinue, prepareRerun, prepareSubmission, executeRun } from '../engine/orchestrator.js';
 import { HttpError, id, now } from '../lib/util.js';
 import { collection } from '../lib/store.js';
 import { planExport, performExport, EXPORTABLE_KINDS, ExportError } from '../lib/exporter.js';
@@ -110,6 +110,25 @@ router.post('/:runId/continue', (req, res) => {
   });
   runInBackground(run.id, project, { resume: true });
   res.status(202).json({ runId: run.id, continuing: decision.agents, overrode: decision.guardrail });
+});
+
+/**
+ * The coding assistant hands back the files for the agent step the run was waiting on. The run
+ * carries on from there.
+ */
+router.post('/:runId/nodes/:nodeId/submit', (req, res) => {
+  const { files, notes = [], by = 'your coding assistant' } = req.body || {};
+  const { project } = runAndProject(req.params.runId);
+  const run = prepareSubmission(req.params.runId, req.params.nodeId, { files, notes, by });
+  const node = run.nodes.find((n) => n.nodeId === req.params.nodeId);
+  onTrail(project.id, {
+    stage: 'run',
+    actor: 'assistant',
+    action: 'run.handoff-returned',
+    detail: `${by} handed back ${node.outputs.length} file(s) for "${node.name}" in run ${run.id}.`,
+  });
+  runInBackground(run.id, project, { resume: true });
+  res.status(202).json({ runId: run.id, nodeId: node.nodeId, files: node.outputs.map((o) => o.path) });
 });
 
 /**

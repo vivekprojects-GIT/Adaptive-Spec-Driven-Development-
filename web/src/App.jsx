@@ -124,8 +124,16 @@ export default function App() {
         <div className="sidebar-foot">
           <div className="tiny faint" style={{ marginBottom: 6 }}>Engine</div>
           {health ? (
-            <Badge tone={health.llm.mode === 'llm' ? 'accent' : health.llm.mode === 'offline' ? '' : 'info'}>
-              {health.llm.mode === 'llm' ? (health.llm.provider === 'editor' ? 'Copilot via MCP' : 'Anthropic model') : health.llm.mode === 'offline' ? 'Offline rules' : 'Rules fallback'}
+            <Badge tone={health.llm.mode === 'llm' || health.llm.mode === 'assistant' ? 'accent' : health.llm.mode === 'offline' ? '' : 'info'}>
+              {health.llm.mode === 'assistant'
+                ? 'Copilot (skills)'
+                : health.llm.mode === 'llm'
+                  ? health.llm.provider === 'editor'
+                    ? 'Copilot via MCP'
+                    : 'Anthropic model'
+                  : health.llm.mode === 'offline'
+                    ? 'Offline rules'
+                    : 'Rules fallback'}
             </Badge>
           ) : (
             <Badge tone="fail">API unreachable</Badge>
