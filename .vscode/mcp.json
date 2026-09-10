@@ -1,0 +1,12 @@
+{
+  "servers": {
+    "asdd": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${workspaceFolder}/server/src/mcp.js"],
+      "env": {
+        "ASDD_API": "http://127.0.0.1:5174"
+      }
+    }
+  }
+}

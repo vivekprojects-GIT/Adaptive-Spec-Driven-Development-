@@ -46,8 +46,11 @@ Three consequences every module must honour:
 | Agent impls | `server/src/engine/agents.js` | The actual work (analyzers, generators, mappers) |
 | Validator | `server/src/engine/validator.js` | Runs guardrail checks against artifacts |
 | Reporter | `server/src/engine/reporter.js` | Traceability matrix + Markdown export |
-| Registries | `server/src/registry/*.js` | Seed agents and guardrails, user extensible |
-| LLM assist | `server/src/lib/llm.js` | Optional; falls back to rules when no key is set |
+| Registries | `server/src/registry/*.js` | Seed agents and guardrails, user extensible; BMAD agents listed live |
+| BMAD loader | `server/src/bmad/loader.js` | Reads the user's BMAD install in place; applies BMAD's override merge |
+| LLM assist | `server/src/lib/llm.js` | Optional; Anthropic key, else the editor bridge, else rules |
+| Model bridge | `server/src/lib/bridge.js` | Queues model requests for the MCP server to answer by sampling |
+| MCP server | `server/src/mcp.js` | Thin client of the API: tools for the assistant + the sampling loop |
 
 ## 3a. Who owns what
 
@@ -70,6 +73,27 @@ moment that agent finishes, so the workflow halts there instead of reporting the
 A **custom project kind** switches off every migration assumption — no source parser is expected, no
 emitter, no framework questions, and no capability gaps. The platform contributes only what it can
 prove (traceability, structural checks) and the human authors the rest.
+
+## 3b. BMAD underneath, the editor's model alongside
+
+ASDD is a layer on BMAD, not a replacement. `loadBmad()` reads `_bmad/_config/skill-manifest.csv`,
+finds each skill's `SKILL.md` at its manifest path or wherever the IDE installed it
+(`.claude/skills/…`), and merges `customize.toml` ← `_bmad/custom/<id>.toml` ← `<id>.user.toml` with
+BMAD's rules (scalars override, tables deep-merge, keyed arrays-of-tables replace or append, other
+arrays append). Persona agents appear in the registry as `bmad.<id>` with `impl: bmadPersonaAgent`;
+a graph node stores only the BMAD id, so every run loads the persona as it is *now*.
+
+The model bridge exists because an HTTP server cannot call an editor's model directly — only an MCP
+client can, through sampling. So:
+
+```
+engine ─ assist() ─▶ bridge queue ◀─ long-poll ─ mcp.js ─ sampling/createMessage ─▶ VS Code model
+       ◀──── text ── bridge queue ◀── POST result ──┘
+```
+
+The poll and the result are authenticated with a token written to the git-ignored data directory
+on start; the API listens on 127.0.0.1. Sampling is one completion with no tools, so a BMAD agent
+here does one bounded task; BMAD's interactive workflows stay in the assistant.
 
 ## 4. Contracts
 

@@ -8,6 +8,8 @@
  * falls back to the generic adapter and is flagged in the run report.
  */
 import { collection } from '../lib/store.js';
+import { loadBmad } from '../bmad/loader.js';
+import { getSettings } from '../lib/settings.js';
 
 export const SEED_AGENTS = [
   {
@@ -206,9 +208,31 @@ export function ensureSeeded() {
   if (changed) agents.replaceAll(existing);
 }
 
+/**
+ * The user's BMAD agents, as registry entries. They are read live from the BMAD install rather than
+ * copied into the store, so the registry always reflects the install — team overrides included.
+ */
+export function bmadAgents() {
+  const bmad = loadBmad({ root: getSettings().bmadRoot || undefined });
+  return bmad.agents.map((agent) => ({
+    id: `bmad.${agent.id}`,
+    name: `${agent.name} — ${agent.title}`,
+    capability: `bmad.persona.${agent.role}`,
+    description: (agent.overview || '').split('\n')[0] || agent.description,
+    inputs: ['requirements', 'constraints', 'generated'],
+    outputs: [`bmad/${agent.role}/*.md`],
+    impl: 'bmadPersonaAgent',
+    tags: ['bmad', agent.role],
+    maturity: 'bmad',
+    source: 'bmad',
+    icon: agent.icon,
+    bmad: { id: agent.id, role: agent.role, overrides: agent.overrides, phase: agent.phase, root: bmad.root },
+  }));
+}
+
 export function listAgents() {
   ensureSeeded();
-  return agents.all();
+  return [...agents.all(), ...bmadAgents()];
 }
 
 export function findByCapability(capability) {

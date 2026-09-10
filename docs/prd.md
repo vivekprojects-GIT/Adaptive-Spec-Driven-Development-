@@ -35,12 +35,17 @@ execution layer over a pluggable Agent Registry and Guardrail Registry.
 | FR-22 | **Templates are starting shapes**, not ready-made runs | A new project from a template has no artifacts and no requirements, and discovery refuses until it does |
 | FR-23 | **Approvals inbox** — every outstanding human decision in one place | Sidebar count, per-project count, in-project banner, and a list that links to the resolving screen |
 | FR-24 | **Export to folder** — write a run's artifacts into a real repository | Absolute path required; previews the plan; never overwrites without explicit consent; paths cannot escape the target |
+| FR-25 | **Runs on the user's existing BMAD install** — agents, customisations and standing facts read in place | No copy of BMAD in the repo; team and personal overrides merged by BMAD's own rules; a missing fact file is reported |
+| FR-26 | **BMAD agents are workflow agents** — any installed BMAD agent can be added to a graph | Loads the agent's current persona at run time; output traced and guarded like any other agent |
+| FR-27 | **MCP server** exposes ASDD to the editor's assistant | Status, approvals, discovery, proposals, runs, BMAD personas; decision tools act only on the user's explicit instruction |
+| FR-28 | **Editor's model with no API key** via MCP sampling | Model setting `copilot` or `auto`; bridge status visible in Settings; each run records the model it used |
 
 ## 3. Non-functional
 
 - **NFR-1** Zero external services. JSON file persistence. Runs fully offline.
-- **NFR-2** Optional LLM assist (`ANTHROPIC_API_KEY`). Without a key the deterministic rule engine runs
-  and the happy path is unaffected.
+- **NFR-2** Optional model assist — an `ANTHROPIC_API_KEY`, or the editor's model through MCP
+  sampling. With neither, the deterministic rule engine runs and the happy path is unaffected.
+- **NFR-5** The API binds to loopback by default; the model bridge requires a per-install token.
 - **NFR-3** `npm install && npm run dev` is the entire setup. No DB, no Docker, no global installs.
 - **NFR-4** Every inference is explainable: each finding carries `why` and `evidence`.
 

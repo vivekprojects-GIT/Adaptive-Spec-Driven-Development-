@@ -136,9 +136,13 @@ function pickBest(matches) {
  * exactly that, whatever the graph happens to look like on this project.
  */
 export function customAgentProposal(input, acceptedAgents = []) {
-  const capability = input.capability?.trim() || `custom.${(input.name || 'agent').toLowerCase().replace(/\W+/g, '-')}`;
   const known = listAgents().find((a) => a.id === input.agentId);
+  const isBmad = known?.source === 'bmad';
+  const capability =
+    input.capability?.trim() || (isBmad ? known.capability : `custom.${(input.name || 'agent').toLowerCase().replace(/\W+/g, '-')}`);
   const authored = {
+    // A BMAD agent is identified by its BMAD id so each run loads its CURRENT persona.
+    bmadAgentId: isBmad ? known.bmad.id : undefined,
     purpose: input.purpose || '',
     instructions: input.instructions || '',
     inputSelections: input.inputSelections || [],
@@ -148,11 +152,13 @@ export function customAgentProposal(input, acceptedAgents = []) {
     runAfterLabel: labelForRunAfter(input.runAfter, acceptedAgents),
   };
 
+  const customisedBy = isBmad ? known.bmad.overrides.filter((layer) => layer !== 'base') : [];
+
   return {
     proposalId: id('ap'),
     kind: 'agent',
     decision: 'accepted',
-    source: known ? 'reuse' : 'custom',
+    source: isBmad ? 'bmad' : known ? 'reuse' : 'custom',
     capability,
     group: capabilityGroup(capability),
     phase: resolvePhase(input, acceptedAgents, capability),
@@ -161,13 +167,17 @@ export function customAgentProposal(input, acceptedAgents = []) {
     description: input.purpose || input.description || known?.description || 'Human-authored agent.',
     inputs: input.inputSelections?.length ? input.inputSelections : known?.inputs || [],
     outputs: input.outputDescription ? [input.outputDescription] : known?.outputs || [],
-    // An authored agent with instructions runs on the instruction agent, which actually executes them.
-    impl: input.impl || (input.instructions?.trim() ? 'instructionAgent' : known?.impl || 'genericAdapter'),
+    // A BMAD persona always runs as itself and any instructions become its task. Other authored
+    // agents with instructions run on the instruction agent, which actually executes them.
+    impl: input.impl || (isBmad ? 'bmadPersonaAgent' : input.instructions?.trim() ? 'instructionAgent' : known?.impl || 'genericAdapter'),
     maturity: known?.maturity || 'custom',
+    icon: known?.icon,
     authored,
-    rationale: input.purpose
-      ? `Authored by a human: ${input.purpose}`
-      : 'Added by a human during proposal review.',
+    rationale: isBmad
+      ? `BMAD agent ${known.name}, loaded from your BMAD install${customisedBy.length ? ` with ${customisedBy.join(' and ')} customisations` : ''}.`
+      : input.purpose
+        ? `Authored by a human: ${input.purpose}`
+        : 'Added by a human during proposal review.',
     alternatives: [],
   };
 }

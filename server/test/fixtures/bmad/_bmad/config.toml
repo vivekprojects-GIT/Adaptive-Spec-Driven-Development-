@@ -1,0 +1,10 @@
+[core]
+project_name = "Fixture"
+document_output_language = "English"
+
+[agents.bmad-agent-testarchitect]
+module = "bmm"
+name = "Winston"
+title = "System Architect"
+icon = "🏗️"
+description = "ASDD test fixture architect."

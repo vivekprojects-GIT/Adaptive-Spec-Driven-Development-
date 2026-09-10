@@ -15,6 +15,8 @@ import {
 } from './parsers.js';
 import { slug, pascal, camel, id } from '../lib/util.js';
 import { assist, llmAvailable } from '../lib/llm.js';
+import { loadBmad, findBmadAgent, personaPrompt, resolveFacts } from '../bmad/loader.js';
+import { getSettings } from '../lib/settings.js';
 
 /* ------------------------------------------------------------------ output */
 
@@ -1166,17 +1168,41 @@ function safePath(raw, fallbackDir) {
   return cleaned || `${fallbackDir}/output.txt`;
 }
 
+/** What every model-backed agent must hand back, whatever persona it runs as. */
+const AUTHORED_OUTPUT_CONTRACT = 'Respond as {"files":[{"path":"relative/path.ext","content":"..."}],"notes":["..."],"unableTo":["..."]}';
+
+const AUTHORED_SYSTEM =
+  "You are executing one agent inside a migration platform. Follow the operator's instructions exactly and produce files. " +
+  'Never invent source material that is not in the inputs. If the inputs are insufficient to do the job properly, say so in notes and produce only what is genuinely supported.';
+
+/** What a BMAD persona does when a human adds it to the graph without writing a task of its own. */
+const BMAD_DEFAULT_TASKS = {
+  architect:
+    'Review this migration as its architect. From the generated artifacts, state the invariants the migrated suite must keep (structure, locator strategy, fixtures, configuration), the risks you see, and concrete changes, each tied to a file or a requirement. Write it as bmad/architect/review.md.',
+  analyst:
+    'Analyse the requirements against what the source suite and the migration actually cover. List requirements with no test evidence, ambiguous requirements, and assumptions the migration is making. Write it as bmad/analyst/requirements-analysis.md.',
+  pm:
+    'Check that every requirement is testable and has an acceptance signal in the migrated suite. Flag requirements that cannot be verified and propose acceptance criteria for each. Write it as bmad/pm/acceptance-review.md.',
+  'ux-designer':
+    'Review the user journeys the migrated tests exercise. List journeys with no coverage, and edge cases missing from the journeys that are covered. Write it as bmad/ux-designer/journey-review.md.',
+  dev:
+    'Review the generated code as the implementing engineer: correctness, conventions, maintainability. List concrete fixes, each naming the file and the change. Write it as bmad/dev/code-review.md.',
+};
+
 /**
- * Runs an agent a human wrote in the UI: their purpose, their instructions, their chosen inputs.
+ * The engine behind every model-backed agent — one a human wrote in the UI, or one of their BMAD
+ * personas.
  *
- * With a model configured it genuinely executes those instructions and writes whatever files come
- * back. With no model it writes the fully resolved brief instead and marks itself a placeholder —
- * it does not invent output and then let a guardrail call it a success.
+ * With a model available (an Anthropic key, or the editor's model through the MCP bridge) it
+ * executes the instructions and writes whatever files come back. With no model it writes the fully
+ * resolved brief instead and marks itself a placeholder — it does not invent output and then let a
+ * guardrail call it a success.
  */
-async function instructionAgent(ctx) {
+async function runModelAgent(ctx, { persona = null, bmadAgent = null } = {}) {
   const node = ctx.node;
   const authored = node.authored || {};
-  const selections = authored.inputSelections?.length ? authored.inputSelections : ['requirements', 'artifacts'];
+  const defaultInputs = bmadAgent ? ['requirements', 'constraints', 'generated'] : ['requirements', 'artifacts'];
+  const selections = authored.inputSelections?.length ? authored.inputSelections : defaultInputs;
 
   const sections = [];
   for (const key of selections) {
@@ -1185,58 +1211,62 @@ async function instructionAgent(ctx) {
     const body = source.collect(ctx, authored);
     if (body?.trim()) sections.push({ key, label: source.label, body });
   }
-
   const inputDigest = sections.map((section) => `## ${section.label}\n${section.body}`).join('\n\n');
-  ctx.log(`Authored agent "${node.name}" reading ${sections.length} input source(s): ${sections.map((s) => s.label).join(', ') || 'none'}.`);
 
-  const outputDir = `custom/${slug(node.name) || 'agent'}`;
+  const instructions =
+    authored.instructions?.trim() ||
+    (bmadAgent ? BMAD_DEFAULT_TASKS[bmadAgent.role] || 'Review the migration in your role and report what you find, with evidence.' : '');
+  const who = bmadAgent ? `${bmadAgent.icon} ${bmadAgent.name} — ${bmadAgent.title} (BMAD ${bmadAgent.id})` : `"${node.name}"`;
+  const outputDir = bmadAgent ? `bmad/${bmadAgent.role}` : `custom/${slug(node.name) || 'agent'}`;
+
+  ctx.log(`${who} reading ${sections.length} input source(s): ${sections.map((s) => s.label).join(', ') || 'none'}.`);
 
   if (!llmAvailable()) {
-    const brief = [
-      `# ${node.name}`,
-      '',
+    const brief = [`# ${node.name}`, ''];
+    if (bmadAgent) brief.push(`**BMAD agent:** ${who}, customised by ${bmadAgent.overrides.join(' + ')}`);
+    brief.push(
       `**Purpose:** ${authored.purpose || node.description || '(not stated)'}`,
       `**Expected output:** ${authored.outputDescription || '(not stated)'}`,
       `**Runs:** ${authored.runAfterLabel || `phase ${node.phase}`}`,
       '',
-      '## Instructions as written',
+      '## Instructions',
       '',
-      authored.instructions || '(no instructions were provided)',
+      instructions || '(no instructions were provided)',
       '',
+    );
+    if (persona) brief.push('## The BMAD persona that would carry them out', '', persona, '');
+    brief.push(
       '## Inputs this agent was given',
       '',
       ...sections.map((section) => `- **${section.label}** — ${section.body.split('\n').length} line(s)`),
       '',
       '---',
       '',
-      'No model is configured, so these instructions were **not executed**. The deterministic engine',
-      'cannot interpret free-text instructions. Set a model in Settings and re-run, or replace this',
-      'agent with a registry agent that has a real implementation.',
-    ].join('\n');
+      'No model is available, so these instructions were **not executed**. The deterministic engine cannot',
+      'interpret free-text instructions. Add an Anthropic key in Settings — or open this folder in VS Code and',
+      'start the "asdd" MCP server to borrow your Copilot model — then re-run.',
+    );
 
     ctx.ws.placeholders = (ctx.ws.placeholders || 0) + 1;
-    ctx.log('No model configured — wrote the resolved brief instead of executing the instructions.');
+    ctx.log('No model available — wrote the resolved brief instead of executing the instructions.');
     return {
-      outputs: [artifact(`${outputDir}/BRIEF.md`, brief, { kind: 'analysis' })],
-      metrics: { placeholder: true, inputsSeen: sections.length },
-      notes: [`"${node.name}" did not execute: authored agents need a model, and none is configured.`],
+      outputs: [artifact(`${outputDir}/BRIEF.md`, brief.join('\n'), { kind: 'analysis' })],
+      metrics: { placeholder: true, inputsSeen: sections.length, bmad: bmadAgent?.id },
+      notes: [`${node.name} did not execute: it needs a model, and none is available.`],
     };
   }
 
   const response = await assist({
     task: 'generation',
     maxTokens: 8000,
-    system:
-      'You are executing one agent inside a migration platform. Follow the operator\'s instructions exactly and produce files. ' +
-      'Never invent source material that is not in the inputs. If the inputs are insufficient to do the job properly, say so in notes and produce only what is genuinely supported. ' +
-      'Respond as {"files":[{"path":"relative/path.ext","content":"..."}],"notes":["..."],"unableTo":["..."]}',
+    system: `${persona || AUTHORED_SYSTEM}\n\n${AUTHORED_OUTPUT_CONTRACT}`,
     prompt: [
       `# Agent: ${node.name}`,
       `Purpose: ${authored.purpose || node.description || '(not stated)'}`,
       `Expected output: ${authored.outputDescription || '(not stated)'}`,
       '',
       '# Instructions',
-      authored.instructions || '(none given — infer from the purpose)',
+      instructions || '(none given — infer from the purpose)',
       '',
       '# Project context',
       `Source stack: ${ctx.spec.sourceStack || 'unspecified'}`,
@@ -1255,17 +1285,17 @@ async function instructionAgent(ctx) {
     ctx.log(`Model call failed: ${reason}`);
     return {
       outputs: [
-        artifact(`${outputDir}/FAILED.md`, `# ${node.name} did not run\n\n${reason}\n\nInstructions were:\n\n${authored.instructions || '(none)'}\n`, { kind: 'analysis' }),
+        artifact(`${outputDir}/FAILED.md`, `# ${node.name} did not run\n\n${reason}\n\nInstructions were:\n\n${instructions || '(none)'}\n`, { kind: 'analysis' }),
       ],
-      metrics: { placeholder: true, error: reason },
-      notes: [`"${node.name}" failed to execute: ${reason}`],
+      metrics: { placeholder: true, error: reason, bmad: bmadAgent?.id },
+      notes: [`${node.name} failed to execute: ${reason}`],
     };
   }
 
   const files = Array.isArray(response.files) ? response.files : [];
   const outputs = files
     .filter((file) => typeof file?.content === 'string' && file.content.trim())
-    .map((file) => artifact(safePath(file.path, outputDir), file.content, { kind: file.kind || 'code' }));
+    .map((file) => artifact(safePath(file.path, outputDir), file.content, { kind: file.kind || (bmadAgent ? 'spec' : 'code') }));
 
   const notes = [...(response.notes || []), ...(response.unableTo || []).map((item) => `Could not do: ${item}`)];
 
@@ -1276,18 +1306,55 @@ async function instructionAgent(ctx) {
     );
   }
 
-  ctx.log(`Authored agent produced ${outputs.length} file(s) via ${response.__model}.`);
+  ctx.log(`${who} produced ${outputs.length} file(s) via ${response.__model}.`);
   return {
     outputs,
-    metrics: { files: outputs.length, model: response.__model, inputsSeen: sections.length },
+    metrics: { files: outputs.length, model: response.__model, inputsSeen: sections.length, bmad: bmadAgent?.id },
     notes,
   };
+}
+
+async function instructionAgent(ctx) {
+  return runModelAgent(ctx);
+}
+
+/**
+ * Runs one of the user's real BMAD agents — Mary, John, Winston, Sally or Amelia — as a step in the
+ * approved graph. The persona is loaded from the BMAD install at run time with the team's and the
+ * user's customisations merged in, so an override committed to `_bmad/custom/` reaches the run.
+ */
+async function bmadPersonaAgent(ctx) {
+  const node = ctx.node;
+  const bmadId = node.authored?.bmadAgentId || (String(node.agentId || '').startsWith('bmad.') ? node.agentId.slice(5) : node.name);
+  const bmad = loadBmad({ root: getSettings().bmadRoot || undefined });
+
+  const notRun = (why) => {
+    ctx.ws.placeholders = (ctx.ws.placeholders || 0) + 1;
+    ctx.log(why);
+    return {
+      outputs: [artifact(`bmad/${slug(node.name) || 'agent'}-NOT-RUN.md`, `# ${node.name} did not run\n\n${why}\n`, { kind: 'analysis' })],
+      metrics: { placeholder: true },
+      notes: [why],
+    };
+  };
+
+  if (!bmad.found) return notRun(`No BMAD install was found (searched: ${bmad.searched.join(', ')}). Set its folder in Settings.`);
+  const agent = findBmadAgent(bmadId, bmad);
+  if (!agent) return notRun(`The BMAD agent "${bmadId}" is not in the install at ${bmad.root}.`);
+
+  const facts = resolveFacts(agent.persona.persistent_facts, bmad.root);
+  const missing = facts.filter((fact) => fact.missing).map((fact) => fact.entry);
+  if (missing.length) ctx.log(`Standing facts reference files that do not exist: ${missing.join(', ')}.`);
+  ctx.log(`Loaded ${agent.icon} ${agent.name} from the BMAD install at ${bmad.root} (${agent.overrides.join(' + ')}).`);
+
+  return runModelAgent(ctx, { persona: personaPrompt(agent, { facts, config: bmad.config }), bmadAgent: agent });
 }
 
 /* ------------------------------------------------------------- registry */
 
 export const AGENT_IMPLS = {
   instructionAgent,
+  bmadPersonaAgent,
   seleniumJavaAnalyzer: analyzerFor('selenium-java'),
   seleniumPythonAnalyzer: analyzerFor('selenium-python'),
   cypressAnalyzer: analyzerFor('cypress'),

@@ -1,0 +1,3 @@
+# Personal override (gitignored in a real install). ASDD test fixture.
+[agent]
+communication_style = "Blunt and brief."

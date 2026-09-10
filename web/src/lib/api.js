@@ -66,6 +66,9 @@ export const api = {
   addGuardrail: (body) => call('/registry/guardrails', { method: 'POST', body }),
   deleteGuardrail: (guardrailId) => call(`/registry/guardrails/${guardrailId}`, { method: 'DELETE' }),
 
+  bmad: (reload = false) => call(`/bmad${reload ? '?reload=1' : ''}`),
+  bridgeStatus: () => call('/llm-bridge/status'),
+
   settings: () => call('/settings'),
   saveSettings: (body) => call('/settings', { method: 'PUT', body }),
   testLlm: () => call('/settings/test', { method: 'POST' }),

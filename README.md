@@ -16,6 +16,11 @@ and holds them to your rules.
 
 **AI proposes the architecture; you own the final architecture.**
 
+**It runs on your BMAD.** Point it at your existing BMAD install and your BMAD agents — with your
+team's customisations — become agents ASDD can put in any workflow, read in place on every run and
+never copied. BMAD supplies the agents and the method; ASDD adds the control plane, the tracking
+and the UI. And inside VS Code it can run them on **Copilot's model, with no API key**.
+
 ---
 
 ## Run it
@@ -28,7 +33,8 @@ npm run dev
 That is the whole setup. No database, no Docker, no API key, no global installs.
 
 - UI → **http://localhost:5173**
-- API → **http://localhost:5174**
+- API → **http://127.0.0.1:5174** — loopback only, since it also carries the model bridge. Set
+  `HOST=0.0.0.0` if you really mean to share it.
 
 Then pick a **template** and walk the nine steps across the top.
 
@@ -41,16 +47,39 @@ you want to watch the pipeline work end to end first.
 Other useful commands:
 
 ```bash
-npm test          # engine smoke tests — the whole pipeline, no network, ~4s
+npm test          # pipeline, BMAD loader, model bridge and an MCP end-to-end test — no network, ~20s
 npm run seed      # create the flagship sample project without using the UI
 npm run build     # build the UI
 npm start         # single process on :5174 serving the built UI + API
 ```
 
-### In VS Code
+### In VS Code — with Copilot, no API key
 
-Open the folder and press <kbd>F5</kbd> to debug the API (`.vscode/launch.json`), or run
-`npm run dev` in the integrated terminal. Recommended extensions are suggested on first open.
+The repo ships `.vscode/mcp.json`, which registers ASDD as an MCP server. That gives you two things:
+
+1. **ASDD inside Copilot Chat.** In Agent mode, ask *"what's waiting for my approval?"*, *"run
+   discovery on the payments project"*, *"summarise the last run"*, or *"give me Winston's persona"*.
+   The tools drive the same server the UI uses, so everything shows up in the UI and the log. The
+   decision tools — approve a run, accept proposals, export — act only when you say so, and each
+   decision is recorded as yours.
+2. **Copilot's model inside ASDD.** The MCP server borrows your editor's model through MCP
+   *sampling* and lends it to the ASDD server. Set the model to **Auto** or **Copilot** in Settings
+   and the interview, your authored agents and your BMAD agents run on your Copilot subscription.
+
+Setup:
+
+1. `npm run dev`
+2. Open this folder in VS Code (1.102 or later) and start **asdd** from the MCP servers view, or
+   from the *Start* link above it in `.vscode/mcp.json`.
+3. The first time ASDD asks for a model, VS Code asks whether to allow it. Allow it.
+4. **Settings → Copilot through VS Code** now says *connected*, with the client and a count of
+   requests served.
+
+Any MCP client that supports sampling works the same way. One that doesn't still gets the tools, and
+Settings tells you the model bridge is unavailable.
+
+To debug the API itself, press <kbd>F5</kbd> (`.vscode/launch.json`). Recommended extensions are
+suggested on first open.
 
 ---
 
@@ -94,8 +123,9 @@ Four more screens in the sidebar:
   step, guardrail verdict and model call, filterable by level and scope.
 - **Registries** — browse and extend the agent registry, the guardrail registry, and the technology
   profiles. An agent you add here is available to the *next* discovery on any project.
-- **Settings** — pick the model (**Auto**, Opus 5, Sonnet 5, Haiku 4.5, Fable 5.1, or **Offline**),
-  set an API key, test the connection, and cap how many questions the interview may ask.
+- **Settings** — pick the model (**Auto**, **Copilot via VS Code**, Opus 5, Sonnet 5, Haiku 4.5,
+  Fable 5.1, or **Offline**), set an API key if you have one, point ASDD at your BMAD install, watch
+  whether VS Code's model bridge is connected, and cap how many questions the interview may ask.
 
 ---
 
@@ -136,6 +166,32 @@ by design, the **Approvals** inbox exists so you always know what it is waiting 
 
 ---
 
+## It runs on your BMAD
+
+ASDD does not reimplement BMAD or ship a copy of it. It reads the install you already have, in
+place, every time:
+
+| From your BMAD | Where it lives | What ASDD does with it |
+|---|---|---|
+| Agents | `_bmad/_config/skill-manifest.csv` → each agent's `SKILL.md` and `customize.toml` | Each one becomes a registry agent (marked *your BMAD agent*) you can put in any workflow |
+| Your team's and your own customisations | `_bmad/custom/<agent>.toml`, `<agent>.user.toml` | Merged the way BMAD's own resolver merges them: scalars override, tables deep-merge, keyed menu items replace or append, lists append |
+| Standing facts | `persistent_facts`, including `file:{project-root}/…` globs | The referenced files are loaded into the agent's context. A fact that points at a missing file is reported, not quietly dropped |
+| Your name and language | `_bmad/bmm/config.yaml` | Used in the persona |
+| Workflows | the same manifest, found wherever your IDE installed them (`.claude/skills/…`) | Counted in Settings, and available to your assistant alongside the ASDD tools |
+
+**Where it looks:** the folder in **Settings → Your BMAD install**, else `ASDD_BMAD_ROOT`, else the
+folder ASDD is cloned into and its parent — so clone ASDD inside your BMAD project and it is found
+with no configuration. Deprecated shims are skipped.
+
+**Using one:** on the Agents step choose **Create my own → Start from one of your BMAD agents**.
+Leave *Instructions* blank and it gets the standard task for its role — the architect reviews the
+migration's invariants and risks, the PM checks requirements coverage, and so on — or write the task
+you want. At run time it loads that agent's *current* persona, so edit its customisation in BMAD
+and the next run picks it up. Its output lands in `bmad/<role>/` in the run, traced and held to your
+guardrails like any other agent's.
+
+---
+
 ## It hands back BMAD artifacts
 
 Every run can write the BMAD document set into `docs/`, derived from what that run actually found:
@@ -153,8 +209,8 @@ it says what the run does not know instead of filling the gap: parse nothing and
 
 Switch it off per project with the **BMAD document set** checkbox on the Spec step.
 
-This is not the BMAD Method itself — that is the agent/skill set you run in your assistant. This is
-ASDD handing its output to it in the shape it expects.
+These are ASDD's output in the shape BMAD expects, so your BMAD agents and workflows can pick up
+where the run left off.
 
 ---
 
@@ -174,13 +230,16 @@ requirements it recognised so a document it could not read fails loudly rather t
 
 | Mode | Behaviour |
 |---|---|
-| **Auto** (default) | Routes per task: discovery → Opus 5, interview → Haiku 4.5, rationales/generation → Sonnet 5, report → Fable 5.1 |
-| A specific model | That model for every assisted task |
+| **Auto** (default) | With an API key, routes per task: discovery → Opus 5, interview → Haiku 4.5, rationales/generation → Sonnet 5, report → Fable 5.1. With no key but VS Code connected: your editor's model. With neither: the rule engine |
+| **Copilot (via VS Code MCP)** | Always your editor's model, through the MCP server — no key |
+| A specific Claude model | That model for every assisted task (needs a key) |
 | **Offline** | No network calls at all |
 
-**With no API key the platform is fully functional.** Parsing, code generation, data migration,
-traceability and every guardrail check are deterministic and never call a model. A key adds
-project-specific interview questions and richer explanations on top. It does not change correctness.
+**With no model at all the platform is still fully functional.** Parsing, code generation, data
+migration, traceability and every guardrail check are deterministic and never call a model. A model
+— yours through a key, or Copilot's through VS Code — adds project-specific interview questions,
+richer explanations, and actually executes authored and BMAD agents. It does not change correctness.
+Every run records which model it used.
 
 ---
 
@@ -243,7 +302,10 @@ than one that says no.
 ## Architecture
 
 ```
- React UI ──HTTP + SSE──▶ Express API
+ React UI ──HTTP + SSE──▶ Express API ◀──HTTP── MCP server ◀──stdio── VS Code · Copilot Chat
+                          (127.0.0.1)          tools + model bridge (MCP sampling)
+                              │
+                              │ reads in place: _bmad/ — agents, customisations, standing facts
                               │
               ┌───────────────┴───────────────┐
               │         CONTROL PLANE         │
@@ -262,11 +324,13 @@ than one that says no.
                      JSON store (server/data)
 ```
 
-Three invariants every module honours:
+Four invariants every module honours:
 
 1. **Registry-first.** Capability → registry lookup → reuse. Generation is the fallback, a gap is the floor.
 2. **Human gate.** No proposal becomes a graph node without an explicit accept.
 3. **Evidence or silence.** A guardrail verdict must be computed from artifacts. Unverifiable → `warn`, never `pass`.
+4. **One brain, one writer.** The Express server owns all state and all logic. The MCP server is a
+   thin client of its API, and BMAD is only ever read — so the UI, Copilot Chat and the log always agree.
 
 Full detail in [docs/architecture.md](docs/architecture.md).
 
@@ -277,19 +341,26 @@ docs/                      BMAD artifacts: product brief → PRD → architectur
 server/
   src/engine/              discovery · agentFactory · guardrailDesigner · workflowComposer
                            orchestrator · agents · parsers · validator · reporter · interview
-  src/registry/            agents · guardrails · technologies
-  src/routes/              projects · runs · registry · settings · observability
+  src/registry/            agents (seeded + your BMAD agents, live) · guardrails · technologies
+  src/routes/              projects · runs · registry · settings · observability · approvals
+                           bmad · llm-bridge
+  src/bmad/loader.js       reads your BMAD install: manifest, SKILL.md, customize.toml merge, facts
+  src/mcp.js               the MCP server: ASDD tools + the editor model bridge
+  src/lib/bridge.js        the queue that lends the editor's model to the engine
   src/templates.js         six starting templates, each with optional demo content
   test/smoke.test.js       end-to-end pipeline tests
   test/authoring.test.js   custom projects, authored agents/guardrails, halting, approval
+  test/bmad-loader.test.js a fixture laid out like a real BMAD install, and BMAD's merge rules
+  test/mcp.e2e.test.js     a real MCP client with sampling runs a BMAD agent with no API key
+.vscode/mcp.json           registers the asdd MCP server in VS Code
 web/
   src/pages/               Dashboard · Projects · Workspace · Registry · Settings
   src/stages/              Spec · Interview · Discovery · Proposals · Workflow · Run · Trace · Report
   src/components/Graph.jsx SVG DAG renderer, shared by the workflow and run views
 ```
 
-React with no UI framework — React 18 + Vite and hand-written CSS. Server dependencies: Express and
-CORS. That is the entire dependency list.
+React with no UI framework — React 18 + Vite and hand-written CSS. Server dependencies: Express,
+CORS, the MCP SDK (with zod), and smol-toml to read BMAD's `customize.toml`. That is the entire list.
 
 ---
 
@@ -306,6 +377,12 @@ CORS. That is the entire dependency list.
 - **Authored agents need a model.** Free-text instructions cannot be executed by the deterministic
   engine. Without a key they produce a resolved brief and say so; they never pretend to have run.
 - **Requirements import is text only** (`.md`, `.txt`, `.csv`, `.json`). No .docx or PDF parsing.
+- **The editor's model answers one prompt at a time.** MCP sampling is a single completion — no
+  tools, no file access, no follow-up questions. So a BMAD agent inside ASDD does one bounded job per
+  run. BMAD's interactive workflows (the step-by-step PRD or architecture sessions) need a
+  conversation: run those in your assistant, where ASDD's tools sit alongside them.
+- **Sampling needs a client that supports it, and your consent.** VS Code does. With a client that
+  doesn't, you still get the tools, and the model falls back to a key or the rule engine.
 
 ---
 

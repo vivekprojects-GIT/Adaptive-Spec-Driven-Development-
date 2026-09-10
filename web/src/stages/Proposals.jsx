@@ -153,8 +153,14 @@ function AgentCard({ proposal, busy, onDecide, onEdit }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="row wrap" style={{ gap: 6, marginBottom: 5 }}>
             <strong style={{ fontSize: 13.5 }}>{proposal.name}</strong>
-            <Badge tone={proposal.source === 'reuse' ? 'pass' : proposal.source === 'generated' ? 'warn' : 'accent'}>
-              {proposal.source === 'reuse' ? 'reused from registry' : proposal.source === 'generated' ? 'generated for this project' : 'human-added'}
+            <Badge tone={proposal.source === 'reuse' || proposal.source === 'bmad' ? 'pass' : proposal.source === 'generated' ? 'warn' : 'accent'}>
+              {proposal.source === 'bmad'
+                ? `${proposal.icon || ''} your BMAD agent`
+                : proposal.source === 'reuse'
+                  ? 'reused from registry'
+                  : proposal.source === 'generated'
+                    ? 'generated for this project'
+                    : 'human-added'}
             </Badge>
             <Badge mono>{proposal.capability}</Badge>
             <Badge>{proposal.group}</Badge>
@@ -332,6 +338,8 @@ function CreateModal({ kind, onClose, onCreate, accepted, options }) {
         },
   );
 
+  const bmadAgents = (options.agents || []).filter((agent) => agent.source === 'bmad');
+
   const toggleInput = (id) =>
     setForm((prev) => ({
       ...prev,
@@ -364,9 +372,41 @@ function CreateModal({ kind, onClose, onCreate, accepted, options }) {
     >
       {isAgents ? (
         <>
+          {bmadAgents.length > 0 && (
+            <Field
+              label="Start from one of your BMAD agents"
+              hint="Runs as that agent — its persona, principles and your team's customisations are loaded from your BMAD install at run time."
+            >
+              <div className="chip-row" style={{ gap: 8, marginTop: 4 }}>
+                {bmadAgents.map((agent) => (
+                  <button
+                    key={agent.id}
+                    type="button"
+                    className={`btn sm ${form.agentId === agent.id ? 'primary' : ''}`}
+                    onClick={() =>
+                      setForm((prev) =>
+                        prev.agentId === agent.id
+                          ? { ...prev, agentId: undefined, name: '', purpose: '' }
+                          : { ...prev, agentId: agent.id, name: agent.name, purpose: agent.description, capability: '' },
+                      )
+                    }
+                  >
+                    {agent.icon} {agent.name.split(' — ')[0]}
+                  </button>
+                ))}
+              </div>
+            </Field>
+          )}
+
           <Field label="Name">
             <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Database Validation Agent" autoFocus />
           </Field>
+
+          {form.agentId && (
+            <div className="proposal-why" style={{ marginBottom: 12 }}>
+              Runs as your BMAD agent. Leave <b>Instructions</b> blank to give it its default review task for this role, or write the task you want done.
+            </div>
+          )}
 
           <Field label="Purpose" hint="One line. It becomes the agent's description everywhere it appears.">
             <input type="text" value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })} placeholder="Validate database checks carried over from Selenium" />

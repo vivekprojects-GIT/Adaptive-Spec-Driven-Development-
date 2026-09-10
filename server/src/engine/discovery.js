@@ -21,6 +21,7 @@ export const CAPABILITY_CATALOG = {
   'target.generate': { phase: 30, label: 'Target generation' },
   'traceability': { phase: 40, label: 'Traceability' },
   'docs.bmad': { phase: 45, label: 'BMAD artifacts' },
+  'bmad.persona': { phase: 25, label: 'BMAD agent' },
   'validate': { phase: 50, label: 'Validation' },
 };
 

@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-const API = process.env.ASDD_API || 'http://localhost:5174';
+const API = process.env.ASDD_API || 'http://127.0.0.1:5174';
 
 export default defineConfig({
   plugins: [react()],

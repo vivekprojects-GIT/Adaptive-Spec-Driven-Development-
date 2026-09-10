@@ -1,0 +1,4 @@
+# ASDD test fixture.
+[workflow]
+persistent_facts = []
+spine_output_path = "{planning_artifacts}/architecture"

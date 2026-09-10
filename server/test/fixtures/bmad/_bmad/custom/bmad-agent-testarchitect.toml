@@ -1,0 +1,19 @@
+# Team override (committed in a real install). ASDD test fixture.
+[agent]
+persistent_facts = [
+  "file:{project-root}/docs/constraints.md",
+  "The system recommends; a human decides.",
+]
+principles = [
+  "Every claim traces to a source.",
+]
+
+[[agent.menu]]
+code = "CA"
+description = "Team-customised architecture spine"
+skill = "bmad-testworkflow"
+
+[[agent.menu]]
+code = "TR"
+description = "Team-added threat review"
+prompt = "Review the design for threats."

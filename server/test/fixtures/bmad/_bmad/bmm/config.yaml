@@ -1,0 +1,6 @@
+# BMM Module Configuration (ASDD test fixture)
+user_name: Tester
+project_name: Fixture
+communication_language: English
+document_output_language: English
+planning_artifacts: "{project-root}/_bmad-output/planning-artifacts"

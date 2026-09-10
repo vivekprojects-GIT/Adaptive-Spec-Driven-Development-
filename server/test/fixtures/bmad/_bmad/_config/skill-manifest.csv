@@ -1,0 +1,5 @@
+canonicalId,name,description,module,path
+"bmad-agent-testarchitect","bmad-agent-testarchitect","ASDD test fixture — not a real BMAD skill. Architect persona, ""Winston"", for loader tests.","bmm","_bmad/bmm/agents/bmad-agent-testarchitect/SKILL.md"
+"bmad-testworkflow","bmad-testworkflow","ASDD test fixture — not a real BMAD skill. A workflow, with a comma, and ""quotes"".","bmm","_bmad/bmm/plan/bmad-testworkflow/SKILL.md"
+"bmad-testshim","bmad-testshim","Deprecated — forwards to bmad-testworkflow.","bmm","_bmad/bmm/v6-shims/bmad-testshim/SKILL.md"
+"bmad-testmissing","bmad-testmissing","ASDD test fixture — listed in the manifest but never installed.","bmm","_bmad/bmm/plan/bmad-testmissing/SKILL.md"

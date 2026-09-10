@@ -33,6 +33,10 @@
 | **E9 Human visibility** | S9.1 Approvals inbox aggregating every pending decision | FR-23 | done |
 | | S9.2 Waiting counts in the sidebar, project list, stepper and an in-project banner | FR-23 | done |
 | **E10 Handover** | S10.1 Export a run's artifacts to a folder, with a preview and overwrite protection | FR-24 | done |
+| **E11 BMAD underneath** | S11.1 Read the user's BMAD install in place, with BMAD's override merge and standing facts | FR-25 | done |
+| | S11.2 BMAD persona agents as workflow nodes, persona loaded at run time | FR-26 | done |
+| **E12 Editor integration** | S12.1 MCP server exposing ASDD tools, decisions only on explicit instruction | FR-27 | done |
+| | S12.2 Model bridge: the editor's model through MCP sampling, no API key | FR-28, NFR-5 | done |
 
 ## Definition of done (applied to every story)
 
