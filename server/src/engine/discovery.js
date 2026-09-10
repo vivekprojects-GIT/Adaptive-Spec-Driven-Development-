@@ -20,6 +20,7 @@ export const CAPABILITY_CATALOG = {
   'auth.migrate': { phase: 20, label: 'Authentication' },
   'target.generate': { phase: 30, label: 'Target generation' },
   'traceability': { phase: 40, label: 'Traceability' },
+  'docs.bmad': { phase: 45, label: 'BMAD artifacts' },
   'validate': { phase: 50, label: 'Validation' },
 };
 
@@ -194,6 +195,16 @@ export function runDiscovery(spec) {
   }
 
   require('validate.compile-structure', 'Generated code must be checked structurally before anyone is asked to trust it.', ['always']);
+
+  // The BMAD document set is on by default — the work is planned this way, so it should be
+  // written up this way — but it is a spec-level choice a human can turn off.
+  if (spec.bmadArtifacts !== false) {
+    require(
+      'docs.bmad.generate',
+      'The project is run the BMAD way, so it should hand back the BMAD document set: brief, PRD, architecture, epics and stories, all derived from what this run actually found.',
+      ['bmad method'],
+    );
+  }
 
   /* ---- risks -------------------------------------------------------- */
 

@@ -31,6 +31,8 @@ execution layer over a pluggable Agent Registry and Guardrail Registry.
 | FR-18 | **Human approval** closes every run | Run ends `pending`; approve or request changes, recorded on the run |
 | FR-19 | **Everything is logged** — API calls, stage changes, agent steps, guardrail verdicts, model calls | Filterable feed with levels and scopes |
 | FR-20 | **Dashboard answers "where did it fail"** | Ranks failing guardrails, failing agents, placeholder agents, orphan requirements, open gaps, blocked projects |
+| FR-21 | **BMAD document set** written per run: brief, PRD, architecture, epics & stories | Every row derived from the run; unknowns stated, not invented; switchable per project |
+| FR-22 | **Templates are starting shapes**, not ready-made runs | A new project from a template has no artifacts and no requirements, and discovery refuses until it does |
 
 ## 3. Non-functional
 

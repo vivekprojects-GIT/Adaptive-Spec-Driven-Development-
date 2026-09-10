@@ -121,6 +121,28 @@ note. Nothing is accepted just because the machine finished.
 
 ---
 
+## It hands back BMAD artifacts
+
+Every run can write the BMAD document set into `docs/`, derived from what that run actually found:
+
+| Document | Built from |
+|---|---|
+| `product-brief.md` | Source entity counts, the requirements, your constraints; non-goals are the real gaps and unmappable constructs |
+| `prd.md` | One row per requirement → the source test that covers it → the generated artifact → migrated / partial / **not covered**. Acceptance criteria are the guardrails you accepted |
+| `architecture.md` | The approved agent graph, drawn by layer, with every capability, provenance and implementation named |
+| `epics-and-stories.md` | One epic per source suite, one story per source test, status computed from the run — plus a "Port by hand" epic for constructs with no target equivalent |
+
+It runs after traceability, so the PRD can link requirements to the artifacts that satisfy them, and
+it says what the run does not know instead of filling the gap: parse nothing and the brief says
+"No source tests were parsed"; leave a requirement untraced and the PRD marks it **not covered**.
+
+Switch it off per project with the **BMAD document set** checkbox on the Spec step.
+
+This is not the BMAD Method itself — that is the agent/skill set you run in your assistant. This is
+ASDD handing its output to it in the shape it expects.
+
+---
+
 ## Any project, not just migrations
 
 Set **Project kind** to `custom` on the Spec step and every migration assumption switches off: no

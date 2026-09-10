@@ -858,6 +858,260 @@ async function genericAdapter(ctx) {
   };
 }
 
+/* ---------------------------------------------------------- BMAD artifacts */
+
+/**
+ * Emits the BMAD document set for this project — brief → PRD → architecture → epics & stories —
+ * so a migration lands in the same shape the BMAD method expects and `bmad-build` can pick it up.
+ *
+ * Every line is derived from what the run actually found: the parsed source model, the approved
+ * graph, the traceability matrix and the guardrails. Nothing here is boilerplate, and where the
+ * run does not know something it says so rather than filling the gap with a template sentence.
+ */
+async function bmadArtifactAgent(ctx) {
+  const { discovery, ws, spec } = ctx;
+  const model = ws.sourceModel;
+  const trace = ws.traceability;
+  const graphNodes = ctx.run?.nodes || [];
+  const generated = ws.generated.filter((a) => a.kind === 'code' || a.kind === 'spec' || a.kind === 'data');
+  const stamp = new Date().toISOString().slice(0, 10);
+
+  const outputs = [
+    artifact('docs/product-brief.md', bmadBrief({ discovery, model, spec, stamp }), { kind: 'spec' }),
+    artifact('docs/prd.md', bmadPrd({ discovery, model, trace, spec, ctx, stamp }), { kind: 'spec' }),
+    artifact('docs/architecture.md', bmadArchitecture({ discovery, graphNodes, generated, stamp }), { kind: 'spec' }),
+    artifact('docs/epics-and-stories.md', bmadEpics({ discovery, model, trace, stamp }), { kind: 'spec' }),
+  ];
+
+  ctx.log(`Wrote the BMAD document set: ${outputs.map((o) => o.path.split('/').pop()).join(', ')}.`);
+  return {
+    outputs,
+    metrics: { documents: outputs.length, requirements: discovery.requirements.length, epics: model?.suites.length || 0 },
+    notes: trace ? [] : ['Traceability had not run when the documents were written, so the PRD could not link requirements to artifacts.'],
+  };
+}
+
+function mdEscape(text) {
+  return String(text ?? '').replace(/\|/g, '\\|').replace(/\n+/g, ' ');
+}
+
+function bmadBrief({ discovery, model, spec, stamp }) {
+  const out = [];
+  const kind = spec.projectKind === 'custom' ? 'Custom project' : 'Migration';
+
+  out.push(`# Product Brief — ${discovery.source.label} → ${discovery.target.label}`);
+  out.push('');
+  out.push(`**Method:** BMAD · **Phase:** 1 (Analysis) · **Generated:** ${stamp} by ASDD`);
+  out.push('');
+  out.push('## Problem');
+  out.push('');
+  if (model?.totals.tests) {
+    out.push(
+      `${model.totals.tests} test case(s) across ${model.totals.suites} suite(s) are written in ${discovery.source.label}. ` +
+        `They carry ${model.totals.assertions} assertion(s)${model.totals.dataRecords ? ` and ${model.totals.dataRecords} fixture record(s)` : ''}, ` +
+        `all of which have to survive a move to ${discovery.target.label}.`,
+    );
+  } else {
+    out.push(`This is a ${kind.toLowerCase()} against ${discovery.source.label}. No source tests were parsed, so the scope below comes from the requirements alone.`);
+  }
+  out.push('');
+  out.push('## The ask');
+  out.push('');
+  for (const requirement of discovery.requirements) out.push(`- **${requirement.id}** — ${requirement.text}`);
+  if (!discovery.requirements.length) out.push('- _No requirements were supplied._');
+  out.push('');
+
+  if (spec.constraints?.trim()) {
+    out.push('## Constraints');
+    out.push('');
+    for (const line of spec.constraints.split('\n').filter(Boolean)) out.push(`- ${line.trim()}`);
+    out.push('');
+  }
+
+  out.push('## Non-goals');
+  out.push('');
+  if (discovery.gaps.length) {
+    for (const gap of discovery.gaps) out.push(`- \`${gap.capability}\` — ${gap.reason} _Needs: ${gap.needs}_`);
+  }
+  if (model?.unmapped.length) {
+    for (const item of model.unmapped) out.push(`- ${item.construct} (${item.file}) — ${item.reason}`);
+  }
+  if (!discovery.gaps.length && !model?.unmapped.length) out.push('- Nothing was found that this migration cannot cover.');
+  out.push('');
+
+  out.push('## Success criteria');
+  out.push('');
+  out.push(`1. Every one of the ${model?.totals.tests ?? 0} source test case(s) has a counterpart in the target.`);
+  out.push(`2. Every one of the ${model?.totals.assertions ?? 0} source assertion(s) is present in the generated output.`);
+  out.push(`3. Every requirement above traces to at least one generated artifact.`);
+  if (model?.unmapped.length) out.push(`4. The ${model.unmapped.length} unmappable construct(s) are ported by hand or explicitly dropped by a human.`);
+  out.push('');
+  return out.join('\n');
+}
+
+function bmadPrd({ discovery, model, trace, spec, ctx, stamp }) {
+  const out = [];
+  const rows = trace?.rows || [];
+
+  out.push('# PRD — Migration requirements');
+  out.push('');
+  out.push(`**Method:** BMAD · **Phase:** 2 (Planning) · **Traces to:** product-brief.md · **Generated:** ${stamp} by ASDD`);
+  out.push('');
+  out.push('## 1. Functional requirements');
+  out.push('');
+  out.push('| ID | Requirement | Covered by | Generated artifact | Status |');
+  out.push('|---|---|---|---|---|');
+  for (const requirement of discovery.requirements) {
+    const covering = rows.filter((row) => row.requirementId === requirement.id);
+    const artifacts = [...new Set(covering.flatMap((row) => row.artifacts))];
+    out.push(
+      `| ${requirement.id} | ${mdEscape(requirement.text)} | ${covering.map((r) => `\`${r.sourceTest}\``).join('<br>') || '—'} | ${artifacts.map((a) => `\`${a}\``).join('<br>') || '—'} | ${covering.length ? (covering.every((r) => r.status === 'migrated') ? 'migrated' : 'partial') : '**not covered**'} |`,
+    );
+  }
+  if (!discovery.requirements.length) out.push('| — | _No requirements supplied_ | — | — | — |');
+  out.push('');
+
+  out.push('## 2. Non-functional requirements');
+  out.push('');
+  const nfrs = [];
+  if (spec.constraints?.trim()) {
+    for (const line of spec.constraints.split('\n').map((l) => l.trim()).filter(Boolean)) nfrs.push(line);
+  }
+  for (const [key, value] of Object.entries(ctx.answers || {})) nfrs.push(`${key}: ${value}`);
+  if (!nfrs.length) nfrs.push('None stated beyond the functional requirements above.');
+  nfrs.forEach((nfr, index) => out.push(`- **NFR-${String(index + 1).padStart(2, '0')}** ${mdEscape(nfr)}`));
+  out.push('');
+
+  out.push('## 3. Acceptance — the guardrails this project runs under');
+  out.push('');
+  out.push('| Guardrail | Severity | Covers risk |');
+  out.push('|---|---|---|');
+  for (const guardrail of ctx.run?.guardrails || []) {
+    out.push(`| ${guardrail.name} | ${guardrail.severity} | ${(guardrail.risks || []).join(', ')} |`);
+  }
+  if (!(ctx.run?.guardrails || []).length) out.push('| _No guardrails were accepted_ | — | — |');
+  out.push('');
+
+  out.push('## 4. Out of scope');
+  out.push('');
+  if (model?.unmapped.length) for (const item of model.unmapped) out.push(`- ${item.construct} — ${item.reason}`);
+  if (discovery.gaps.length) for (const gap of discovery.gaps) out.push(`- \`${gap.capability}\` — ${gap.needs}`);
+  if (!model?.unmapped.length && !discovery.gaps.length) out.push('- Nothing.');
+  out.push('');
+  return out.join('\n');
+}
+
+function bmadArchitecture({ discovery, graphNodes, generated, stamp }) {
+  const out = [];
+
+  out.push('# Architecture — the agent graph that performs this migration');
+  out.push('');
+  out.push(`**Method:** BMAD · **Phase:** 3 (Solutioning) · **Traces to:** prd.md · **Generated:** ${stamp} by ASDD`);
+  out.push('');
+  out.push('## 1. Approach');
+  out.push('');
+  out.push(`${discovery.source.label} is parsed into a technology-neutral source model, and ${discovery.target.label} is emitted from that model. Neither side knows about the other, which is what lets either end change independently.`);
+  out.push('');
+
+  out.push('## 2. Capabilities this project required');
+  out.push('');
+  out.push('| Capability | Why it was required |');
+  out.push('|---|---|');
+  for (const capability of discovery.capabilities) out.push(`| \`${capability.id}\` | ${mdEscape(capability.why)} |`);
+  out.push('');
+
+  out.push('## 3. The approved graph');
+  out.push('');
+  out.push('```');
+  const byPhase = new Map();
+  for (const node of graphNodes) {
+    if (!byPhase.has(node.phase)) byPhase.set(node.phase, []);
+    byPhase.get(node.phase).push(node);
+  }
+  const phases = [...byPhase.keys()].sort((a, b) => a - b);
+  phases.forEach((phase, index) => {
+    for (const node of byPhase.get(phase)) out.push(`${'  '.repeat(index)}${index ? '└─▶ ' : ''}${node.name}  (${node.capability})`);
+  });
+  if (!graphNodes.length) out.push('(no agents in the graph)');
+  out.push('```');
+  out.push('');
+
+  out.push('| # | Agent | Capability | Provenance | Implementation |');
+  out.push('|---|---|---|---|---|');
+  graphNodes.forEach((node, index) => {
+    out.push(`| ${index + 1} | ${node.name} | \`${node.capability}\` | ${node.source} | \`${node.impl}\` |`);
+  });
+  out.push('');
+
+  out.push('## 4. Artifacts this architecture produces');
+  out.push('');
+  out.push('| Path | Kind | Lines |');
+  out.push('|---|---|---|');
+  for (const item of generated) out.push(`| \`${item.path}\` | ${item.kind} | ${item.lines} |`);
+  if (!generated.length) out.push('| _Nothing generated yet_ | — | — |');
+  out.push('');
+
+  if (discovery.gaps.length) {
+    out.push('## 5. Known gaps');
+    out.push('');
+    for (const gap of discovery.gaps) out.push(`- \`${gap.capability}\` — ${gap.reason} **Needs:** ${gap.needs}`);
+    out.push('');
+  }
+  return out.join('\n');
+}
+
+function bmadEpics({ discovery, model, trace, stamp }) {
+  const out = [];
+  const rows = trace?.rows || [];
+
+  out.push('# Epics & Stories');
+  out.push('');
+  out.push(`**Method:** BMAD · **Phase:** 4 (Implementation) · **Traces to:** architecture.md · **Generated:** ${stamp} by ASDD`);
+  out.push('');
+  out.push('One epic per source suite, one story per source test. Status is computed from the run, not asserted.');
+  out.push('');
+  out.push('| Epic | Story | Traces | Assertions | Generated | Status |');
+  out.push('|---|---|---|---|---|---|');
+
+  (model?.suites || []).forEach((suite, index) => {
+    suite.tests.forEach((test, testIndex) => {
+      const row = rows.find((r) => r.testId === test.id);
+      out.push(
+        `| ${testIndex === 0 ? `**E${index + 1} ${mdEscape(suite.name)}**` : ''} | S${index + 1}.${testIndex + 1} ${mdEscape(test.name)} | ${row?.requirementId || '—'} | ${test.assertions.length} | ${(row?.artifacts || []).map((a) => `\`${a}\``).join('<br>') || '—'} | ${row?.status || 'unknown'} |`,
+      );
+    });
+  });
+  if (!(model?.suites || []).length) out.push('| _No source suites were parsed_ | — | — | — | — | — |');
+  out.push('');
+
+  if (model?.unmapped.length) {
+    out.push(`## Epic E${(model.suites.length || 0) + 1} — Port by hand`);
+    out.push('');
+    out.push('Constructs with no target equivalent. These are the stories a human still owns.');
+    out.push('');
+    for (const [index, item] of model.unmapped.entries()) {
+      out.push(`- **H${index + 1}** ${item.construct} in \`${item.file}\` — ${item.reason}`);
+    }
+    out.push('');
+  }
+
+  const orphans = trace?.orphanRequirements || [];
+  if (orphans.length) {
+    out.push('## Requirements with no story');
+    out.push('');
+    for (const orphan of orphans) out.push(`- **${orphan.id}** — ${orphan.text}`);
+    out.push('');
+  }
+
+  out.push('## Definition of done');
+  out.push('');
+  out.push('1. Every story above reads `migrated`.');
+  out.push('2. Every guardrail in the PRD passes, or its failure is accepted by a named human.');
+  out.push('3. The hand-port epic is empty, or each item is explicitly signed off.');
+  out.push('');
+  return out.join('\n');
+}
+
 /* --------------------------------------------------- human-authored agent */
 
 /**
@@ -1048,6 +1302,7 @@ export const AGENT_IMPLS = {
   testDataMigrator,
   authMigrator,
   traceabilityAgent,
+  bmadArtifactAgent,
   structureValidator,
   genericAdapter,
 };

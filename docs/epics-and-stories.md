@@ -28,6 +28,8 @@
 | | S6.5 Human approval gate closing every run | FR-18 | done |
 | **E7 Observability** | S7.1 Structured log across api / run / agent / guardrail / llm | FR-19 | done |
 | | S7.2 Failure-first dashboard with live log feed | FR-20 | done |
+| **E8 BMAD handover** | S8.1 BMAD Artifact Agent emitting brief / PRD / architecture / epics | FR-21 | done |
+| | S8.2 Templates that start empty and hold the run until you supply content | FR-22 | done |
 
 ## Definition of done (applied to every story)
 

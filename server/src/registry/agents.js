@@ -161,6 +161,18 @@ export const SEED_AGENTS = [
     maturity: 'proven',
   },
   {
+    id: 'agent.bmad-artifacts',
+    name: 'BMAD Artifact Agent',
+    capability: 'docs.bmad.generate',
+    description:
+      'Writes the BMAD document set for the project — product brief, PRD, architecture and epics & stories — derived from the discovery report, the approved graph and the traceability matrix, so the migration lands in the shape the BMAD method expects.',
+    inputs: ['spec:requirements', 'analysis/source-model.json', 'analysis/traceability.json', 'graph'],
+    outputs: ['docs/product-brief.md', 'docs/prd.md', 'docs/architecture.md', 'docs/epics-and-stories.md'],
+    impl: 'bmadArtifactAgent',
+    tags: ['bmad', 'documentation', 'handover'],
+    maturity: 'proven',
+  },
+  {
     id: 'agent.structure-validator',
     name: 'Structure & Compilation Validator',
     capability: 'validate.compile-structure',

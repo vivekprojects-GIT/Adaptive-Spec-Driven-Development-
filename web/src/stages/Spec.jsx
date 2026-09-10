@@ -37,6 +37,7 @@ export default function SpecStage({ project, reload, navigate, toast }) {
     try {
       await api.saveSpec(project.id, {
         projectKind: spec.projectKind || 'migration',
+        bmadArtifacts: spec.bmadArtifacts !== false,
         requirements: spec.requirements,
         sourceStack: spec.sourceStack,
         targetStack: spec.targetStack,
@@ -157,6 +158,19 @@ export default function SpecStage({ project, reload, navigate, toast }) {
             <Field label="Constraints" hint="CI, security, deadlines, anything the migration must respect.">
               <textarea rows={3} value={spec.constraints || ''} onChange={(e) => setSpec({ ...spec, constraints: e.target.value })} />
             </Field>
+
+            <label className="row small" style={{ gap: 8, marginBottom: 13, alignItems: 'flex-start' }}>
+              <input
+                type="checkbox"
+                style={{ width: 'auto', marginTop: 3 }}
+                checked={spec.bmadArtifacts !== false}
+                onChange={(e) => setSpec({ ...spec, bmadArtifacts: e.target.checked })}
+              />
+              <span>
+                Hand back the <b>BMAD document set</b>
+                <span className="faint"> — product brief, PRD, architecture and epics &amp; stories, written from what this run actually finds.</span>
+              </span>
+            </label>
 
             <div className="row">
               <button className="btn" disabled={!dirty || saving} onClick={save}>{saving ? 'Saving…' : dirty ? 'Save spec' : 'Saved'}</button>

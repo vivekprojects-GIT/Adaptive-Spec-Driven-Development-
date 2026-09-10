@@ -126,6 +126,7 @@ export async function executeRun(runId, project) {
         discovery: run.discovery,
         ws,
         node,
+        run,
         notes,
         log: (message) => emit(run, { type: 'node:log', nodeId: node.nodeId, agent: node.name, message }),
       };
