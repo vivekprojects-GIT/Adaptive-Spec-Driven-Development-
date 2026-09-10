@@ -6,4 +6,5 @@ server/data/*.json
 !server/data/.gitkeep
 *.log
 .DS_Store
-test/.data/
+# Test scratch store. Anchored patterns only match at the repo root, so match at any depth.
+**/test/.data/
