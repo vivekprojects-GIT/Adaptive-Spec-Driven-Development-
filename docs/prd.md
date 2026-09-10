@@ -34,6 +34,7 @@ execution layer over a pluggable Agent Registry and Guardrail Registry.
 | FR-21 | **BMAD document set** written per run: brief, PRD, architecture, epics & stories | Every row derived from the run; unknowns stated, not invented; switchable per project |
 | FR-22 | **Templates are starting shapes**, not ready-made runs | A new project from a template has no artifacts and no requirements, and discovery refuses until it does |
 | FR-23 | **Approvals inbox** — every outstanding human decision in one place | Sidebar count, per-project count, in-project banner, and a list that links to the resolving screen |
+| FR-24 | **Export to folder** — write a run's artifacts into a real repository | Absolute path required; previews the plan; never overwrites without explicit consent; paths cannot escape the target |
 
 ## 3. Non-functional
 

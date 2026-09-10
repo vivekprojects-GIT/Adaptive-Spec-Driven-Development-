@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { getRun, busFor, listRuns, recordApproval } from '../engine/orchestrator.js';
 import { HttpError } from '../lib/util.js';
+import { planExport, performExport, EXPORTABLE_KINDS, ExportError } from '../lib/exporter.js';
+import { logger } from '../lib/logger.js';
 
 const router = Router();
 
@@ -53,6 +55,33 @@ router.post('/:runId/approval', (req, res) => {
   const approval = recordApproval(req.params.runId, { state, note, by });
   if (!approval) throw new HttpError(404, 'Run not found.');
   res.json(approval);
+});
+
+/**
+ * Write the run's artifacts into a folder on disk — normally the target repository.
+ *
+ * `dryRun` is the default path the UI uses first: it returns the exact file plan so a person can
+ * see what would be created, what already exists, and what was blocked, before anything is written.
+ */
+router.post('/:runId/export', (req, res) => {
+  const run = getRun(req.params.runId);
+  if (!run) throw new HttpError(404, 'Run not found.');
+  if (!(run.ws?.generated || []).length) throw new HttpError(409, 'This run produced no artifacts to export.');
+
+  const { targetDir, include, overwrite = false, dryRun = true } = req.body || {};
+  const options = { targetDir, include, overwrite };
+
+  const result = dryRun ? planExport(run, options) : performExport(run, options);
+  if (!dryRun) {
+    logger.info('run', `Exported ${result.written.length} file(s) to ${result.root}`, {
+      runId: run.id,
+      projectId: run.projectId,
+      written: result.written.length,
+      skipped: result.skipped.length,
+      failed: result.errors.length,
+    });
+  }
+  res.json({ dryRun, kinds: EXPORTABLE_KINDS, ...result });
 });
 
 router.get('/:runId/report.md', (req, res) => {

@@ -32,6 +32,7 @@
 | | S8.2 Templates that start empty and hold the run until you supply content | FR-22 | done |
 | **E9 Human visibility** | S9.1 Approvals inbox aggregating every pending decision | FR-23 | done |
 | | S9.2 Waiting counts in the sidebar, project list, stepper and an in-project banner | FR-23 | done |
+| **E10 Handover** | S10.1 Export a run's artifacts to a folder, with a preview and overwrite protection | FR-24 | done |
 
 ## Definition of done (applied to every story)
 

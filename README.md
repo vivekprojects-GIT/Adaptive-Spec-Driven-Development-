@@ -71,6 +71,12 @@ Everything. There is no step that requires curl or editing a file by hand.
 | **8 Trace** | Five-column lineage — requirement → source test → agent → artifact → guardrail. Click any node and its whole chain lights up. Plus the traceability matrix and a full decision trail |
 | **9 Report** | Acceptance summary and a Markdown report, downloadable, plus a JSON bundle of the entire run |
 
+**Getting the files out.** The run view has **Export to folder**: give it an absolute path and it
+writes `tests/`, `pages/`, `data/`, `features/` and `docs/` straight into that repository. It always
+previews first — every file marked *new*, *exists — skipped* or *blocked* — and it never overwrites
+anything unless you explicitly tick the box. Then open the folder in your editor; they are ordinary
+source files, and Copilot, Cursor or Claude Code can pick them up from there.
+
 Four more screens in the sidebar:
 
 - **Approvals** — every decision waiting on a human, across every project, in one list: unanswered

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { api, streamRun } from '../lib/api.js';
 import { Card, Badge, Stat, Empty, Dot, Spinner, shortTime, toneForStatus, toneForVerdict, copyText } from '../lib/ui.jsx';
 import Graph from '../components/Graph.jsx';
+import ExportModal from '../components/ExportModal.jsx';
 
 export default function RunStage({ project, reload, navigate, toast }) {
   const [runId, setRunId] = useState(project.runs?.[0]?.id || null);
@@ -10,6 +11,7 @@ export default function RunStage({ project, reload, navigate, toast }) {
   const [busy, setBusy] = useState(false);
   const [selectedArtifact, setSelectedArtifact] = useState(null);
   const [approvalNote, setApprovalNote] = useState('');
+  const [exporting, setExporting] = useState(false);
   const consoleRef = useRef(null);
 
   const load = useCallback(async (targetId) => {
@@ -277,6 +279,7 @@ export default function RunStage({ project, reload, navigate, toast }) {
           sub="Real files. Copy them straight into the target repository."
           right={
             <div className="row">
+              <button className="btn sm primary" onClick={() => setExporting(true)}>⤓ Export to folder</button>
               <a className="btn sm" href={api.bundleUrl(run.id)} download={`${run.id}-bundle.json`}>⬇ Download bundle</a>
             </div>
           }
@@ -320,6 +323,8 @@ export default function RunStage({ project, reload, navigate, toast }) {
           </div>
         </Card>
       )}
+
+      {exporting && <ExportModal run={run} onClose={() => setExporting(false)} />}
 
       {live && !events.length && (
         <div className="row" style={{ marginTop: 14 }}><Spinner /> <span className="muted small">Connecting to the run stream…</span></div>
