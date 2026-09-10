@@ -78,7 +78,7 @@ export function pendingApprovals() {
           detail: run.approval.reason,
           count: 1,
           since: run.finishedAt || run.startedAt,
-          action: 'Review the run',
+          action: 'Continue it or send it back',
         });
         continue;
       }

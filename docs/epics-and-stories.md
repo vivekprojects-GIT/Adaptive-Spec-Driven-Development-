@@ -37,6 +37,8 @@
 | | S11.2 BMAD persona agents as workflow nodes, persona loaded at run time | FR-26 | done |
 | **E12 Editor integration** | S12.1 MCP server exposing ASDD tools, decisions only on explicit instruction | FR-27 | done |
 | | S12.2 Model bridge: the editor's model through MCP sampling, no API key | FR-28, NFR-5 | done |
+| **E13 Picking up from a decision** | S13.1 Continue a halted run past its stop, recorded as an override | FR-29 | done |
+| | S13.2 Re-run from a changed agent, reusing the unchanged agents before it | FR-29 | done |
 
 ## Definition of done (applied to every story)
 

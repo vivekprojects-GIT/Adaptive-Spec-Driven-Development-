@@ -39,6 +39,7 @@ execution layer over a pluggable Agent Registry and Guardrail Registry.
 | FR-26 | **BMAD agents are workflow agents** — any installed BMAD agent can be added to a graph | Loads the agent's current persona at run time; output traced and guarded like any other agent |
 | FR-27 | **MCP server** exposes ASDD to the editor's assistant | Status, approvals, discovery, proposals, runs, BMAD personas; decision tools act only on the user's explicit instruction |
 | FR-28 | **Editor's model with no API key** via MCP sampling | Model setting `copilot` or `auto`; bridge status visible in Settings; each run records the model it used |
+| FR-29 | **Decisions resume the work** — a halted run continues past its stop; a run with changes requested re-runs from any agent | A halted run cannot be approved as it stands; continue keeps finished work and runs only the skipped agents in the same run, recording the override; a re-run reuses unchanged upstream agents and says why when it cannot |
 
 ## 3. Non-functional
 

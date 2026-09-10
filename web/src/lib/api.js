@@ -58,6 +58,8 @@ export const api = {
 
   importRequirements: (projectId, body) => call(`/projects/${projectId}/requirements/import`, { method: 'POST', body }),
   approve: (runId, body) => call(`/runs/${runId}/approval`, { method: 'POST', body }),
+  continueRun: (runId, body) => call(`/runs/${runId}/continue`, { method: 'POST', body }),
+  rerunRun: (runId, body) => call(`/runs/${runId}/rerun`, { method: 'POST', body }),
   exportRun: (runId, body) => call(`/runs/${runId}/export`, { method: 'POST', body }),
 
   registry: () => call('/registry'),

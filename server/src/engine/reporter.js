@@ -94,6 +94,11 @@ export function buildMarkdown(project, run) {
   out.push(`- **Migration:** ${discovery.source.label} → ${discovery.target.label}`);
   out.push(`- **Model:** ${run.modelUsed || 'rule engine (offline)'}`);
   out.push(`- **Verdict:** **${(validation?.verdict || 'unknown').toUpperCase()}**`);
+  if (run.rerunOf) {
+    out.push(
+      `- **Re-run of:** \`${run.rerunOf.runId}\`${run.rerunOf.from ? ` from "${run.rerunOf.from}"` : ''} — ${run.rerunOf.reused.length} agent(s) reused unchanged`,
+    );
+  }
   out.push('');
 
   out.push('## 1. What was discovered');
@@ -124,7 +129,8 @@ export function buildMarkdown(project, run) {
   out.push('| # | Agent | Capability | Source | Status | ms |');
   out.push('|---|---|---|---|---|---|');
   nodes.forEach((node, index) => {
-    out.push(`| ${index + 1} | ${node.name} | \`${node.capability}\` | ${node.source} | ${node.status} | ${node.ms ?? '—'} |`);
+    const status = node.reusedFrom ? `${node.status} (reused from \`${node.reusedFrom}\`)` : node.status;
+    out.push(`| ${index + 1} | ${node.name} | \`${node.capability}\` | ${node.source} | ${status} | ${node.ms ?? '—'} |`);
   });
   out.push('');
 
@@ -133,9 +139,29 @@ export function buildMarkdown(project, run) {
   out.push('| Guardrail | Severity | Status | Evidence |');
   out.push('|---|---|---|---|');
   for (const result of validation?.results || []) {
-    out.push(`| ${result.name} | ${result.severity} | **${result.status}** | ${String(result.evidence).replace(/\|/g, '\\|')} |`);
+    const override = result.overridden
+      ? ` — stop overridden by ${result.overridden.by}${result.overridden.note ? `: ${String(result.overridden.note).replace(/\|/g, '\\|')}` : ''}`
+      : '';
+    out.push(`| ${result.name} | ${result.severity} | **${result.status}**${override} | ${String(result.evidence).replace(/\|/g, '\\|')} |`);
   }
   out.push('');
+
+  if (run.decisions?.length) {
+    out.push('### Human decisions on this run');
+    out.push('');
+    for (const decision of run.decisions) {
+      const what =
+        decision.type === 'continued'
+          ? `Continued past "${decision.guardrail}" — ${decision.agents?.length || 0} skipped agent(s) then ran`
+          : decision.type === 'rerun'
+            ? `Re-run as \`${decision.runId}\` from "${decision.from}"`
+            : decision.type === 'approved'
+              ? 'Approved'
+              : 'Changes requested';
+      out.push(`- ${decision.at} — **${what}** by ${decision.by}${decision.note ? `: ${decision.note}` : ''}`);
+    }
+    out.push('');
+  }
 
   out.push('## 5. Traceability matrix');
   out.push('');

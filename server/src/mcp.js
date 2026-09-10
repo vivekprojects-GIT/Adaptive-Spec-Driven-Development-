@@ -90,20 +90,46 @@ const readOnly = { readOnlyHint: true, openWorldHint: false };
 
 function summariseRun(run) {
   const results = run.validation?.results || [];
+  const halted = run.status === 'halted';
+  const stoppedBy = halted ? results.find((r) => r.guardrailId === run.validation?.haltedBy) : null;
+  const next = () => {
+    if (halted && run.approval?.state === 'pending') {
+      return `A guardrail ("${stoppedBy?.name}") halted this run and it cannot be approved as it stands. Ask the user: continue past the stop (asdd_continue_run), or request changes and re-run from an agent (asdd_rerun_run). Act only on their answer.`;
+    }
+    if (run.approval?.state === 'pending') {
+      return 'This run is waiting on a human decision. Ask the user whether to approve it or request changes, then call asdd_decide_run with their answer.';
+    }
+    if (run.approval?.state === 'changes-requested' && !run.supersededBy) {
+      return 'Changes were requested. Once the user has made them, asdd_rerun_run re-runs from the agent they changed, reusing the unchanged ones before it.';
+    }
+    return undefined;
+  };
   return {
     runId: run.id,
     project: run.projectName,
     status: run.status,
     verdict: run.validation?.verdict || null,
     approval: run.approval?.state || null,
-    guardrails: results.map((r) => `${r.status.toUpperCase()} — ${r.name}: ${r.evidence}`),
+    haltedBy: stoppedBy ? `${stoppedBy.name}: ${stoppedBy.evidence}` : undefined,
+    agents: (run.nodes || []).map((n) => `${n.nodeId} · ${n.name} — ${n.status}${n.reusedFrom ? ` (reused from ${n.reusedFrom})` : ''}`),
+    guardrails: results.map((r) => `${r.status.toUpperCase()} — ${r.name}: ${r.evidence}${r.overridden ? ` [stop overridden by ${r.overridden.by}]` : ''}`),
     artifacts: (run.ws?.generated || []).map((a) => a.path),
     model: run.modelUsed || 'rule engine',
-    next:
-      run.approval?.state === 'pending'
-        ? 'This run is waiting on a human decision. Ask the user whether to approve it or request changes, then call asdd_decide_run with their answer.'
-        : undefined,
+    rerunOf: run.rerunOf ? `${run.rerunOf.runId}, from "${run.rerunOf.from}"; reused: ${run.rerunOf.reused.join(', ') || 'none'}` : undefined,
+    supersededBy: run.supersededBy || undefined,
+    decisions: run.decisions?.length ? run.decisions.map((d) => `${d.at} ${d.type} by ${d.by}${d.note ? `: ${d.note}` : ''}`) : undefined,
+    next: next(),
   };
+}
+
+/** Polls until a run stops running, for tools that start one. */
+async function waitForRun(runId, timeoutMs = 120_000) {
+  for (let waited = 0; waited < timeoutMs; waited += 1000) {
+    await sleep(1000);
+    const run = await api(`/runs/${runId}`);
+    if (!['running', 'queued'].includes(run.status)) return summariseRun(run);
+  }
+  return { runId, status: 'still running', next: 'Check again with asdd_run_summary.' };
 }
 
 tool(
@@ -267,12 +293,7 @@ tool(
     const composed = await api(`/projects/${projectId}/compose`, { method: 'POST' });
     if (!composed.graph?.order?.length) throw new ToolError(`Nothing to run: ${(composed.graph?.errors || []).join(' ') || 'no accepted agents.'}`);
     const { runId } = await api(`/projects/${projectId}/runs`, { method: 'POST' });
-    for (let waited = 0; waited < 120_000; waited += 1000) {
-      await sleep(1000);
-      const run = await api(`/runs/${runId}`);
-      if (!['running', 'queued'].includes(run.status)) return summariseRun(run);
-    }
-    return { runId, status: 'still running', next: 'Check again with asdd_run_summary.' };
+    return waitForRun(runId);
   },
 );
 
@@ -287,7 +308,7 @@ tool(
   {
     title: "Record the user's decision on a run",
     description:
-      "Approves a run or requests changes — the platform's final human gate. ONLY call this after the user has explicitly told you their decision in this conversation. Never decide on the user's behalf. The decision is recorded as made by a human through Copilot Chat.",
+      "Approves a run or requests changes — the platform's final human gate. ONLY call this after the user has explicitly told you their decision in this conversation. Never decide on the user's behalf. The decision is recorded as made by a human through Copilot Chat. A run a guardrail halted cannot be approved as it stands — offer asdd_continue_run or a re-run instead.",
     inputSchema: {
       runId: z.string(),
       decision: z.enum(['approved', 'changes-requested']),
@@ -297,6 +318,49 @@ tool(
   async ({ runId, decision, note }) => {
     const approval = await api(`/runs/${runId}/approval`, { method: 'POST', body: { state: decision, note: note || '', by: 'human via Copilot Chat' } });
     return { recorded: approval.state, by: approval.by, at: approval.at, note: approval.note };
+  },
+);
+
+tool(
+  'asdd_continue_run',
+  {
+    title: 'Continue a halted run past its stop',
+    description:
+      "Overrides the guardrail that halted a run and carries the SAME run on from the agent after the one that stopped it, keeping everything already produced. ONLY call this after the user has explicitly told you to continue past that stop in this conversation. The override is recorded as theirs, the check still counts as failed, and the run comes back for their final approval.",
+    inputSchema: {
+      runId: z.string(),
+      note: z.string().optional().describe("The user's reason for overriding the stop, in their words"),
+    },
+  },
+  async ({ runId, note }) => {
+    const started = await api(`/runs/${runId}/continue`, { method: 'POST', body: { note: note || '', by: 'human via Copilot Chat' } });
+    return { overrode: started.overrode, ran: started.continuing, ...(await waitForRun(runId)) };
+  },
+);
+
+tool(
+  'asdd_rerun_run',
+  {
+    title: 'Re-run from an agent after changes',
+    description:
+      "Re-runs a run from one agent after the user has made changes. Agents before it that have not changed are reused as they were; that agent and everything after it run again, in a new run. Records 'changes requested' on the original if it was still undecided. ONLY call this when the user has asked for a re-run. If they changed an agent, the workflow must be recomposed first (asdd_run_workflow does both, but starts from the top).",
+    inputSchema: {
+      runId: z.string(),
+      fromAgent: z.string().optional().describe('Node id (e.g. n3) or agent name to re-run from. Omit to start at the agent whose check stopped the run, or the first that failed.'),
+      note: z.string().optional().describe('What the user changed, in their words'),
+    },
+  },
+  async ({ runId, fromAgent, note }) => {
+    let fromNodeId;
+    if (fromAgent) {
+      const run = await api(`/runs/${runId}`);
+      const wanted = fromAgent.toLowerCase();
+      const node = run.nodes.find((n) => n.nodeId === fromAgent) || run.nodes.find((n) => n.name.toLowerCase().includes(wanted));
+      if (!node) throw new ToolError(`No agent matching "${fromAgent}" in ${runId}. Agents: ${run.nodes.map((n) => `${n.nodeId} ${n.name}`).join(', ')}`);
+      fromNodeId = node.nodeId;
+    }
+    const started = await api(`/runs/${runId}/rerun`, { method: 'POST', body: { fromNodeId, note: note || '', by: 'human via Copilot Chat' } });
+    return { newRunId: started.runId, from: started.from, reused: started.reused, reasons: started.reasons, ...(await waitForRun(started.runId)) };
   },
 );
 

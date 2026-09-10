@@ -60,7 +60,7 @@ The repo ships `.vscode/mcp.json`, which registers ASDD as an MCP server. That g
 1. **ASDD inside Copilot Chat.** In Agent mode, ask *"what's waiting for my approval?"*, *"run
    discovery on the payments project"*, *"summarise the last run"*, or *"give me Winston's persona"*.
    The tools drive the same server the UI uses, so everything shows up in the UI and the log. The
-   decision tools — approve a run, accept proposals, export — act only when you say so, and each
+   decision tools — approve, continue or re-run a run, accept proposals, export — act only when you say so, and each
    decision is recorded as yours.
 2. **Copilot's model inside ASDD.** The MCP server borrows your editor's model through MCP
    *sampling* and lends it to the ASDD server. Set the model to **Auto** or **Copilot** in Settings
@@ -96,7 +96,7 @@ Everything. There is no step that requires curl or editing a file by hand.
 | **5 Guardrails** | Guardrail Designer proposals, each naming the discovered risk it covers. Same four actions |
 | **6 Workflow** | The composed DAG, drawn. Layers come from capability phases, so the picture is the real execution order |
 | **7 Run** | Live execution with a streaming console, per-node status on the graph, guardrail verdicts, and a browsable file viewer of everything generated |
-| **7a Approval** | Approve the run or request changes — the run stays `pending` until you decide |
+| **7a Approval** | Approve the run or request changes — the run stays `pending` until you decide. A halted run is continued past its stop, or re-run from the agent you changed — never restarted from scratch |
 | **8 Trace** | Five-column lineage — requirement → source test → agent → artifact → guardrail. Click any node and its whole chain lights up. Plus the traceability matrix and a full decision trail |
 | **9 Report** | Acceptance summary and a Markdown report, downloadable, plus a JSON bundle of the entire run |
 
@@ -163,6 +163,22 @@ halts *there* — later agents are marked skipped, the verdict is `blocked`, and
 And every run ends the same way: **pending your approval**. Approve it, or request changes with a
 note. Nothing is accepted just because the machine finished — and because the platform waits on you
 by design, the **Approvals** inbox exists so you always know what it is waiting for.
+
+**A decision picks the work up where it stopped — it never starts over.** A run a guardrail halted
+cannot be approved as it stands, because agents in it never ran. You get two choices instead:
+
+- **Approve and continue** — the *same* run carries on from the agent after the one that stopped it.
+  Everything already produced is kept and only the skipped agents run. The override is recorded
+  against you, the check still counts as failed (the verdict can no longer read *passed*), and the
+  run comes back to you for final approval.
+- **Request changes**, then **Re-run from** any agent — make the change (edit the agent, recompose
+  the workflow), and a new run reuses every agent before the one you pick that has not changed
+  (marked *reused*, drawn dashed on the graph), then runs that agent and everything after it. If
+  something earlier changed — or the spec, source files or answers did — it starts earlier and says
+  why, rather than mixing two versions.
+
+Every decision — continued, approved, changes requested, re-run — is on the run's timeline, in its
+report, and on the project's decision trail.
 
 ---
 

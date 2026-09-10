@@ -99,10 +99,11 @@ test.after(async () => {
 test('the MCP server exposes the ASDD tools, and the decision tools say whose decision it is', async () => {
   const { tools } = await client.listTools();
   const names = tools.map((t) => t.name);
-  for (const name of ['asdd_status', 'asdd_list_approvals', 'asdd_run_discovery', 'asdd_decide_run', 'asdd_export_run', 'asdd_bmad_agents', 'asdd_bmad_persona']) {
+  for (const name of ['asdd_status', 'asdd_list_approvals', 'asdd_run_discovery', 'asdd_decide_run', 'asdd_continue_run', 'asdd_rerun_run', 'asdd_export_run', 'asdd_bmad_agents', 'asdd_bmad_persona']) {
     assert.ok(names.includes(name), `${name} is exposed`);
   }
   assert.match(tools.find((t) => t.name === 'asdd_decide_run').description, /never decide on the user's behalf/i);
+  assert.match(tools.find((t) => t.name === 'asdd_continue_run').description, /ONLY call this after the user has explicitly told you/);
   assert.equal(tools.find((t) => t.name === 'asdd_export_run').annotations?.destructiveHint, true);
   assert.equal(tools.find((t) => t.name === 'asdd_list_approvals').annotations?.readOnlyHint, true);
 });

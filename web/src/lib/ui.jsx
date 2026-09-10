@@ -124,7 +124,11 @@ export function Spinner() {
 /* --------------------------------------------------------------- helpers */
 
 export const toneForStatus = (status) =>
-  ({ pass: 'pass', warn: 'warn', fail: 'fail', done: 'pass', running: 'info', failed: 'fail', pending: '', migrated: 'pass', orphan: 'fail', partial: 'warn', 'not-migrated': 'fail' }[status] || '');
+  ({
+    pass: 'pass', warn: 'warn', fail: 'fail', done: 'pass', running: 'info', queued: 'info', failed: 'fail', pending: '',
+    reused: 'info', skipped: 'warn', halted: 'fail', completed: 'pass', 'completed-with-errors': 'fail',
+    migrated: 'pass', orphan: 'fail', partial: 'warn', 'not-migrated': 'fail',
+  }[status] || '');
 
 export const toneForVerdict = (verdict) =>
   ({ passed: 'pass', 'passed-with-warnings': 'warn', 'failed-checks': 'fail', blocked: 'fail' }[verdict] || '');

@@ -53,7 +53,8 @@ export default function Graph({ graph, statuses = {}, selected, onSelect }) {
           const x2 = to.x;
           const y2 = to.y + NODE_H / 2;
           const mid = (x1 + x2) / 2;
-          const active = statuses[edge.from] === 'done' && (statuses[edge.to] === 'running' || statuses[edge.to] === 'done');
+          const finished = (status) => status === 'done' || status === 'reused';
+          const active = finished(statuses[edge.from]) && (statuses[edge.to] === 'running' || finished(statuses[edge.to]));
           return (
             <path
               key={index}
@@ -122,7 +123,9 @@ function truncate(text, max) {
 function statusColour(status) {
   return {
     done: 'var(--pass)',
+    reused: 'var(--info)',
     running: 'var(--info)',
     failed: 'var(--fail)',
+    skipped: 'var(--warn)',
   }[status] || 'var(--text-faint)';
 }

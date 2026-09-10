@@ -427,6 +427,9 @@ function summariseRun(run) {
     nodes: run.nodes.length,
     artifacts: run.ws?.generated?.length || 0,
     modelUsed: run.modelUsed,
+    approval: run.approval?.state || null,
+    rerunOf: run.rerunOf?.runId || null,
+    supersededBy: run.supersededBy || null,
   };
 }
 

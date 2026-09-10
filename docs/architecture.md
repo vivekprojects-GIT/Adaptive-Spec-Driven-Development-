@@ -70,6 +70,19 @@ An **authored guardrail** (`check: customRule`) carries a plain-English rule, an
 and an `onFailure` policy. `stop` is honoured mid-run: guardrails scoped to an agent execute the
 moment that agent finishes, so the workflow halts there instead of reporting the failure afterwards.
 
+A halt is not a dead end, and a decision never restarts the work from scratch:
+
+- **Continue** — `prepareContinue` marks the halting check `overridden: { by, note, at }` and resets
+  the skipped nodes to pending; `executeRun(…, { resume: true })` carries the *same* run on. Finished
+  nodes and their scoped checks stand, the workspace is restored from `run.ws`, and workflow-level
+  checks re-run over the full artifact set. An overridden failure no longer blocks, but the verdict
+  can never read `passed`. A halted run cannot be approved as it stands.
+- **Re-run** — `prepareRerun` creates a new run. `planRerun` walks the old and new workflows in order
+  and reuses the unbroken prefix of agents that are the same, unchanged and finished, stopping at the
+  requested agent — or earlier at the first that changed or did not finish, or at the top when the
+  spec/answers/discovery hash differs. Each run records which node last wrote each piece of shared
+  workspace state (`wsWriters`), so a reused prefix carries over exactly the state it produced.
+
 A **custom project kind** switches off every migration assumption — no source parser is expected, no
 emitter, no framework questions, and no capability gaps. The platform contributes only what it can
 prove (traceability, structural checks) and the human authors the rest.

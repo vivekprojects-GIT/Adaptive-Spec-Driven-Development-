@@ -1,10 +1,42 @@
 import { Router } from 'express';
-import { getRun, busFor, listRuns, recordApproval } from '../engine/orchestrator.js';
-import { HttpError } from '../lib/util.js';
+import { getRun, busFor, listRuns, recordApproval, prepareContinue, prepareRerun, executeRun } from '../engine/orchestrator.js';
+import { HttpError, id, now } from '../lib/util.js';
+import { collection } from '../lib/store.js';
 import { planExport, performExport, EXPORTABLE_KINDS, ExportError } from '../lib/exporter.js';
 import { logger } from '../lib/logger.js';
 
 const router = Router();
+const projects = collection('projects');
+
+/** Decisions on a run belong on the project's decision trail too — that is where people look. */
+function onTrail(projectId, entry) {
+  projects.update(projectId, (project) => ({
+    ...project,
+    trail: [{ id: id('ev'), at: now(), actor: 'human', ...entry }, ...(project.trail || [])].slice(0, 400),
+  }));
+}
+
+/** Fire and forget, like starting a run: the client follows progress on the SSE stream. */
+function runInBackground(runId, project, options) {
+  executeRun(runId, project, options)
+    .then((finished) =>
+      onTrail(project.id, {
+        stage: 'run',
+        actor: 'control-plane',
+        action: 'run.finished',
+        detail: `Run ${finished.id} ${finished.status}; verdict ${finished.validation?.verdict}.`,
+      }),
+    )
+    .catch((err) => logger.error('run', `Run ${runId} could not execute: ${err.message}`, { runId }));
+}
+
+function runAndProject(runId) {
+  const run = getRun(runId);
+  if (!run) throw new HttpError(404, 'Run not found.');
+  const project = projects.find(run.projectId);
+  if (!project) throw new HttpError(404, 'The project this run belongs to no longer exists.');
+  return { run, project };
+}
 
 router.get('/', (req, res) => {
   res.json(listRuns(req.query.projectId));
@@ -54,7 +86,56 @@ router.post('/:runId/approval', (req, res) => {
   }
   const approval = recordApproval(req.params.runId, { state, note, by });
   if (!approval) throw new HttpError(404, 'Run not found.');
+  onTrail(getRun(req.params.runId).projectId, {
+    stage: 'run',
+    action: state === 'approved' ? 'run.approved' : 'run.changes-requested',
+    detail: `${approval.by} ${state === 'approved' ? 'approved' : 'requested changes on'} run ${req.params.runId}${note ? `: ${note}` : '.'}`,
+  });
   res.json(approval);
+});
+
+/**
+ * Override a guardrail's stop and carry on. The same run continues from the agent after the one
+ * that stopped it; everything already produced is kept.
+ */
+router.post('/:runId/continue', (req, res) => {
+  const { note = '', by = 'human' } = req.body || {};
+  const { project } = runAndProject(req.params.runId);
+  const run = prepareContinue(req.params.runId, project, { note, by });
+  const decision = run.decisions.at(-1);
+  onTrail(project.id, {
+    stage: 'run',
+    action: 'run.continued',
+    detail: `${by} overrode "${decision.guardrail}" and continued run ${run.id}${note ? `: ${note}` : '.'}`,
+  });
+  runInBackground(run.id, project, { resume: true });
+  res.status(202).json({ runId: run.id, continuing: decision.agents, overrode: decision.guardrail });
+});
+
+/**
+ * Redo the work from one agent after changes. A new run reuses every unchanged agent before it and
+ * runs that agent and everything after it again.
+ */
+router.post('/:runId/rerun', (req, res) => {
+  const { fromNodeId, note = '', by = 'human' } = req.body || {};
+  const { run: previous, project } = runAndProject(req.params.runId);
+  const wasUndecided = !previous.approval || previous.approval.state === 'pending';
+  const { run, plan } = prepareRerun(previous.id, project, { fromNodeId, note, by });
+  // Asking for a re-run of an undecided run is also a request for changes; the trail shows both.
+  if (wasUndecided) {
+    onTrail(project.id, {
+      stage: 'run',
+      action: 'run.changes-requested',
+      detail: `${by} requested changes on run ${previous.id}${note ? `: ${note}` : '.'}`,
+    });
+  }
+  onTrail(project.id, {
+    stage: 'run',
+    action: 'run.rerun',
+    detail: `${by} re-ran ${previous.id} as ${run.id}${plan.fromName ? ` from "${plan.fromName}"` : ''}; ${plan.pairs.length} agent(s) reused unchanged.${note ? ` Note: ${note}` : ''}`,
+  });
+  runInBackground(run.id, project);
+  res.status(202).json({ runId: run.id, from: plan.fromName, reused: plan.pairs.map((pair) => pair.next.name), reasons: plan.reasons });
 });
 
 /**
