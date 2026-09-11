@@ -155,7 +155,7 @@ function AgentCard({ proposal, busy, onDecide, onEdit }) {
             <strong style={{ fontSize: 13.5 }}>{proposal.name}</strong>
             <Badge tone={proposal.source === 'reuse' || proposal.source === 'bmad' ? 'pass' : proposal.source === 'generated' ? 'warn' : 'accent'}>
               {proposal.source === 'bmad'
-                ? `${proposal.icon || ''} your BMAD agent`
+                ? `${proposal.icon || ''} your ASDD persona`
                 : proposal.source === 'reuse'
                   ? 'reused from registry'
                   : proposal.source === 'generated'
@@ -374,8 +374,8 @@ function CreateModal({ kind, onClose, onCreate, accepted, options }) {
         <>
           {bmadAgents.length > 0 && (
             <Field
-              label="Start from one of your BMAD agents"
-              hint="Runs as that agent — its persona, principles and your team's customisations are loaded from your BMAD install at run time."
+              label="Start from one of your ASDD personas"
+              hint="Runs as that persona — its principles and your team's customisations are loaded from your persona library at run time."
             >
               <div className="chip-row" style={{ gap: 8, marginTop: 4 }}>
                 {bmadAgents.map((agent) => (
@@ -404,7 +404,7 @@ function CreateModal({ kind, onClose, onCreate, accepted, options }) {
 
           {form.agentId && (
             <div className="proposal-why" style={{ marginBottom: 12 }}>
-              Runs as your BMAD agent. Leave <b>Instructions</b> blank to give it its default review task for this role, or write the task you want done.
+              Runs as your ASDD persona. Leave <b>Instructions</b> blank to give it its default review task for this role, or write the task you want done.
             </div>
           )}
 

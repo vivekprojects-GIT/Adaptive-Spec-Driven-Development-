@@ -167,7 +167,7 @@ export default function SpecStage({ project, reload, navigate, toast }) {
                 onChange={(e) => setSpec({ ...spec, bmadArtifacts: e.target.checked })}
               />
               <span>
-                Hand back the <b>BMAD document set</b>
+                Hand back the <b>ASDD document set</b>
                 <span className="faint"> — product brief, PRD, architecture and epics &amp; stories, written from what this run actually finds.</span>
               </span>
             </label>

@@ -1,6 +1,6 @@
 ---
 name: asdd-run
-description: 'Run the ASDD workflow the user approved in this project, and carry out any agent step ASDD hands to you (such as one of the user''s BMAD agents or an agent they wrote), then hand the files back so the run continues. Use when the user says run, go, or carry on with ASDD.'
+description: 'Run the ASDD workflow the user approved in this project, and carry out any agent step ASDD hands to you (such as one of the user''s ASDD personas or an agent they wrote), then hand the files back so the run continues. Use when the user says run, go, or carry on with ASDD.'
 ---
 <!-- installed by ASDD — "asdd install" updates this file; edits here are overwritten. -->
 
@@ -17,7 +17,7 @@ description: 'Run the ASDD workflow the user approved in this project, and carry
    - **Agents ran and guardrails reported.** Relay the verdict, and every FAIL and WARN with its evidence. Then `/asdd-decide`.
 
    - **`WAITING FOR YOU`** — a step is yours to do. This is how ASDD uses you as its model, with no API key:
-     1. Read the whole TASK.md it names. It says who you are for this step (often one of the user's BMAD agents, carrying their team's customisations), what to do, and the inputs that agent was given.
+     1. Read the whole TASK.md it names. It says who you are for this step (often one of the user's ASDD personas, carrying their team's customisations), what to do, and the inputs that agent was given.
      2. Do the work for real. Read the project files you need, and write the files under the `out/` folder it names, each at the path it should have in the project.
      3. Stay in that role and that step's scope. Do not change other project files for this step.
      4. If something essential is missing, ask the user. If you go ahead on an assumption, write it in `NOTES.md` in that `out/` folder.

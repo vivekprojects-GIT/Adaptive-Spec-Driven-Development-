@@ -1,6 +1,6 @@
 # ASDD — Adaptive Spec Driven Development
 
-A migration-adaptive AI control plane, built with the BMAD method.
+A migration-adaptive AI control plane, built with the ASDD method.
 
 > **Requirements determine the workflow, the workflow determines the agents,
 > and the identified risks determine the guardrails.**
@@ -16,11 +16,10 @@ and holds them to your rules.
 
 **AI proposes the architecture; you own the final architecture.**
 
-**It runs on your BMAD.** Point it at your existing BMAD install and your BMAD agents — with your
-team's customisations — become agents ASDD can put in any workflow, read in place on every run and
-never copied. BMAD supplies the agents and the method; ASDD adds the control plane, the tracking
-and the UI. And it runs inside VS Code the way BMAD does — as skills Copilot follows in your
-project folder, with **Copilot as the model and no API key**.
+**It runs on your ASDD personas.** Point it at your persona library and your personas — Mary, John,
+Winston, Sally and Amelia, with your team's customisations — become agents ASDD can put in any
+workflow, read in place on every run and never copied. And it runs inside VS Code as skills Copilot
+follows in your project folder, with **Copilot as the model and no API key**.
 
 ---
 
@@ -49,15 +48,15 @@ you want to watch the pipeline work end to end first.
 Other useful commands:
 
 ```bash
-npm test          # pipeline, BMAD loader, model bridge and an MCP end-to-end test — no network, ~20s
+npm test          # pipeline, persona loader, model bridge and an MCP end-to-end test — no network, ~20s
 npm run seed      # create the flagship sample project without using the UI
 npm run build     # build the UI
 npm start         # single process on :5174 serving the built UI + API
 ```
 
-### In VS Code, the way BMAD works — Copilot does it, in your project folder
+### In VS Code — Copilot does it, in your project folder
 
-BMAD runs inside VS Code as skills that Copilot's agent mode follows. ASDD works the same way.
+ASDD runs inside VS Code as skills that Copilot's agent mode follows.
 Install it into your project once (after `npm install` in the ASDD folder):
 
 ```bash
@@ -65,13 +64,13 @@ node <path-to-ASDD>/server/src/cli.js install --workspace <your-project-folder>
 ```
 
 That adds six skills next to your project's other skills — `.github/skills/`, or `.claude/skills/`
-if that is where your BMAD lives — and a small launcher at `_asdd/asdd.mjs`. Open the project in
+if that is where your personas live — and a small launcher at `_asdd/asdd.mjs`. Open the project in
 VS Code, open Copilot Chat in **Agent** mode, and type **/asdd-start**.
 
 | Skill | What Copilot does with you |
 |---|---|
 | `/asdd-start` | Asks what you want, finds your requirements and source folders, asks the blocking questions |
-| `/asdd-review` | Shows the proposed agents and guardrails, records your accept / reject / edit, adds your own — including your BMAD agents |
+| `/asdd-review` | Shows the proposed agents and guardrails, records your accept / reject / edit, adds your own — including your ASDD personas |
 | `/asdd-run` | Runs the workflow, and does the steps ASDD hands to it |
 | `/asdd-decide` | Approve, request changes, continue past a stop, re-run; previews, then writes, the files into your project |
 | `/asdd-status` | Where things stand and what is waiting on you |
@@ -82,7 +81,7 @@ VS Code, open Copilot Chat in **Agent** mode, and type **/asdd-start**.
   generated files into the project only after showing you the plan and getting your yes.
 - **Copilot is the model — no API key, no bridge.** The deterministic engine (parsers, generators,
   guardrail checks, traceability) runs as a command. A step that needs thinking — an agent you
-  wrote, or one of your BMAD agents such as Winston — is handed to Copilot as a `TASK.md`: the BMAD
+  wrote, or one of your ASDD personas such as Winston — is handed to Copilot as a `TASK.md`: the
   persona with your team's customisations, the task, and the inputs. Copilot does it with your
   files, can ask you, and hands the files back with `submit`; the run carries on. Guardrails you
   wrote in plain English are judged by Copilot too — against the run's files, with the evidence
@@ -112,7 +111,7 @@ The repo ships `.vscode/mcp.json`, which registers ASDD as an MCP server. That g
    decision is recorded as yours.
 2. **Copilot's model inside ASDD.** The MCP server borrows your editor's model through MCP
    *sampling* and lends it to the ASDD server. Set the model to **Auto** or **Copilot** in Settings
-   and the interview, your authored agents and your BMAD agents run on your Copilot subscription.
+   and the interview, your authored agents and your ASDD personas run on your Copilot subscription.
 
 Setup:
 
@@ -172,7 +171,7 @@ Four more screens in the sidebar:
 - **Registries** — browse and extend the agent registry, the guardrail registry, and the technology
   profiles. An agent you add here is available to the *next* discovery on any project.
 - **Settings** — pick the model (**Auto**, **Copilot via VS Code**, Opus 5, Sonnet 5, Haiku 4.5,
-  Fable 5.1, or **Offline**), set an API key if you have one, point ASDD at your BMAD install, watch
+  Fable 5.1, or **Offline**), set an API key if you have one, point ASDD at your persona library, watch
   whether VS Code's model bridge is connected, and cap how many questions the interview may ask.
 
 ---
@@ -230,40 +229,39 @@ report, and on the project's decision trail.
 
 ---
 
-## It runs on your BMAD
+## It runs on your ASDD personas
 
-ASDD does not reimplement BMAD or ship a copy of it. It reads the install you already have, in
-place, every time:
+ASDD does not reimplement its personas or ship copies of them. It reads your persona library — the
+`_bmad/` folder in your project — in place, every time:
 
-| From your BMAD | Where it lives | What ASDD does with it |
+| From your library | Where it lives | What ASDD does with it |
 |---|---|---|
-| Agents | `_bmad/_config/skill-manifest.csv` → each agent's `SKILL.md` and `customize.toml` | Each one becomes a registry agent (marked *your BMAD agent*) you can put in any workflow |
-| Your team's and your own customisations | `_bmad/custom/<agent>.toml`, `<agent>.user.toml` | Merged the way BMAD's own resolver merges them: scalars override, tables deep-merge, keyed menu items replace or append, lists append |
-| Standing facts | `persistent_facts`, including `file:{project-root}/…` globs | The referenced files are loaded into the agent's context. A fact that points at a missing file is reported, not quietly dropped |
+| Personas | `_bmad/_config/skill-manifest.csv` → each persona's `SKILL.md` and `customize.toml` | Each one becomes a registry agent (marked *your ASDD persona*) you can put in any workflow |
+| Your team's and your own customisations | `_bmad/custom/<agent>.toml`, `<agent>.user.toml` | Merged the way the library's own resolver merges them: scalars override, tables deep-merge, keyed menu items replace or append, lists append |
+| Standing facts | `persistent_facts`, including `file:{project-root}/…` globs | The referenced files are loaded into the persona's context. A fact that points at a missing file is reported, not quietly dropped |
 | Your name and language | `_bmad/bmm/config.yaml` | Used in the persona |
 | Workflows | the same manifest, found wherever your IDE installed them (`.claude/skills/…`) | Counted in Settings, and available to your assistant alongside the ASDD tools |
 
-**Where it looks:** the folder in **Settings → Your BMAD install**, else `ASDD_BMAD_ROOT`, else the
-folder ASDD is cloned into and its parent — so clone ASDD inside your BMAD project and it is found
+**Where it looks:** the folder in **Settings → Your ASDD personas**, else `ASDD_PERSONA_ROOT`, else
+the folder ASDD is cloned into and its parent — so clone ASDD inside your project and it is found
 with no configuration. Deprecated shims are skipped.
 
-**No BMAD yet?** Everything else in ASDD works without it — Settings just says *not found*. To add
-it, install BMAD into your project with `npx bmad-method install` (see
-[BMAD-METHOD](https://github.com/bmad-code-org/BMAD-METHOD)), then clone ASDD inside that project or
-point Settings at it.
+**No persona library yet?** Everything else in ASDD works without it — Settings just says *not
+found*. To add one to your project, run `npx bmad-method install` there, then clone ASDD inside
+that project or point Settings at it.
 
-**Using one:** on the Agents step choose **Create my own → Start from one of your BMAD agents**.
+**Using one:** on the Agents step choose **Create my own → Start from one of your ASDD personas**.
 Leave *Instructions* blank and it gets the standard task for its role — the architect reviews the
 migration's invariants and risks, the PM checks requirements coverage, and so on — or write the task
-you want. At run time it loads that agent's *current* persona, so edit its customisation in BMAD
-and the next run picks it up. Its output lands in `bmad/<role>/` in the run, traced and held to your
+you want. At run time it loads that persona's *current* definition, so edit its customisation and
+the next run picks it up. Its output lands in `personas/<role>/` in the run, traced and held to your
 guardrails like any other agent's.
 
 ---
 
-## It hands back BMAD artifacts
+## It hands back the ASDD document set
 
-Every run can write the BMAD document set into `docs/`, derived from what that run actually found:
+Every run can write the ASDD document set into `docs/`, derived from what that run actually found:
 
 | Document | Built from |
 |---|---|
@@ -276,10 +274,9 @@ It runs after traceability, so the PRD can link requirements to the artifacts th
 it says what the run does not know instead of filling the gap: parse nothing and the brief says
 "No source tests were parsed"; leave a requirement untraced and the PRD marks it **not covered**.
 
-Switch it off per project with the **BMAD document set** checkbox on the Spec step.
+Switch it off per project with the **ASDD document set** checkbox on the Spec step.
 
-These are ASDD's output in the shape BMAD expects, so your BMAD agents and workflows can pick up
-where the run left off.
+Your ASDD personas and workflows can pick up from these documents where the run left off.
 
 ---
 
@@ -307,7 +304,7 @@ requirements it recognised so a document it could not read fails loudly rather t
 **With no model at all the platform is still fully functional.** Parsing, code generation, data
 migration, traceability and every guardrail check are deterministic and never call a model. A model
 — yours through a key, or Copilot's through VS Code — adds project-specific interview questions,
-richer explanations, and actually executes authored and BMAD agents. It does not change correctness.
+richer explanations, and actually executes authored agents and ASDD personas. It does not change correctness.
 Every run records which model it used.
 
 ---
@@ -374,7 +371,7 @@ than one that says no.
  React UI ──HTTP + SSE──▶ Express API ◀──HTTP── MCP server ◀──stdio── VS Code · Copilot Chat
                           (127.0.0.1)          tools + model bridge (MCP sampling)
                               │
-                              │ reads in place: _bmad/ — agents, customisations, standing facts
+                              │ reads in place: the persona library (_bmad/) — personas, customisations, facts
                               │
               ┌───────────────┴───────────────┐
               │         CONTROL PLANE         │
@@ -399,29 +396,29 @@ Four invariants every module honours:
 2. **Human gate.** No proposal becomes a graph node without an explicit accept.
 3. **Evidence or silence.** A guardrail verdict must be computed from artifacts. Unverifiable → `warn`, never `pass`.
 4. **One brain, one writer.** The Express server owns all state and all logic. The MCP server is a
-   thin client of its API, and BMAD is only ever read — so the UI, Copilot Chat and the log always agree.
+   thin client of its API, and the persona library is only ever read — so the UI, Copilot Chat and the log always agree.
 
 Full detail in [docs/architecture.md](docs/architecture.md).
 
 ### Layout
 
 ```
-docs/                      BMAD artifacts: product brief → PRD → architecture → epics & stories
+docs/                      ASDD document set: product brief → PRD → architecture → epics & stories
 server/
   src/engine/              discovery · agentFactory · guardrailDesigner · workflowComposer
                            orchestrator · agents · parsers · validator · reporter · interview
-  src/registry/            agents (seeded + your BMAD agents, live) · guardrails · technologies
+  src/registry/            agents (seeded + your ASDD personas, live) · guardrails · technologies
   src/routes/              projects · runs · registry · settings · observability · approvals
-                           bmad · llm-bridge
-  src/bmad/loader.js       reads your BMAD install: manifest, SKILL.md, customize.toml merge, facts
+                           personas · llm-bridge
+  src/bmad/loader.js       reads your persona library: manifest, SKILL.md, customize.toml merge, facts
   src/cli.js               the command line the ASDD skills run from a project folder
   src/mcp.js               the MCP server: ASDD tools + the editor model bridge
   src/lib/bridge.js        the queue that lends the editor's model to the engine
   src/templates.js         six starting templates, each with optional demo content
   test/smoke.test.js       end-to-end pipeline tests
   test/authoring.test.js   custom projects, authored agents/guardrails, halting, approval
-  test/bmad-loader.test.js a fixture laid out like a real BMAD install, and BMAD's merge rules
-  test/mcp.e2e.test.js     a real MCP client with sampling runs a BMAD agent with no API key
+  test/bmad-loader.test.js a fixture laid out like a real persona library, and its merge rules
+  test/mcp.e2e.test.js     a real MCP client with sampling runs an ASDD persona with no API key
   test/workspace.e2e.test.js  the whole flow from a project folder, exactly as the skills run it
   test/cli-commands.e2e.test.js  every other command, rules judged by the assistant, MCP on the
                            folder's server, and the server stopping itself when idle
@@ -434,7 +431,7 @@ web/
 ```
 
 React with no UI framework — React 18 + Vite and hand-written CSS. Server dependencies: Express,
-CORS, the MCP SDK (with zod), and smol-toml to read BMAD's `customize.toml`. That is the entire list.
+CORS, the MCP SDK (with zod), and smol-toml to read the personas' `customize.toml`. That is the entire list.
 
 ---
 
@@ -452,8 +449,8 @@ CORS, the MCP SDK (with zod), and smol-toml to read BMAD's `customize.toml`. Tha
   engine. Without a key they produce a resolved brief and say so; they never pretend to have run.
 - **Requirements import is text only** (`.md`, `.txt`, `.csv`, `.json`). No .docx or PDF parsing.
 - **Through the MCP bridge, the editor's model answers one prompt at a time.** MCP sampling is a single completion — no
-  tools, no file access, no follow-up questions. So a BMAD agent inside ASDD does one bounded job per
-  run. BMAD's interactive workflows (the step-by-step PRD or architecture sessions) need a
+  tools, no file access, no follow-up questions. So a persona inside ASDD does one bounded job per
+  run. Interactive persona workflows (the step-by-step PRD or architecture sessions) need a
   conversation: run those in your assistant, where ASDD's tools sit alongside them. Through the skills there is
   no such limit: Copilot does each handed-over step with its full tools.
 - **Sampling needs a client that supports it, and your consent.** VS Code does. With a client that
@@ -461,5 +458,5 @@ CORS, the MCP SDK (with zod), and smol-toml to read BMAD's `customize.toml`. Tha
 
 ---
 
-Built with the BMAD method: brief → PRD → architecture → epics & stories → implementation.
+Built with the ASDD method: brief → PRD → architecture → epics & stories → implementation.
 Those artifacts are in [`docs/`](docs/) and describe the system that is actually here.

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "ASDD - Adaptive Spec Driven Development: a migration-adaptive AI control plane built on the BMAD method.",
+  "description": "ASDD - Adaptive Spec Driven Development: a migration-adaptive AI control plane built with the ASDD method.",
   "workspaces": ["server", "web"],
   "bin": { "asdd": "server/src/cli.js" },
   "engines": { "node": ">=20.6" },

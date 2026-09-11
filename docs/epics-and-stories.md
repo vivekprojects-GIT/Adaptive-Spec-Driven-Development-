@@ -1,6 +1,6 @@
 # Epics & Stories — ASDD
 
-**Method:** BMAD · **Phase:** 4 (Implementation) · **Traces to:** architecture.md
+**Method:** ASDD · **Phase:** 4 (Implementation) · **Traces to:** architecture.md
 
 | Epic | Story | Traces | Status |
 |---|---|---|---|
@@ -28,19 +28,19 @@
 | | S6.5 Human approval gate closing every run | FR-18 | done |
 | **E7 Observability** | S7.1 Structured log across api / run / agent / guardrail / llm | FR-19 | done |
 | | S7.2 Failure-first dashboard with live log feed | FR-20 | done |
-| **E8 BMAD handover** | S8.1 BMAD Artifact Agent emitting brief / PRD / architecture / epics | FR-21 | done |
+| **E8 Document handover** | S8.1 ASDD Document Agent emitting brief / PRD / architecture / epics | FR-21 | done |
 | | S8.2 Templates that start empty and hold the run until you supply content | FR-22 | done |
 | **E9 Human visibility** | S9.1 Approvals inbox aggregating every pending decision | FR-23 | done |
 | | S9.2 Waiting counts in the sidebar, project list, stepper and an in-project banner | FR-23 | done |
 | **E10 Handover** | S10.1 Export a run's artifacts to a folder, with a preview and overwrite protection | FR-24 | done |
-| **E11 BMAD underneath** | S11.1 Read the user's BMAD install in place, with BMAD's override merge and standing facts | FR-25 | done |
-| | S11.2 BMAD persona agents as workflow nodes, persona loaded at run time | FR-26 | done |
+| **E11 Personas underneath** | S11.1 Read the user's persona library in place, with its override merge and standing facts | FR-25 | done |
+| | S11.2 ASDD personas as workflow nodes, loaded at run time | FR-26 | done |
 | **E12 Editor integration** | S12.1 MCP server exposing ASDD tools, decisions only on explicit instruction | FR-27 | done |
 | | S12.2 Model bridge: the editor's model through MCP sampling, no API key | FR-28, NFR-5 | done |
 | **E13 Picking up from a decision** | S13.1 Continue a halted run past its stop, recorded as an override | FR-29 | done |
 | | S13.2 Re-run from a changed agent, reusing the unchanged agents before it | FR-29 | done |
-| **E14 VS Code, BMAD-style** | S14.1 Command line over a per-folder ASDD server, state in the project's `_asdd/` | FR-30 | done |
-| | S14.2 ASDD skills and `asdd install`, next to the project's BMAD skills | FR-30 | done |
+| **E14 VS Code, as skills** | S14.1 Command line over a per-folder ASDD server, state in the project's `_asdd/` | FR-30 | done |
+| | S14.2 ASDD skills and `asdd install`, next to the project's other skills | FR-30 | done |
 | | S14.3 Model-driven steps handed to the coding assistant, resumed on submit | FR-30 | done |
 | | S14.4 Plain-English guardrails judged by the assistant; its clarifying questions recorded | FR-30 | done |
 | | S14.5 MCP tools on the folder's server; the server stops itself when idle | FR-30 | done |

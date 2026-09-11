@@ -6,7 +6,7 @@
  *
  *   1. TOOLS — Copilot Chat can drive ASDD: read projects and the approvals inbox, answer interview
  *      questions, run discovery, decide proposals, run workflows, record the human's decision on a
- *      run, export files, and load real BMAD agent personas.
+ *      run, export files, and load the user's ASDD personas.
  *
  *   2. MODEL BRIDGE — when the ASDD server needs a model and no API key is configured, it queues
  *      the request. This process picks it up and asks the MCP client to run it through SAMPLING —
@@ -68,7 +68,7 @@ const server = new McpServer(
   { name: 'asdd', version: '1.0.0' },
   {
     instructions:
-      'ASDD is an adaptive, spec-driven migration control plane built on the BMAD Method. Humans own every decision: ' +
+      'ASDD is an adaptive, spec-driven migration control plane. Humans own every decision: ' +
       'never accept proposals, approve runs, or write files unless the user has explicitly asked for that specific action. ' +
       'Start with asdd_status, then asdd_list_approvals to see what is waiting on the user.',
   },
@@ -141,16 +141,16 @@ tool(
   'asdd_status',
   {
     title: 'ASDD status',
-    description: 'Whether the ASDD server is up, which model it will use (API key, your editor via sampling, or the offline rule engine), whether the editor bridge is connected, and which BMAD install it found.',
+    description: 'Whether the ASDD server is up, which model it will use (API key, your editor via sampling, or the offline rule engine), whether the editor bridge is connected, and which persona library it found.',
     annotations: readOnly,
   },
   async () => {
-    const [health, bridge, bmad] = await Promise.all([api('/health'), api('/llm-bridge/status'), api('/bmad')]);
+    const [health, bridge, bmad] = await Promise.all([api('/health'), api('/llm-bridge/status'), api('/personas')]);
     return {
       server: `${API} — up`,
       model: health.llm,
       editorBridge: bridge,
-      bmad: bmad.found
+      personas: bmad.found
         ? { root: bmad.root, version: bmad.version, agents: bmad.agents.map((a) => `${a.icon} ${a.name} — ${a.title}`), workflows: bmad.workflows.length }
         : { found: false, searched: bmad.searched },
     };
@@ -405,7 +405,7 @@ tool(
       runId,
       nodeId: node.nodeId,
       step: node.name,
-      bmadAgent: node.handoff.bmad,
+      personaAgent: node.handoff.bmad,
       persona: node.handoff.system,
       task: node.handoff.task,
       outputDir: node.handoff.outputDir,
@@ -502,15 +502,15 @@ tool(
 );
 
 tool(
-  'asdd_bmad_agents',
+  'asdd_personas',
   {
-    title: 'BMAD agents and workflows',
-    description: "The BMAD install ASDD runs on: its persona agents (Mary, John, Winston, Sally, Amelia — with the team's customisations applied) and its workflows.",
+    title: 'Your ASDD personas and workflows',
+    description: "The persona library ASDD runs on: its personas (Mary, John, Winston, Sally, Amelia — with the team's customisations applied) and its workflows.",
     annotations: readOnly,
   },
   async () => {
-    const bmad = await api('/bmad');
-    if (!bmad.found) return { found: false, searched: bmad.searched, fix: 'Set the BMAD folder in ASDD Settings, or start the server with ASDD_BMAD_ROOT set.' };
+    const bmad = await api('/personas');
+    if (!bmad.found) return { found: false, searched: bmad.searched, fix: 'Set the persona library folder in ASDD Settings, or start the server with ASDD_PERSONA_ROOT set.' };
     return {
       root: bmad.root,
       version: bmad.version,
@@ -522,22 +522,22 @@ tool(
 );
 
 tool(
-  'asdd_bmad_persona',
+  'asdd_persona',
   {
-    title: 'Load a BMAD persona',
+    title: 'Load an ASDD persona',
     description:
-      'Returns the fully resolved BMAD persona for an agent — overview, role, identity, communication style, principles and the team\'s standing facts — optionally with an ASDD project\'s context. Adopt it to work as that agent in this chat, e.g. "review this migration as Winston".',
+      'Returns the fully resolved ASDD persona for an agent — overview, role, identity, communication style, principles and the team\'s standing facts — optionally with an ASDD project\'s context. Adopt it to work as that agent in this chat, e.g. "review this migration as Winston".',
     inputSchema: {
-      agent: z.string().describe('Agent id, role or name — "bmad-agent-architect", "architect" or "Winston"'),
+      agent: z.string().describe('Role or name — "architect" or "Winston" (or its library id)'),
       projectId: z.string().optional().describe('Include this ASDD project as context'),
     },
     annotations: readOnly,
   },
   async ({ agent, projectId }) => {
-    const brief = await api(`/bmad/agents/${encodeURIComponent(agent)}/brief${projectId ? `?projectId=${encodeURIComponent(projectId)}` : ''}`);
+    const brief = await api(`/personas/agents/${encodeURIComponent(agent)}/brief${projectId ? `?projectId=${encodeURIComponent(projectId)}` : ''}`);
     const missing = brief.facts.filter((f) => f.missing).map((f) => f.entry);
     return [
-      `Adopt the following BMAD persona for the rest of this task. ${brief.agent.icon} ${brief.agent.name} — ${brief.agent.title}`,
+      `Adopt the following ASDD persona for the rest of this task. ${brief.agent.icon} ${brief.agent.name} — ${brief.agent.title}`,
       `Customised by: ${brief.agent.overrides.filter((o) => o !== 'base').join(', ') || 'no overrides'}.`,
       '',
       brief.system,

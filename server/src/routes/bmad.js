@@ -1,5 +1,5 @@
 /**
- * BMAD, as seen by ASDD: which install was found, which agents and workflows it has, and the
+ * The persona library, as seen by ASDD: which library was found, which personas and workflows it has, and the
  * resolved persona brief for any agent — the same brief an ASDD run uses, and the one Copilot
  * receives when a chat asks to "work as Winston".
  */
@@ -34,10 +34,10 @@ router.get('/', (req, res) => {
 
 router.get('/agents/:agentId/brief', (req, res) => {
   const bmad = current();
-  if (!bmad.found) throw new HttpError(404, 'No BMAD install was found. Set its folder in Settings or ASDD_BMAD_ROOT.', { searched: bmad.searched });
+  if (!bmad.found) throw new HttpError(404, 'No ASDD persona library was found. Set its folder in Settings, or ASDD_PERSONA_ROOT.', { searched: bmad.searched });
   const agent = findBmadAgent(req.params.agentId, bmad);
   if (!agent) {
-    throw new HttpError(404, `No BMAD agent matches "${req.params.agentId}".`, { available: bmad.agents.map((a) => `${a.name} (${a.id})`) });
+    throw new HttpError(404, `No persona matches "${req.params.agentId}".`, { available: bmad.agents.map((a) => `${a.name} (${a.id})`) });
   }
 
   const facts = resolveFacts(agent.persona.persistent_facts, bmad.root);

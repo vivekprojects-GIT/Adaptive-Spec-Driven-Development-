@@ -1,6 +1,6 @@
 # Product Brief — ASDD (Adaptive Spec Driven Development)
 
-**Status:** approved · **Method:** BMAD · **Phase:** 1 (Analysis)
+**Status:** approved · **Method:** ASDD · **Phase:** 1 (Analysis)
 
 ## Problem
 

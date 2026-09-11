@@ -1,6 +1,6 @@
 # PRD — ASDD Control Plane
 
-**Method:** BMAD · **Phase:** 2 (Planning) · **Traces to:** product-brief.md
+**Method:** ASDD · **Phase:** 2 (Planning) · **Traces to:** product-brief.md
 
 ## 1. Scope
 
@@ -31,15 +31,15 @@ execution layer over a pluggable Agent Registry and Guardrail Registry.
 | FR-18 | **Human approval** closes every run | Run ends `pending`; approve or request changes, recorded on the run |
 | FR-19 | **Everything is logged** — API calls, stage changes, agent steps, guardrail verdicts, model calls | Filterable feed with levels and scopes |
 | FR-20 | **Dashboard answers "where did it fail"** | Ranks failing guardrails, failing agents, placeholder agents, orphan requirements, open gaps, blocked projects |
-| FR-21 | **BMAD document set** written per run: brief, PRD, architecture, epics & stories | Every row derived from the run; unknowns stated, not invented; switchable per project |
+| FR-21 | **ASDD document set** written per run: brief, PRD, architecture, epics & stories | Every row derived from the run; unknowns stated, not invented; switchable per project |
 | FR-22 | **Templates are starting shapes**, not ready-made runs | A new project from a template has no artifacts and no requirements, and discovery refuses until it does |
 | FR-23 | **Approvals inbox** — every outstanding human decision in one place | Sidebar count, per-project count, in-project banner, and a list that links to the resolving screen |
 | FR-24 | **Export to folder** — write a run's artifacts into a real repository | Absolute path required; previews the plan; never overwrites without explicit consent; paths cannot escape the target |
-| FR-25 | **Runs on the user's existing BMAD install** — agents, customisations and standing facts read in place | No copy of BMAD in the repo; team and personal overrides merged by BMAD's own rules; a missing fact file is reported |
-| FR-26 | **BMAD agents are workflow agents** — any installed BMAD agent can be added to a graph | Loads the agent's current persona at run time; output traced and guarded like any other agent |
-| FR-27 | **MCP server** exposes ASDD to the editor's assistant | Status, approvals, discovery, proposals, runs, BMAD personas; decision tools act only on the user's explicit instruction |
+| FR-25 | **Runs on the user's existing persona library** — personas, customisations and standing facts read in place | No copy of the library in the repo; team and personal overrides merged by the library's own rules; a missing fact file is reported |
+| FR-26 | **ASDD personas are workflow agents** — any persona in the library can be added to a graph | Loads the agent's current persona at run time; output traced and guarded like any other agent |
+| FR-27 | **MCP server** exposes ASDD to the editor's assistant | Status, approvals, discovery, proposals, runs, ASDD personas; decision tools act only on the user's explicit instruction |
 | FR-28 | **Editor's model with no API key** via MCP sampling | Model setting `copilot` or `auto`; bridge status visible in Settings; each run records the model it used |
-| FR-30 | **Runs inside VS Code like BMAD** — skills Copilot follows in the project folder, with Copilot as the model | `asdd install` adds the skills next to BMAD's; state, reports and handed-over steps live in the project's `_asdd/`; model-driven steps are handed to the assistant and resume on `submit`; files reach the project only after a preview and a yes |
+| FR-30 | **Runs inside VS Code as skills** — skills Copilot follows in the project folder, with Copilot as the model | `asdd install` adds the skills next to the project's other skills; state, reports and handed-over steps live in the project's `_asdd/`; model-driven steps are handed to the assistant and resume on `submit`; files reach the project only after a preview and a yes |
 | FR-29 | **Decisions resume the work** — a halted run continues past its stop; a run with changes requested re-runs from any agent | A halted run cannot be approved as it stands; continue keeps finished work and runs only the skipped agents in the same run, recording the override; a re-run reuses unchanged upstream agents and says why when it cannot |
 
 ## 3. Non-functional

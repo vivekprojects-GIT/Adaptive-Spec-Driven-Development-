@@ -1,9 +1,9 @@
 /**
- * BMAD loader — reads the user's real BMAD install instead of reimplementing its agents.
+ * Persona loader — reads the user's real persona library (`_bmad/`) instead of reimplementing its agents.
  *
- * ASDD sits ON TOP of BMAD: BMAD supplies the agents (Mary, John, Winston, Sally, Amelia) and the
+ * ASDD sits ON TOP of the persona library: it supplies the personas (Mary, John, Winston, Sally, Amelia) and the
  * workflows; ASDD supplies the control plane, guardrails, approvals, traceability and UI. So the
- * personas come from BMAD's own files, merged exactly the way BMAD merges them:
+ * personas come from the library's own files, merged exactly the way the library merges them:
  *
  *   {skill}/customize.toml                 base   (installer-owned)
  *   _bmad/custom/{skill}.toml              team   (committed)
@@ -13,7 +13,7 @@
  *   · every other array appends
  *
  * A team override that adds regulatory facts to Winston therefore reaches ASDD intact — which is
- * the whole point of running on BMAD rather than beside it.
+ * the whole point of running on the persona library rather than beside it.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -32,11 +32,12 @@ export function isBmadRoot(dir) {
 }
 
 /**
- * Where BMAD lives. ASDD is usually cloned INSIDE a BMAD workspace, so the parent folder is the
- * natural default; an explicit path (Settings) or ASDD_BMAD_ROOT wins when given.
+ * Where the persona library lives. ASDD is usually cloned INSIDE the project that has it, so the parent
+ * folder is the natural default; an explicit path (Settings) or ASDD_PERSONA_ROOT wins when given
+ * (ASDD_BMAD_ROOT, the earlier name, is still read).
  */
 export function bmadRootCandidates(explicit) {
-  return [explicit, process.env.ASDD_BMAD_ROOT, path.dirname(REPO_ROOT), REPO_ROOT]
+  return [explicit, process.env.ASDD_PERSONA_ROOT, process.env.ASDD_BMAD_ROOT, path.dirname(REPO_ROOT), REPO_ROOT]
     .filter(Boolean)
     .map((dir) => path.resolve(dir));
 }
@@ -47,7 +48,7 @@ export function findBmadRoot(explicit) {
 
 /* -------------------------------------------------------------- parsers */
 
-/** RFC 4180 CSV — BMAD descriptions contain commas and doubled quotes. */
+/** RFC 4180 CSV — persona descriptions contain commas and doubled quotes. */
 export function parseCsv(text) {
   const rows = [];
   let row = [];
@@ -107,7 +108,7 @@ export function parseFrontmatter(text) {
   return { meta, body: String(text).slice(match[0].length) };
 }
 
-/** BMAD's module config.yaml is flat `key: value`; no YAML dependency needed for it. */
+/** The library's module config.yaml is flat `key: value`; no YAML dependency needed for it. */
 export function parseFlatYaml(text) {
   const out = {};
   for (const line of String(text).split(/\r?\n/)) {
@@ -135,7 +136,7 @@ function readToml(file) {
 const isTable = (value) => value !== null && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date);
 const keyOf = (item) => (isTable(item) ? item.code ?? item.id : undefined);
 
-/** BMAD's structural merge, exactly as its resolver documents it. */
+/** The library's structural merge, exactly as its resolver documents it. */
 export function bmadMerge(base, override) {
   if (override === undefined) return base;
   if (base === undefined) return override;
@@ -188,7 +189,7 @@ function resolveBlock(skillDir, root, skillId, key) {
 /* ------------------------------------------------------------- skills */
 
 /**
- * The manifest's `path` is BMAD's canonical layout, but an IDE install copies skills elsewhere —
+ * The manifest's `path` is the library's canonical layout, but an IDE install copies skills elsewhere —
  * for Claude Code, into `.claude/skills/`. Try the canonical path, then each IDE location.
  */
 function resolveSkillFile(root, row) {
@@ -216,7 +217,7 @@ function groupFor(row) {
   return row.module || 'Other';
 }
 
-/** Where a BMAD persona naturally sits in an ASDD graph, by the phase it owns in BMAD. */
+/** Where a persona naturally sits in an ASDD graph, by the phase it owns in the method. */
 const PERSONA_PHASE = { analyst: 15, pm: 18, 'ux-designer': 22, architect: 25, dev: 35 };
 
 /* ------------------------------------------------------------ facts */
@@ -271,7 +272,7 @@ function expandGlob(pattern) {
 }
 
 /**
- * Resolves BMAD persistent facts. `file:` entries load the referenced contents (globs allowed),
+ * Resolves a persona's persistent facts. `file:` entries load the referenced contents (globs allowed),
  * `skill:` entries are noted, everything else is a literal fact. A fact that points at a missing
  * file is reported as missing rather than silently dropped.
  */
@@ -292,7 +293,7 @@ export function resolveFacts(entries = [], root, { maxBytes = 12000 } = {}) {
       return { entry, kind: 'file', files: files.map((f) => path.relative(root, f).replace(/\\/g, '/')), text: parts.join('\n\n') };
     }
     if (entry.startsWith('skill:')) {
-      return { entry, kind: 'skill', text: `(references the BMAD skill "${entry.slice(6).trim()}", which runs in the assistant)` };
+      return { entry, kind: 'skill', text: `(references the skill "${entry.slice(6).trim()}", which runs in the assistant)` };
     }
     return { entry, kind: 'literal', text: entry };
   });
@@ -400,13 +401,13 @@ export function findBmadAgent(query, bmad = loadBmad()) {
 }
 
 /**
- * The system prompt that makes a model BE this BMAD persona for one ASDD step. Built entirely
- * from BMAD's own definitions — overview, role, identity, style, principles, standing facts.
+ * The system prompt that makes a model BE this ASDD persona for one step. Built entirely
+ * from the library's own definitions — overview, role, identity, style, principles, standing facts.
  */
 export function personaPrompt(agent, { facts = [], config = {} } = {}) {
   const p = agent.persona || {};
   const sections = [
-    `You are ${agent.name}${agent.title ? `, ${agent.title}` : ''} — a BMAD Method agent (${agent.id}).`,
+    `You are ${agent.name}${agent.title ? `, ${agent.title}` : ''} — an ASDD persona (${agent.id}).`,
     agent.overview,
     p.role && `Role: ${p.role}`,
     p.identity && `Identity: ${p.identity}`,

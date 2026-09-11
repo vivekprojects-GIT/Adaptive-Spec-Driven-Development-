@@ -1,5 +1,5 @@
 /**
- * BMAD Orchestrator — executes an approved graph and narrates every step.
+ * ASDD Orchestrator — executes an approved graph and narrates every step.
  *
  * Emits an event for every state change so the UI can show the run as it happens (SSE), and
  * persists the same events so a refresh, or opening the run tomorrow, shows the identical timeline.

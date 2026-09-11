@@ -9,7 +9,7 @@ description: 'ASDD (Adaptive Spec Driven Development) in this project: turn requ
 ASDD turns the user's requirements and source material into a workflow of agents, checks every
 agent's work with guardrails, and stops at every decision that belongs to the user. It works in
 this folder: its state lives in `_asdd/`, and generated files are written into the project only
-when the user says so. If this project has BMAD installed, ASDD uses the user's BMAD agents in place.
+when the user says so. If this project has a persona library, ASDD uses the user's personas (Mary, John, Winston…) in place.
 
 You drive it by running commands in the terminal, from the project root:
 
@@ -22,7 +22,7 @@ Every command prints what happened and ends with a `NEXT:` line. Follow it.
 ## The flow
 
 1. **Start** — `/asdd-start`: ask the user what they want, point ASDD at their requirements and source files, and get the blocking questions answered.
-2. **Review** — `/asdd-review`: discovery proposes agents and guardrails; the user accepts, rejects, edits or adds their own (including their BMAD agents).
+2. **Review** — `/asdd-review`: discovery proposes agents and guardrails; the user accepts, rejects, edits or adds their own (including their ASDD personas).
 3. **Run** — `/asdd-run`: run the workflow. When a step is handed to you, do it and hand the files back.
 4. **Decide** — `/asdd-decide`: approve, request changes, continue past a stop, re-run from a changed agent, and write the files into the project.
 
@@ -47,7 +47,8 @@ Every command prints what happened and ends with a `NEXT:` line. Follow it.
 | `discover` / `proposals` | Propose agents and guardrails / list them |
 | `accept` / `reject <id>` or `all` | Record the user's decision |
 | `edit <id> --set key=value` | Change a proposal the user wants changed |
-| `add-agent …` / `add-agent --bmad <role>` | The user's own agent / one of their BMAD agents |
+| `add-agent …` / `add-agent --persona <role>` | The user's own agent / one of their ASDD personas |
+| `personas` | The user's ASDD personas |
 | `add-guardrail …` | The user's own rule |
 | `run` | Run the accepted workflow |
 | `task` / `submit` | The step handed to you / hand its files back |

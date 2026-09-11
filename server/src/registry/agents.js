@@ -164,14 +164,14 @@ export const SEED_AGENTS = [
   },
   {
     id: 'agent.bmad-artifacts',
-    name: 'BMAD Artifact Agent',
+    name: 'ASDD Document Agent',
     capability: 'docs.bmad.generate',
     description:
-      'Writes the BMAD document set for the project — product brief, PRD, architecture and epics & stories — derived from the discovery report, the approved graph and the traceability matrix, so the migration lands in the shape the BMAD method expects.',
+      'Writes the ASDD document set for the project — product brief, PRD, architecture and epics & stories — derived from the discovery report, the approved graph and the traceability matrix.',
     inputs: ['spec:requirements', 'analysis/source-model.json', 'analysis/traceability.json', 'graph'],
     outputs: ['docs/product-brief.md', 'docs/prd.md', 'docs/architecture.md', 'docs/epics-and-stories.md'],
     impl: 'bmadArtifactAgent',
-    tags: ['bmad', 'documentation', 'handover'],
+    tags: ['asdd', 'documentation', 'handover'],
     maturity: 'proven',
   },
   {
@@ -205,11 +205,23 @@ export function ensureSeeded() {
       changed = true;
     }
   }
+  // A seed whose wording has since changed is refreshed — but only if it still carries our old
+  // wording, so an agent a person edited is never overwritten.
+  for (const seed of SEED_AGENTS) {
+    const stored = byId.get(seed.id);
+    if (stored && RENAMED_SEEDS[seed.id]?.includes(stored.name)) {
+      Object.assign(stored, { name: seed.name, description: seed.description, tags: seed.tags });
+      changed = true;
+    }
+  }
   if (changed) agents.replaceAll(existing);
 }
 
+/** Earlier names of seed agents, so stores written before a rename pick up the new wording. */
+const RENAMED_SEEDS = { 'agent.bmad-artifacts': ['BMAD Artifact Agent'] };
+
 /**
- * The user's BMAD agents, as registry entries. They are read live from the BMAD install rather than
+ * The user's ASDD personas, as registry entries. They are read live from the persona library rather than
  * copied into the store, so the registry always reflects the install — team overrides included.
  */
 export function bmadAgents() {
@@ -220,10 +232,10 @@ export function bmadAgents() {
     capability: `bmad.persona.${agent.role}`,
     description: (agent.overview || '').split('\n')[0] || agent.description,
     inputs: ['requirements', 'constraints', 'generated'],
-    outputs: [`bmad/${agent.role}/*.md`],
+    outputs: [`personas/${agent.role}/*.md`],
     impl: 'bmadPersonaAgent',
-    tags: ['bmad', agent.role],
-    maturity: 'bmad',
+    tags: ['persona', agent.role],
+    maturity: 'persona',
     source: 'bmad',
     icon: agent.icon,
     bmad: { id: agent.id, role: agent.role, overrides: agent.overrides, phase: agent.phase, root: bmad.root },

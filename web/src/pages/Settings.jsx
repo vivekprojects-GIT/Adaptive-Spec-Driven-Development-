@@ -147,24 +147,24 @@ export default function Settings({ onSaved }) {
 
         <div className="grid cols-2" style={{ marginTop: 14, marginBottom: 14 }}>
           <Card
-            title="Your BMAD install"
-            sub="ASDD runs on your existing BMAD agents and workflows — read in place, with your team's customisations."
+            title="Your ASDD personas"
+            sub="The personas (Mary, John, Winston…) and workflows ASDD runs on — read in place from your persona library, with your team's customisations."
             right={bmad ? <Badge tone={bmad.found ? 'pass' : 'warn'}>{bmad.found ? `v${bmad.version}` : 'not found'}</Badge> : <Badge>reading…</Badge>}
           >
             {!bmad ? (
-              <div className="small muted" style={{ marginBottom: 12 }}>Reading your BMAD install…</div>
+              <div className="small muted" style={{ marginBottom: 12 }}>Reading your persona library…</div>
             ) : bmad.found ? (
               <>
                 <div className="kv" style={{ marginBottom: 12 }}>
                   <div className="k">Folder</div>
                   <div className="v mono tiny">{bmad.root}</div>
-                  <div className="k">Agents</div>
+                  <div className="k">Personas</div>
                   <div className="v">{bmad.agents.map((a) => `${a.icon} ${a.name}`).join('  ·  ')}</div>
                   <div className="k">Workflows</div>
                   <div className="v">{bmad.workflows.length} ({bmad.deprecated} deprecated shims skipped)</div>
                   {bmad.user && (
                     <>
-                      <div className="k">BMAD user</div>
+                      <div className="k">User</div>
                       <div className="v">{bmad.user}</div>
                     </>
                   )}
@@ -184,12 +184,12 @@ export default function Settings({ onSaved }) {
               </>
             ) : (
               <div className="small muted" style={{ marginBottom: 12 }}>
-                No BMAD install found{bmad?.searched?.length ? ` — looked in ${bmad.searched.join(', ')}` : ''}. Point this at the folder that contains{' '}
+                No persona library found{bmad?.searched?.length ? ` — looked in ${bmad.searched.join(', ')}` : ''}. Point this at the folder that contains{' '}
                 <span className="mono">_bmad/</span>.
               </div>
             )}
-            <Field label="BMAD folder" hint="Blank = the folder ASDD is cloned into. It must contain _bmad/_config/skill-manifest.csv.">
-              <input className="mono" type="text" value={bmadRoot} placeholder={'D:\\Vivek\\Desktop\\BMAD_AGENTS'} onChange={(e) => setBmadRoot(e.target.value)} />
+            <Field label="Persona library folder" hint="Blank = the folder ASDD is cloned into. It must contain _bmad/_config/skill-manifest.csv.">
+              <input className="mono" type="text" value={bmadRoot} placeholder={'D:\\work\\my-project'} onChange={(e) => setBmadRoot(e.target.value)} />
             </Field>
             <div className="row">
               <button
@@ -201,7 +201,7 @@ export default function Settings({ onSaved }) {
               >
                 Save &amp; reload
               </button>
-              <button className="btn ghost" onClick={() => loadBmadInfo(true)}>↻ Re-read install</button>
+              <button className="btn ghost" onClick={() => loadBmadInfo(true)}>↻ Re-read library</button>
             </div>
           </Card>
 

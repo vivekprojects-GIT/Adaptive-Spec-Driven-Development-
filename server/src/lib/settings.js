@@ -2,7 +2,7 @@
  * Runtime settings, editable from the UI (Settings page) and persisted to server/data/settings.json.
  *
  * The platform is useful with no model at all — the rule engine runs everything. A model only adds
- * assistance: extra interview questions, executing authored and BMAD agents, judging plain-English
+ * assistance: extra interview questions, executing authored agents and ASDD personas, judging plain-English
  * guardrail rules. That model can come from an Anthropic key, or be BORROWED from the user's editor
  * (Copilot) through the ASDD MCP server's sampling bridge — no key needed.
  */
@@ -56,7 +56,7 @@ const DEFAULTS = {
   llmAssist: true,
   autoApproveReuse: false,
   maxQuestions: 8,
-  // Where the BMAD install lives. Blank = the folder ASDD is cloned into, then ASDD_BMAD_ROOT.
+  // Where the persona library lives. Blank = ASDD_PERSONA_ROOT, then the folder ASDD is cloned into.
   bmadRoot: '',
 };
 

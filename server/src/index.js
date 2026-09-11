@@ -119,6 +119,8 @@ app.use('/api/registry', registryRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/approvals', approvalsRouter);
 app.use('/api/llm-bridge', bridgeRouter);
+app.use('/api/personas', bmadRouter);
+// The earlier name for the same thing, kept so older clients keep working.
 app.use('/api/bmad', bmadRouter);
 app.use('/api', observabilityRouter);
 
@@ -168,8 +170,8 @@ const server = app.listen(PORT, HOST, () => {
   }
   console.log(
     bmadAtStart.found
-      ? `\n  BMAD: ${bmadAtStart.agents.length} agents, ${bmadAtStart.workflows.length} workflows (v${bmadAtStart.version}) from ${bmadAtStart.root}`
-      : '\n  BMAD: no install found — set its folder in Settings, or ASDD_BMAD_ROOT',
+      ? `\n  Personas: ${bmadAtStart.agents.length} personas, ${bmadAtStart.workflows.length} workflows (library v${bmadAtStart.version}) from ${bmadAtStart.root}`
+      : '\n  Personas: no persona library found — set its folder in Settings, or ASDD_PERSONA_ROOT',
   );
   const status = llmStatus();
   console.log(`\n  ASDD control plane  →  http://${HOST}:${port}`);

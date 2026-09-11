@@ -59,7 +59,7 @@ test('the whole flow runs from the project folder, the way Copilot drives it', a
   // install — next to BMAD's skills, since this project keeps them in .claude/skills
   const installed = await command(CLI, ['install', '--workspace', WS]);
   assert.match(installed, /\.claude\/skills\/asdd-start\/SKILL\.md/);
-  assert.match(installed, /BMAD: found/);
+  assert.match(installed, /Personas: found/);
   const skill = fs.readFileSync(path.join(WS, '.claude', 'skills', 'asdd-run', 'SKILL.md'), 'utf8');
   assert.match(skill, /^---\nname: asdd-run\n/, 'a skill Copilot can load');
   assert.match(await asdd('status'), /No ASDD project in this folder yet/);
@@ -77,8 +77,8 @@ test('the whole flow runs from the project folder, the way Copilot drives it', a
   const discovered = await asdd('discover', '--force');
   assert.match(discovered, /AGENTS — \d+ awaiting a decision/);
   await asdd('accept', 'all');
-  assert.match(await asdd('bmad'), /Winston — System Architect/);
-  const added = await asdd('add-agent', '--bmad', 'testarchitect', '--instructions', 'Review the generated page objects.', '--after', 'Playwright TypeScript Generator');
+  assert.match(await asdd('personas'), /Winston — System Architect/);
+  const added = await asdd('add-agent', '--persona', 'testarchitect', '--instructions', 'Review the generated page objects.', '--after', 'Playwright TypeScript Generator');
   assert.match(added, /Added and accepted: .*Winston/);
   assert.match(added, /handed to you, the coding assistant/);
 
@@ -93,8 +93,8 @@ test('the whole flow runs from the project folder, the way Copilot drives it', a
   assert.match(task, /Review the generated page objects\./);
 
   // the assistant does the step, and hands it back
-  fs.mkdirSync(path.join(WS, outDir, 'bmad', 'testarchitect'), { recursive: true });
-  fs.writeFileSync(path.join(WS, outDir, 'bmad', 'testarchitect', 'review.md'), '# Page object review\n\nLoginPage is fine.\n');
+  fs.mkdirSync(path.join(WS, outDir, 'personas', 'testarchitect'), { recursive: true });
+  fs.writeFileSync(path.join(WS, outDir, 'personas', 'testarchitect', 'review.md'), '# Page object review\n\nLoginPage is fine.\n');
   fs.writeFileSync(path.join(WS, outDir, 'NOTES.md'), '- Only LoginPage exists in the sample.\n');
   const submitted = await asdd('submit');
   assert.match(submitted, /Handed back 1 file\(s\) for ".*Winston/);
@@ -107,12 +107,12 @@ test('the whole flow runs from the project folder, the way Copilot drives it', a
   assert.match(await asdd('approve', '--note', 'Checked by hand.'), /Approved .* recorded as human \(via VS Code\): "Checked by hand\."/);
   const plan = await asdd('export');
   assert.match(plan, /nothing written yet/);
-  assert.match(plan, /\+ create\s+bmad\/testarchitect\/review\.md/);
-  assert.ok(!fs.existsSync(path.join(WS, 'bmad', 'testarchitect', 'review.md')), 'a preview writes nothing');
+  assert.match(plan, /\+ create\s+personas\/testarchitect\/review\.md/);
+  assert.ok(!fs.existsSync(path.join(WS, 'personas', 'testarchitect', 'review.md')), 'a preview writes nothing');
 
   const written = await asdd('export', '--yes');
   assert.match(written, /Wrote \d+ file\(s\)/);
-  assert.ok(fs.existsSync(path.join(WS, 'bmad', 'testarchitect', 'review.md')), "the assistant's review is now in the project");
+  assert.ok(fs.existsSync(path.join(WS, 'personas', 'testarchitect', 'review.md')), "the assistant's review is now in the project");
   assert.ok(fs.readdirSync(path.join(WS, 'tests')).some((file) => file.endsWith('.spec.ts')), 'and so are the migrated Playwright specs');
   assert.ok(!fs.existsSync(path.join(WS, '_asdd', 'state', 'tests')), "nothing was written into ASDD's own state");
 

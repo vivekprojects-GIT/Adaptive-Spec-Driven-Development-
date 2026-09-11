@@ -141,7 +141,7 @@ export function customAgentProposal(input, acceptedAgents = []) {
   const capability =
     input.capability?.trim() || (isBmad ? known.capability : `custom.${(input.name || 'agent').toLowerCase().replace(/\W+/g, '-')}`);
   const authored = {
-    // A BMAD agent is identified by its BMAD id so each run loads its CURRENT persona.
+    // A persona is identified by its library id, so each run loads its CURRENT definition.
     bmadAgentId: isBmad ? known.bmad.id : undefined,
     purpose: input.purpose || '',
     instructions: input.instructions || '',
@@ -167,14 +167,14 @@ export function customAgentProposal(input, acceptedAgents = []) {
     description: input.purpose || input.description || known?.description || 'Human-authored agent.',
     inputs: input.inputSelections?.length ? input.inputSelections : known?.inputs || [],
     outputs: input.outputDescription ? [input.outputDescription] : known?.outputs || [],
-    // A BMAD persona always runs as itself and any instructions become its task. Other authored
+    // An ASDD persona always runs as itself and any instructions become its task. Other authored
     // agents with instructions run on the instruction agent, which actually executes them.
     impl: input.impl || (isBmad ? 'bmadPersonaAgent' : input.instructions?.trim() ? 'instructionAgent' : known?.impl || 'genericAdapter'),
     maturity: known?.maturity || 'custom',
     icon: known?.icon,
     authored,
     rationale: isBmad
-      ? `BMAD agent ${known.name}, loaded from your BMAD install${customisedBy.length ? ` with ${customisedBy.join(' and ')} customisations` : ''}.`
+      ? `ASDD persona ${known.name}, loaded from your persona library${customisedBy.length ? ` with ${customisedBy.join(' and ')} customisations` : ''}.`
       : input.purpose
         ? `Authored by a human: ${input.purpose}`
         : 'Added by a human during proposal review.',

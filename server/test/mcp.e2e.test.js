@@ -70,7 +70,7 @@ test.before(async () => {
       content: {
         type: 'text',
         text: JSON.stringify({
-          files: [{ path: 'bmad/testarchitect/review.md', content: `# Review by the fixture persona\n\nRead ${prompt.length} characters of context.` }],
+          files: [{ path: 'personas/testarchitect/review.md', content: `# Review by the fixture persona\n\nRead ${prompt.length} characters of context.` }],
           notes: ['answered by the e2e sampling handler'],
         }),
       },
@@ -99,7 +99,7 @@ test.after(async () => {
 test('the MCP server exposes the ASDD tools, and the decision tools say whose decision it is', async () => {
   const { tools } = await client.listTools();
   const names = tools.map((t) => t.name);
-  for (const name of ['asdd_status', 'asdd_list_approvals', 'asdd_run_discovery', 'asdd_decide_run', 'asdd_continue_run', 'asdd_rerun_run', 'asdd_waiting_task', 'asdd_hand_back_files', 'asdd_judge_rules', 'asdd_add_clarification', 'asdd_export_run', 'asdd_bmad_agents', 'asdd_bmad_persona']) {
+  for (const name of ['asdd_status', 'asdd_list_approvals', 'asdd_run_discovery', 'asdd_decide_run', 'asdd_continue_run', 'asdd_rerun_run', 'asdd_waiting_task', 'asdd_hand_back_files', 'asdd_judge_rules', 'asdd_add_clarification', 'asdd_export_run', 'asdd_personas', 'asdd_persona']) {
     assert.ok(names.includes(name), `${name} is exposed`);
   }
   assert.match(tools.find((t) => t.name === 'asdd_decide_run').description, /never decide on the user's behalf/i);
@@ -113,11 +113,11 @@ test('status reports the borrowed editor model and the BMAD install', async () =
   const status = JSON.parse(result.content[0].text);
   assert.equal(status.editorBridge.usable, true);
   assert.equal(status.model.provider, 'editor', 'no key, so the model is the editor’s');
-  assert.equal(status.bmad.agents.length, 1);
+  assert.equal(status.personas.agents.length, 1);
 });
 
 test("a BMAD persona is served to the chat with the team's customisations applied", async () => {
-  const result = await client.callTool({ name: 'asdd_bmad_persona', arguments: { agent: 'winston' } });
+  const result = await client.callTool({ name: 'asdd_persona', arguments: { agent: 'winston' } });
   const text = result.content[0].text;
   assert.match(text, /You are Winston, System Architect/);
   assert.match(text, /Blunt and brief/, 'the personal override');
@@ -153,7 +153,7 @@ test('with no API key, a BMAD agent in a workflow executes on the editor model v
   assert.notEqual(node.metrics.placeholder, true, 'it really executed — no placeholder brief');
   assert.match(node.metrics.model, /fake-copilot-model \(via your editor\)/);
 
-  const review = run.ws.generated.find((a) => a.path === 'bmad/testarchitect/review.md');
+  const review = run.ws.generated.find((a) => a.path === 'personas/testarchitect/review.md');
   assert.ok(review, `the persona's file came back through sampling; got: ${run.ws.generated.map((a) => a.path).join(', ')}`);
   assert.match(review.content, /Review by the fixture persona/);
 

@@ -860,11 +860,11 @@ async function genericAdapter(ctx) {
   };
 }
 
-/* ---------------------------------------------------------- BMAD artifacts */
+/* ------------------------------------------------------ ASDD document set */
 
 /**
- * Emits the BMAD document set for this project — brief → PRD → architecture → epics & stories —
- * so a migration lands in the same shape the BMAD method expects and `bmad-build` can pick it up.
+ * Emits the ASDD document set for this project — brief → PRD → architecture → epics & stories —
+ * so a migration lands in the shape the ASDD method works in.
  *
  * Every line is derived from what the run actually found: the parsed source model, the approved
  * graph, the traceability matrix and the guardrails. Nothing here is boilerplate, and where the
@@ -885,7 +885,7 @@ async function bmadArtifactAgent(ctx) {
     artifact('docs/epics-and-stories.md', bmadEpics({ discovery, model, trace, stamp }), { kind: 'spec' }),
   ];
 
-  ctx.log(`Wrote the BMAD document set: ${outputs.map((o) => o.path.split('/').pop()).join(', ')}.`);
+  ctx.log(`Wrote the ASDD document set: ${outputs.map((o) => o.path.split('/').pop()).join(', ')}.`);
   return {
     outputs,
     metrics: { documents: outputs.length, requirements: discovery.requirements.length, epics: model?.suites.length || 0 },
@@ -903,7 +903,7 @@ function bmadBrief({ discovery, model, spec, stamp }) {
 
   out.push(`# Product Brief — ${discovery.source.label} → ${discovery.target.label}`);
   out.push('');
-  out.push(`**Method:** BMAD · **Phase:** 1 (Analysis) · **Generated:** ${stamp} by ASDD`);
+  out.push(`**Method:** ASDD · **Phase:** 1 (Analysis) · **Generated:** ${stamp} by ASDD`);
   out.push('');
   out.push('## Problem');
   out.push('');
@@ -957,7 +957,7 @@ function bmadPrd({ discovery, model, trace, spec, ctx, stamp }) {
 
   out.push('# PRD — Migration requirements');
   out.push('');
-  out.push(`**Method:** BMAD · **Phase:** 2 (Planning) · **Traces to:** product-brief.md · **Generated:** ${stamp} by ASDD`);
+  out.push(`**Method:** ASDD · **Phase:** 2 (Planning) · **Traces to:** product-brief.md · **Generated:** ${stamp} by ASDD`);
   out.push('');
   out.push('## 1. Functional requirements');
   out.push('');
@@ -1008,7 +1008,7 @@ function bmadArchitecture({ discovery, graphNodes, generated, stamp }) {
 
   out.push('# Architecture — the agent graph that performs this migration');
   out.push('');
-  out.push(`**Method:** BMAD · **Phase:** 3 (Solutioning) · **Traces to:** prd.md · **Generated:** ${stamp} by ASDD`);
+  out.push(`**Method:** ASDD · **Phase:** 3 (Solutioning) · **Traces to:** prd.md · **Generated:** ${stamp} by ASDD`);
   out.push('');
   out.push('## 1. Approach');
   out.push('');
@@ -1068,7 +1068,7 @@ function bmadEpics({ discovery, model, trace, stamp }) {
 
   out.push('# Epics & Stories');
   out.push('');
-  out.push(`**Method:** BMAD · **Phase:** 4 (Implementation) · **Traces to:** architecture.md · **Generated:** ${stamp} by ASDD`);
+  out.push(`**Method:** ASDD · **Phase:** 4 (Implementation) · **Traces to:** architecture.md · **Generated:** ${stamp} by ASDD`);
   out.push('');
   out.push('One epic per source suite, one story per source test. Status is computed from the run, not asserted.');
   out.push('');
@@ -1175,22 +1175,22 @@ const AUTHORED_SYSTEM =
   "You are executing one agent inside a migration platform. Follow the operator's instructions exactly and produce files. " +
   'Never invent source material that is not in the inputs. If the inputs are insufficient to do the job properly, say so in notes and produce only what is genuinely supported.';
 
-/** What a BMAD persona does when a human adds it to the graph without writing a task of its own. */
-const BMAD_DEFAULT_TASKS = {
+/** What an ASDD persona does when a human adds it to the graph without writing a task of its own. */
+const PERSONA_DEFAULT_TASKS = {
   architect:
-    'Review this migration as its architect. From the generated artifacts, state the invariants the migrated suite must keep (structure, locator strategy, fixtures, configuration), the risks you see, and concrete changes, each tied to a file or a requirement. Write it as bmad/architect/review.md.',
+    'Review this migration as its architect. From the generated artifacts, state the invariants the migrated suite must keep (structure, locator strategy, fixtures, configuration), the risks you see, and concrete changes, each tied to a file or a requirement. Write it as personas/architect/review.md.',
   analyst:
-    'Analyse the requirements against what the source suite and the migration actually cover. List requirements with no test evidence, ambiguous requirements, and assumptions the migration is making. Write it as bmad/analyst/requirements-analysis.md.',
+    'Analyse the requirements against what the source suite and the migration actually cover. List requirements with no test evidence, ambiguous requirements, and assumptions the migration is making. Write it as personas/analyst/requirements-analysis.md.',
   pm:
-    'Check that every requirement is testable and has an acceptance signal in the migrated suite. Flag requirements that cannot be verified and propose acceptance criteria for each. Write it as bmad/pm/acceptance-review.md.',
+    'Check that every requirement is testable and has an acceptance signal in the migrated suite. Flag requirements that cannot be verified and propose acceptance criteria for each. Write it as personas/pm/acceptance-review.md.',
   'ux-designer':
-    'Review the user journeys the migrated tests exercise. List journeys with no coverage, and edge cases missing from the journeys that are covered. Write it as bmad/ux-designer/journey-review.md.',
+    'Review the user journeys the migrated tests exercise. List journeys with no coverage, and edge cases missing from the journeys that are covered. Write it as personas/ux-designer/journey-review.md.',
   dev:
-    'Review the generated code as the implementing engineer: correctness, conventions, maintainability. List concrete fixes, each naming the file and the change. Write it as bmad/dev/code-review.md.',
+    'Review the generated code as the implementing engineer: correctness, conventions, maintainability. List concrete fixes, each naming the file and the change. Write it as personas/dev/code-review.md.',
 };
 
 /**
- * The engine behind every model-backed agent — one a human wrote in the UI, or one of their BMAD
+ * The engine behind every model-backed agent — one a human wrote in the UI, or one of their ASDD
  * personas.
  *
  * With a model available (an Anthropic key, or the editor's model through the MCP bridge) it
@@ -1215,9 +1215,9 @@ async function runModelAgent(ctx, { persona = null, bmadAgent = null } = {}) {
 
   const instructions =
     authored.instructions?.trim() ||
-    (bmadAgent ? BMAD_DEFAULT_TASKS[bmadAgent.role] || 'Review the migration in your role and report what you find, with evidence.' : '');
-  const who = bmadAgent ? `${bmadAgent.icon} ${bmadAgent.name} — ${bmadAgent.title} (BMAD ${bmadAgent.id})` : `"${node.name}"`;
-  const outputDir = bmadAgent ? `bmad/${bmadAgent.role}` : `custom/${slug(node.name) || 'agent'}`;
+    (bmadAgent ? PERSONA_DEFAULT_TASKS[bmadAgent.role] || 'Review the migration in your role and report what you find, with evidence.' : '');
+  const who = bmadAgent ? `${bmadAgent.icon} ${bmadAgent.name} — ${bmadAgent.title} (persona ${bmadAgent.id})` : `"${node.name}"`;
+  const outputDir = bmadAgent ? `personas/${bmadAgent.role}` : `custom/${slug(node.name) || 'agent'}`;
 
   ctx.log(`${who} reading ${sections.length} input source(s): ${sections.map((s) => s.label).join(', ') || 'none'}.`);
 
@@ -1258,7 +1258,7 @@ async function runModelAgent(ctx, { persona = null, bmadAgent = null } = {}) {
 
   if (!llmAvailable()) {
     const brief = [`# ${node.name}`, ''];
-    if (bmadAgent) brief.push(`**BMAD agent:** ${who}, customised by ${bmadAgent.overrides.join(' + ')}`);
+    if (bmadAgent) brief.push(`**ASDD persona:** ${who}, customised by ${bmadAgent.overrides.join(' + ')}`);
     brief.push(
       `**Purpose:** ${authored.purpose || node.description || '(not stated)'}`,
       `**Expected output:** ${authored.outputDescription || '(not stated)'}`,
@@ -1269,7 +1269,7 @@ async function runModelAgent(ctx, { persona = null, bmadAgent = null } = {}) {
       instructions || '(no instructions were provided)',
       '',
     );
-    if (persona) brief.push('## The BMAD persona that would carry them out', '', persona, '');
+    if (persona) brief.push('## The ASDD persona that would carry them out', '', persona, '');
     brief.push(
       '## Inputs this agent was given',
       '',
@@ -1338,8 +1338,8 @@ async function instructionAgent(ctx) {
 }
 
 /**
- * Runs one of the user's real BMAD agents — Mary, John, Winston, Sally or Amelia — as a step in the
- * approved graph. The persona is loaded from the BMAD install at run time with the team's and the
+ * Runs one of the user's ASDD personas — Mary, John, Winston, Sally or Amelia — as a step in the
+ * approved graph. The persona is loaded from the persona library at run time with the team's and the
  * user's customisations merged in, so an override committed to `_bmad/custom/` reaches the run.
  */
 async function bmadPersonaAgent(ctx) {
@@ -1351,20 +1351,20 @@ async function bmadPersonaAgent(ctx) {
     ctx.ws.placeholders = (ctx.ws.placeholders || 0) + 1;
     ctx.log(why);
     return {
-      outputs: [artifact(`bmad/${slug(node.name) || 'agent'}-NOT-RUN.md`, `# ${node.name} did not run\n\n${why}\n`, { kind: 'analysis' })],
+      outputs: [artifact(`personas/${slug(node.name) || 'agent'}-NOT-RUN.md`, `# ${node.name} did not run\n\n${why}\n`, { kind: 'analysis' })],
       metrics: { placeholder: true },
       notes: [why],
     };
   };
 
-  if (!bmad.found) return notRun(`No BMAD install was found (searched: ${bmad.searched.join(', ')}). Set its folder in Settings.`);
+  if (!bmad.found) return notRun(`No ASDD persona library was found (searched: ${bmad.searched.join(', ')}). Set its folder in Settings.`);
   const agent = findBmadAgent(bmadId, bmad);
-  if (!agent) return notRun(`The BMAD agent "${bmadId}" is not in the install at ${bmad.root}.`);
+  if (!agent) return notRun(`The persona "${bmadId}" is not in the persona library at ${bmad.root}.`);
 
   const facts = resolveFacts(agent.persona.persistent_facts, bmad.root);
   const missing = facts.filter((fact) => fact.missing).map((fact) => fact.entry);
   if (missing.length) ctx.log(`Standing facts reference files that do not exist: ${missing.join(', ')}.`);
-  ctx.log(`Loaded ${agent.icon} ${agent.name} from the BMAD install at ${bmad.root} (${agent.overrides.join(' + ')}).`);
+  ctx.log(`Loaded ${agent.icon} ${agent.name} from the persona library at ${bmad.root} (${agent.overrides.join(' + ')}).`);
 
   return runModelAgent(ctx, { persona: personaPrompt(agent, { facts, config: bmad.config }), bmadAgent: agent });
 }

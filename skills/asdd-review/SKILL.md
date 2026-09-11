@@ -1,6 +1,6 @@
 ---
 name: asdd-review
-description: 'Run ASDD discovery and review the proposed agents and guardrails with the user, recording their accept, reject and edit decisions and adding their own agents (including their BMAD agents) and guardrails. Use after /asdd-start, or whenever the user wants to change the ASDD workflow.'
+description: 'Run ASDD discovery and review the proposed agents and guardrails with the user, recording their accept, reject and edit decisions and adding their own agents (including their ASDD personas) and guardrails. Use after /asdd-start, or whenever the user wants to change the ASDD workflow.'
 ---
 <!-- installed by ASDD — "asdd install" updates this file; edits here are overwritten. -->
 
@@ -25,11 +25,11 @@ AI proposes the workflow; the user owns it. Nothing runs until they are happy wi
    | Keep everything proposed | `node _asdd/asdd.mjs accept all` |
    | Change one | `node _asdd/asdd.mjs edit <id> --set name="…" --set severity=blocker` |
    | Their own agent | `node _asdd/asdd.mjs add-agent --name "…" --purpose "…" --instructions "…" [--inputs requirements,artifacts] [--files java,csv] [--output "…"] [--after "<agent name>"]` |
-   | One of their BMAD agents as a step | `node _asdd/asdd.mjs bmad` to list them, then `node _asdd/asdd.mjs add-agent --bmad <role> [--instructions "…"] [--after "<agent name>"]` |
+   | One of their ASDD personas as a step | `node _asdd/asdd.mjs personas` to list them, then `node _asdd/asdd.mjs add-agent --persona <role> [--instructions "…"] [--after "<agent name>"]` |
    | Their own rule | `node _asdd/asdd.mjs add-guardrail --name "…" --rule "<plain English>" --severity blocker\|major\|minor --applies-to "<agent name>"\|workflow --on-failure stop\|flag\|continue` |
 
    Inputs an agent can read: `requirements`, `constraints`, `artifacts` (the source files), `sourceModel` (the parsed source), `generated` (files produced earlier in the run).
-   A BMAD agent with no `--instructions` does the standard review for its role; with instructions, it does that task as itself.
+   A persona with no `--instructions` does the standard review for its role; with instructions, it does that task as itself.
    `--on-failure stop` really stops the run at that agent and waits for the user.
 
 4. Show the final list (`node _asdd/asdd.mjs proposals`) and ask whether it is right. When they say go, continue with `/asdd-run`.

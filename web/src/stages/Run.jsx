@@ -283,7 +283,7 @@ export default function RunStage({ project, reload, navigate, toast }) {
         >
           <div className="proposal-why" style={{ marginBottom: 10 }}>
             <b>{waitingNode.name}</b>
-            {waitingNode.handoff?.bmad ? ` — your BMAD agent ${waitingNode.handoff.bmad.icon} ${waitingNode.handoff.bmad.name}` : ''}. In Copilot Chat run{' '}
+            {waitingNode.handoff?.bmad ? ` — your ASDD persona ${waitingNode.handoff.bmad.icon} ${waitingNode.handoff.bmad.name}` : ''}. In Copilot Chat run{' '}
             <span className="mono">/asdd-run</span>, or <span className="mono">node _asdd/asdd.mjs task</span> in the project's terminal, to see the
             task. The files come back with <span className="mono">node _asdd/asdd.mjs submit</span>.
           </div>

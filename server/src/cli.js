@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The ASDD command line — how ASDD runs inside VS Code the way BMAD does.
+ * The ASDD command line — how ASDD runs inside VS Code, as skills your coding assistant follows.
  *
  * Copilot (or any coding assistant), guided by the ASDD skills, runs these commands in the terminal
  * from the project's own folder. Everything lives in that folder:
@@ -91,7 +91,7 @@ function paths(root) {
   };
 }
 
-/** The folder BMAD is installed in, if this project (or the folder around it) has one. */
+/** The persona library's folder (it contains _bmad/), if this project or the folder around it has one. */
 function bmadRootFor(root) {
   for (const dir of [root, path.dirname(root)]) {
     if (fs.existsSync(path.join(dir, '_bmad', '_config', 'skill-manifest.csv'))) return dir;
@@ -155,7 +155,7 @@ async function ensureServer(p) {
       ASDD_DEFAULT_MODEL: process.env.ASDD_DEFAULT_MODEL || 'assistant',
       // It stops itself when nothing has used it for this long; the next command starts it again.
       ASDD_IDLE_EXIT_MINUTES: process.env.ASDD_IDLE_EXIT_MINUTES || '30',
-      ...(bmadRoot ? { ASDD_BMAD_ROOT: bmadRoot } : {}),
+      ...(bmadRoot ? { ASDD_PERSONA_ROOT: bmadRoot } : {}),
     },
     detached: true,
     stdio: ['ignore', log, log],
@@ -293,7 +293,7 @@ const toArtifact = (file) => ({
 const SOURCE_LABEL = {
   reuse: 'reused from the registry',
   generated: 'generated for this project',
-  bmad: 'your BMAD agent',
+  bmad: 'your ASDD persona',
   custom: 'added by you',
   'author-required': 'placeholder — author your own agent',
   registry: 'from the registry',
@@ -413,7 +413,7 @@ function taskMarkdown(ctx, run, node, out) {
     `**Step:** ${node.name} · **Run:** ${run.id} · **Node:** ${node.nodeId}`,
   ];
   if (handoff.bmad) {
-    lines.push(`**BMAD agent:** ${handoff.bmad.icon} ${handoff.bmad.name} — ${handoff.bmad.title} (\`${handoff.bmad.id}\`), as customised by ${handoff.bmad.overrides.join(' + ')}`);
+    lines.push(`**ASDD persona:** ${handoff.bmad.icon} ${handoff.bmad.name} — ${handoff.bmad.title} (\`${handoff.bmad.id}\`), as customised by ${handoff.bmad.overrides.join(' + ')}`);
   }
   if (handoff.inputs?.length) lines.push(`**Inputs this agent was given:** ${handoff.inputs.join(', ')}`);
   lines.push(
@@ -497,7 +497,7 @@ function announceWaiting(ctx, run) {
   fs.mkdirSync(out, { recursive: true });
   const taskFile = path.join(dir, 'TASK.md');
   fs.writeFileSync(taskFile, taskMarkdown(ctx, run, node, out));
-  const bmad = node.handoff.bmad ? ` — BMAD ${node.handoff.bmad.icon} ${node.handoff.bmad.name}, ${node.handoff.bmad.title}` : '';
+  const bmad = node.handoff.bmad ? ` — your ASDD persona ${node.handoff.bmad.icon} ${node.handoff.bmad.name}, ${node.handoff.bmad.title}` : '';
   say(
     '',
     `⧗ WAITING FOR YOU — the coding assistant. This step is yours to do: "${node.name}"${bmad}.`,
@@ -520,7 +520,7 @@ async function cmdInstall(ctx) {
     skillsDir = path.resolve(p.root, String(options.skills));
     if (!inside(p.root, skillsDir)) throw new CliError('--skills must be a folder inside the project.');
   } else {
-    // Next to the project's other skills — BMAD's, if it is installed — so they appear together.
+    // Next to the project's other skills, so they all appear together.
     const existing = ['.github/skills', '.claude/skills', '.agents/skills'].find((dir) => fs.existsSync(path.join(p.root, dir)));
     skillsDir = path.join(p.root, existing || '.github/skills');
   }
@@ -567,7 +567,7 @@ async function cmdInstall(ctx) {
   );
 
   const bmadRoot = bmadRootFor(p.root);
-  say(bmadRoot ? `BMAD: found in ${bmadRoot} — your BMAD agents can be workflow steps.` : 'BMAD: not installed here. Everything works without it; to add it: npx bmad-method install');
+  say(bmadRoot ? `Personas: found in ${bmadRoot} — your ASDD personas can be workflow steps.` : 'Personas: no persona library here. Everything works without one; to add it: npx bmad-method install');
   if (!fs.existsSync(path.join(ASDD_HOME, 'node_modules', 'express'))) say(`⚠ ASDD's dependencies are missing. Run once: cd "${ASDD_HOME}" && npm install`);
   next('Open this folder in VS Code, open Copilot Chat in Agent mode, and type /asdd-start.');
 }
@@ -731,7 +731,7 @@ async function cmdDiscover(ctx) {
     'Show the user these proposals and record only their decisions:',
     `  ${CMD} accept <id>   ${CMD} reject <id>   ${CMD} accept all   (every undecided agent and guardrail)`,
     `  ${CMD} edit <id> --set name="…" --set instructions="…"`,
-    `  their own agent:  ${CMD} add-agent --name "…" --purpose "…" --instructions "…"   (or --bmad <role> for one of their BMAD agents)`,
+    `  their own agent:  ${CMD} add-agent --name "…" --purpose "…" --instructions "…"   (or --persona <role> for one of their ASDD personas)`,
     `  their own rule:   ${CMD} add-guardrail --name "…" --rule "…" --on-failure stop|flag|continue`,
     `When they are happy with the list: ${CMD} run`,
   );
@@ -827,9 +827,10 @@ async function cmdAddAgent(ctx) {
   const accepted = (project.proposals?.agents || []).filter((a) => a.decision === 'accepted');
 
   let agentId;
-  if (o.bmad) {
+  const personaRef = o.persona || o.bmad; // --bmad is the earlier spelling, still accepted
+  if (personaRef) {
     const bmadAgents = (await api('/registry')).agents.filter((a) => a.source === 'bmad');
-    const query = String(o.bmad).toLowerCase();
+    const query = String(personaRef).toLowerCase();
     const match = bmadAgents.find(
       (a) =>
         a.id === query ||
@@ -841,14 +842,14 @@ async function cmdAddAgent(ctx) {
     if (!match) {
       throw new CliError(
         bmadAgents.length
-          ? `No BMAD agent "${o.bmad}". Yours: ${bmadAgents.map((a) => `${a.bmad?.role || a.id} (${a.name})`).join(', ')}`
-          : 'No BMAD install was found for this project. Install BMAD here (npx bmad-method install), then try again.',
+          ? `No persona "${personaRef}". Yours: ${bmadAgents.map((a) => `${a.bmad?.role || a.id} (${a.name})`).join(', ')}`
+          : 'No persona library was found for this project. Install one here (npx bmad-method install), then try again.',
       );
     }
     agentId = match.id;
   }
   if (!text('name') && !agentId) {
-    throw new CliError(`${CMD} add-agent --name "…" --purpose "…" --instructions "…" [--inputs ${INPUT_KEYS.join(',')}] [--files java,csv] [--output "…"] [--after <agent>|start|end]   (or --bmad <role>)`);
+    throw new CliError(`${CMD} add-agent --name "…" --purpose "…" --instructions "…" [--inputs ${INPUT_KEYS.join(',')}] [--files java,csv] [--output "…"] [--after <agent>|start|end]   (or --persona <role>)`);
   }
   const inputs = list(o.inputs);
   const unknown = inputs.filter((key) => !INPUT_KEYS.includes(key));
@@ -916,18 +917,18 @@ async function cmdAddGuardrail(ctx) {
 
 async function cmdBmad(ctx) {
   const api = await ctx.api();
-  const bmad = await api('/bmad');
+  const bmad = await api('/personas');
   if (!bmad.found) {
-    say(`No BMAD install found (looked in: ${bmad.searched.join(', ')}).`);
-    return next('Everything else works without it. To add BMAD to this project: npx bmad-method install');
+    say(`No persona library found (looked in: ${bmad.searched.join(', ')}).`);
+    return next('Everything else works without it. To add a persona library to this project: npx bmad-method install');
   }
-  say(`BMAD ${bmad.version} in ${bmad.root}${bmad.user ? ` · user ${bmad.user}` : ''}`, '');
+  say(`ASDD personas (library v${bmad.version}) in ${bmad.root}${bmad.user ? ` · user ${bmad.user}` : ''}`, '');
   for (const agent of bmad.agents) {
     const customised = agent.overrides.filter((layer) => layer !== 'base');
     say(`  ${agent.icon} ${agent.name} — ${agent.title}   role: ${agent.role}${customised.length ? `   customised: ${customised.join(' + ')}` : ''}`);
   }
-  say('', `${bmad.workflows.length} workflow(s) available to you directly as BMAD skills.`);
-  return next(`To make one a step in the workflow: ${CMD} add-agent --bmad <role> [--instructions "…"] [--after "<agent>"]`);
+  say('', `${bmad.workflows.length} workflow(s) available to you directly as skills.`);
+  return next(`To make one a step in the workflow: ${CMD} add-agent --persona <role> [--instructions "…"] [--after "<agent>"]`);
 }
 
 async function cmdRun(ctx) {
@@ -1196,7 +1197,7 @@ function cmdHelp() {
     `Usage: ${CMD} <command> [options]        (from VS Code, the /asdd-* skills run these for you)`,
     '',
     'Set up',
-    '  install [--skills <dir>]          add the ASDD skills to this project (next to BMAD\'s, if present)',
+    '  install [--skills <dir>]          add the ASDD skills to this project, next to its other skills',
     '  start --name <n> --source <dir> --requirements <file> | --requirements-text "<lines>"',
     '        [--kind migration|custom] [--source-stack "<…>"] [--target-stack "<…>"] [--constraints "<…>"]',
     '  sync                              re-read the source files and requirements',
@@ -1209,9 +1210,9 @@ function cmdHelp() {
     '  accept|reject <id>|all [--agents|--guardrails]',
     '  edit <id> --set key=value         e.g. --set instructions="…"   --set severity=blocker',
     '  add-agent --name … --purpose … --instructions … [--inputs …] [--files …] [--output …] [--after <agent>]',
-    '  add-agent --bmad <role> [--instructions …] [--after <agent>]   one of your BMAD agents as a step',
+    '  add-agent --persona <role> [--instructions …] [--after <agent>]   one of your ASDD personas as a step',
     '  add-guardrail --name … --rule … [--severity …] [--applies-to <agent>] [--on-failure stop|flag|continue]',
-    '  bmad                              your BMAD agents',
+    '  personas                          your ASDD personas',
     '',
     'Run and decide',
     '  run                               compose the accepted agents and run them',
@@ -1264,7 +1265,8 @@ const COMMANDS = {
   edit: cmdEdit,
   'add-agent': cmdAddAgent,
   'add-guardrail': cmdAddGuardrail,
-  bmad: cmdBmad,
+  personas: cmdBmad,
+  bmad: cmdBmad, // the earlier name, still accepted
   run: cmdRun,
   task: cmdTask,
   submit: cmdSubmit,
