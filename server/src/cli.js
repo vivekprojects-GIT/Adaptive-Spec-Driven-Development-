@@ -536,7 +536,9 @@ async function cmdInstall(ctx) {
       continue;
     }
     fs.mkdirSync(path.dirname(target), { recursive: true });
-    fs.copyFileSync(source, target);
+    // Always LF: git on Windows may have checked the source out with CRLF, and a skill loader
+    // reading the frontmatter should not have to cope with that.
+    fs.writeFileSync(target, fs.readFileSync(source, 'utf8').replace(/\r\n/g, '\n'));
     installed.push(relPosix(p.root, target));
   }
 

@@ -130,9 +130,14 @@ test('a rule written in plain English is judged by the assistant, with evidence,
 
 test('the dashboard and the MCP tools run on this folder\'s own server', async () => {
   const ui = await asdd('ui');
-  const address = ui.match(/dashboard for this folder: (http:\/\/127\.0\.0\.1:\d+)/)?.[1];
-  assert.ok(address, ui);
-  assert.match(await fetch(address).then((r) => r.text()), /<div id="root">|<!doctype html/i);
+  if (fs.existsSync(path.resolve(here, '../../web/dist/index.html'))) {
+    const address = ui.match(/dashboard for this folder: (http:\/\/127\.0\.0\.1:\d+)/)?.[1];
+    assert.ok(address, ui);
+    assert.match(await fetch(address).then((r) => r.text()), /<div id="root">|<!doctype html/i);
+  } else {
+    // A checkout whose UI was never built says exactly how to build it, rather than serving nothing.
+    assert.match(ui, /The dashboard is not built yet\. Build it once: .*npm run build/);
+  }
 
   const client = new Client({ name: 'cli-mcp-check', version: '1.0.0' });
   await client.connect(new StdioClientTransport({ command: process.execPath, args: [SHIM, 'mcp'], cwd: WS, env, stderr: 'pipe' }));

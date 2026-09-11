@@ -50,7 +50,7 @@ Other useful commands:
 ```bash
 npm test          # pipeline, persona loader, model bridge and an MCP end-to-end test — no network, ~20s
 npm run seed      # create the flagship sample project without using the UI
-npm run build     # build the UI
+npm run build     # rebuild the UI (npm install already builds it once)
 npm start         # single process on :5174 serving the built UI + API
 ```
 
