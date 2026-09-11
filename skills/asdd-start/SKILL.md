@@ -33,7 +33,17 @@ with every blocking question answered by the user.
 
    Offer the optional questions; do not push them.
 
-5. When nothing blocks, continue with `/asdd-review`.
+5. Then read the requirements and the source files yourself, the way a senior engineer would before
+   starting. If something important is unclear, missing or contradictory, ask the user — a few
+   questions at most — and record each question with their answer:
+
+   ```
+   node _asdd/asdd.mjs clarify "<your question>" "<their answer>" --why "<why it matters>"
+   ```
+
+   It becomes part of the spec, so discovery and every agent see it, and the report lists it.
+
+6. When nothing blocks, continue with `/asdd-review`.
 
 Never invent requirements, stacks or answers. If the user does not know, record that as their
 answer ("not sure — …") or leave the question open and tell them what it blocks.

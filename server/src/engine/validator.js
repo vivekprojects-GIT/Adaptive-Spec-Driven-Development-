@@ -6,6 +6,7 @@
  */
 
 import { assist, llmAvailable } from '../lib/llm.js';
+import { assistantHandoff } from '../lib/settings.js';
 
 const CODE_KINDS = new Set(['code', 'config']);
 
@@ -199,6 +200,29 @@ const CHECKS = {
       return {
         status: 'warn',
         evidence: `Nothing in scope to check — ${scope.label} produced no artifacts.`,
+      };
+    }
+
+    // Driven from VS Code, the coding assistant judges the rule. A verdict it already gave in this
+    // run stands (the run re-checks when it resumes); otherwise the run waits for one.
+    if (assistantHandoff()) {
+      const verdict = run?.judgements?.[guardrail.guardrailId || guardrail.id];
+      if (verdict) {
+        return {
+          status: verdict.status,
+          evidence: `${verdict.evidence} (judged by ${verdict.by} over ${scope.artifacts.length} artifact(s) from ${scope.label})`,
+        };
+      }
+      return {
+        status: 'pending',
+        evidence: `Waiting for your coding assistant to judge this rule against ${scope.artifacts.length} artifact(s) from ${scope.label}.`,
+        judgement: {
+          rule,
+          scope: scope.label,
+          artifacts: scope.artifacts.map((a) => a.path),
+          digest: scope.artifacts.map((a) => `--- ${a.path}\n${a.content.slice(0, 5000)}`).join('\n\n').slice(0, 40000),
+          facts: sourceFacts(ws),
+        },
       };
     }
 

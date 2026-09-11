@@ -84,13 +84,21 @@ VS Code, open Copilot Chat in **Agent** mode, and type **/asdd-start**.
   guardrail checks, traceability) runs as a command. A step that needs thinking — an agent you
   wrote, or one of your BMAD agents such as Winston — is handed to Copilot as a `TASK.md`: the BMAD
   persona with your team's customisations, the task, and the inputs. Copilot does it with your
-  files, can ask you, and hands the files back with `submit`; the run carries on.
+  files, can ask you, and hands the files back with `submit`; the run carries on. Guardrails you
+  wrote in plain English are judged by Copilot too — against the run's files, with the evidence
+  quoted, and a failed "stop" rule still stops the run. And before discovery Copilot reads your
+  requirements and source itself and asks you what is unclear; your answers become part of the spec.
 - **You still own every decision.** The skills tell Copilot never to answer, accept, approve,
   continue, re-run or export on its own judgment — it asks you, then records your words.
 - **The dashboard is optional.** `node _asdd/asdd.mjs ui` gives the address of the same project in
   the web UI — graph, live console, trace. Whatever you did in the chat is there.
 - VS Code asks before running each terminal command. That is a useful gate; if you would rather not
   click each time, add `node _asdd/asdd.mjs` to VS Code's terminal auto-approve list.
+- **ASDD's tools in Copilot Chat, on the same project.** `install` also adds an `asdd` entry to the
+  project's `.vscode/mcp.json` (never over one of yours). It runs on the folder's own server, so
+  the chat tools, the skills and the dashboard all see one project.
+- **Nothing left running.** The folder's ASDD server stops itself after 30 minutes with no command,
+  no dashboard open and no run in progress; the next command starts it again from the same state.
 - The commands work from any terminal too: `node _asdd/asdd.mjs help`.
 
 ### Also in VS Code: ASDD tools, and Copilot's model for the dashboard (MCP)
@@ -415,6 +423,8 @@ server/
   test/bmad-loader.test.js a fixture laid out like a real BMAD install, and BMAD's merge rules
   test/mcp.e2e.test.js     a real MCP client with sampling runs a BMAD agent with no API key
   test/workspace.e2e.test.js  the whole flow from a project folder, exactly as the skills run it
+  test/cli-commands.e2e.test.js  every other command, rules judged by the assistant, MCP on the
+                           folder's server, and the server stopping itself when idle
 skills/                    the ASDD skills that `asdd install` copies into a project
 .vscode/mcp.json           registers the asdd MCP server in VS Code
 web/

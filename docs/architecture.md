@@ -122,6 +122,18 @@ and the command line writes `_asdd/handoff/<run>-<node>/TASK.md`. The assistant 
 under `out/` and runs `submit`; `prepareSubmission` records them as the node's output and marks it
 `submitted`, and `executeRun(…, { resume: true })` runs that node's scoped checks and the rest.
 
+Plain-English guardrails (`customRule`) work the same way. In assistant mode the check returns
+`pending` with the rule, its scope and the files; the run pauses with `waitingFor.kind =
+'judgement'` (the agent's own checks marked `checksPending`, so they re-run on resume). The
+assistant records a verdict with evidence per rule (`prepareJudgement`); on resume the check finds
+it in `run.judgements`, and a failed "stop" rule halts the run exactly as any other check would.
+Questions the assistant asks the user are recorded through `interview/questions`: they join the
+interview, survive re-assessment, and are appended to the spec's constraints.
+
+The folder's server exits after `ASDD_IDLE_EXIT_MINUTES` (30 from the command line) with no open
+request, no activity and no run in progress. `install` also adds `node _asdd/asdd.mjs mcp` to the
+project's `.vscode/mcp.json`, which starts the MCP server against that same folder server.
+
 ## 4. Contracts
 
 **Capability** — the unit of matchmaking: `{ id, label, tags[] }`. Agents *provide* capabilities;

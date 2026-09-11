@@ -297,15 +297,33 @@ export async function executeRun(runId, project, { resume = false } = {}) {
 
   // On a continue, the checks already made on finished agents stand — including the overridden one.
   const finishedScoped = new Set(
-    run.nodes.filter((n) => n.status === 'done' || n.status === 'failed').flatMap((n) => scopedFor(n).map((g) => g.guardrailId || g.id)),
+    run.nodes
+      .filter((n) => (n.status === 'done' || n.status === 'failed') && !n.checksPending)
+      .flatMap((n) => scopedFor(n).map((g) => g.guardrailId || g.id)),
   );
   const earlyResults = resume ? (run.validation?.results || []).filter((r) => finishedScoped.has(r.guardrailId)) : [];
   let halted = null;
   let waitingOn = null;
+  let judging = null;
+
+  // An agent step, or a verdict on a plain-English rule, is with the user's coding assistant. The
+  // run is neither finished nor failed: nothing more is checked or offered for approval until the
+  // answer is back. Checks already made stand.
+  const pause = (waitingFor, message) => {
+    run.status = 'waiting';
+    run.waitingFor = waitingFor;
+    run.ws = { ...ws, generated: ws.generated };
+    run.validation = { verdict: null, results: earlyResults, haltedBy: null, overrides: [], partial: true, at: now() };
+    run.approval = null;
+    emit(run, { type: 'run:waiting', nodeId: waitingFor.nodeId || null, message });
+    runs.update(run.id, run);
+    busFor(run.id).emit('event', { type: 'stream:end', at: now() });
+    return runs.find(run.id);
+  };
 
   try {
     for (const node of run.nodes) {
-      if (resume && (node.status === 'done' || node.status === 'failed')) continue;
+      if (resume && (node.status === 'done' || node.status === 'failed') && !node.checksPending) continue;
       if (halted) {
         if (node.status === 'reused') {
           // Never reached, so nothing of it carries over: it is simply an agent that did not run.
@@ -319,6 +337,7 @@ export async function executeRun(runId, project, { resume = false } = {}) {
 
       const reusedHere = node.status === 'reused';
       const submittedHere = node.status === 'submitted';
+      const recheckHere = Boolean(node.checksPending) && (node.status === 'done' || node.status === 'failed');
       if (reusedHere) {
         node.status = 'done';
         const carry = run.carry || {};
@@ -336,6 +355,8 @@ export async function executeRun(runId, project, { resume = false } = {}) {
           outputs: node.outputs,
           message: `↺ ${node.name} reused from ${node.reusedFrom} — unchanged since that run; ${node.outputs.length} artifact(s) carried over.`,
         });
+      } else if (recheckHere) {
+        // It already ran. Only its checks were waiting on the assistant's verdict; they run below.
       } else if (submittedHere) {
         // The coding assistant did this step and handed its files back; its checks run below.
         node.status = 'done';
@@ -417,6 +438,7 @@ export async function executeRun(runId, project, { resume = false } = {}) {
       }
 
       if (waitingOn) break;
+      delete node.checksPending;
 
       const scoped = scopedFor(node);
       if (scoped.length) {
@@ -428,6 +450,14 @@ export async function executeRun(runId, project, { resume = false } = {}) {
           message: `Checking ${fresh.length} guardrail(s) scoped to ${node.name}${carried.length ? `; ${carried.length} carried over unchanged from ${node.reusedFrom}` : ''}.`,
         });
         const scopedResults = [...carried, ...(fresh.length ? await runGuardrails(fresh, { discovery: run.discovery, ws, run }) : [])];
+        const pending = scopedResults.filter((r) => r.status === 'pending');
+        if (pending.length) {
+          // A rule on this agent needs the assistant's verdict before the run can know whether to
+          // stop here. The agent's work stands; its checks run again, with the verdict, on resume.
+          node.checksPending = true;
+          judging = { nodeId: node.nodeId, agent: node.name, items: pending };
+          break;
+        }
         earlyResults.push(...scopedResults);
         for (const result of scopedResults) emitGuardrail(run, result);
 
@@ -443,26 +473,33 @@ export async function executeRun(runId, project, { resume = false } = {}) {
     }
 
     if (waitingOn) {
-      // Neither finished nor failed. Nothing is checked or offered for approval until the
-      // assistant's work is back and the rest of the graph has run. Checks already made stand.
-      run.status = 'waiting';
-      run.ws = { ...ws, generated: ws.generated };
-      run.validation = { verdict: null, results: earlyResults, haltedBy: null, overrides: [], partial: true, at: now() };
-      run.approval = null;
-      emit(run, {
-        type: 'run:waiting',
-        nodeId: waitingOn.nodeId,
-        message: `⧗ Waiting on your coding assistant for "${waitingOn.name}". In VS Code it does this step and hands the files back; the run then carries on.`,
-      });
-      runs.update(run.id, run);
-      busFor(run.id).emit('event', { type: 'stream:end', at: now() });
-      return runs.find(run.id);
+      return pause(
+        { kind: 'agent', nodeId: waitingOn.nodeId, agent: waitingOn.name },
+        `⧗ Waiting on your coding assistant for "${waitingOn.name}". In VS Code it does this step and hands the files back; the run then carries on.`,
+      );
+    }
+    if (judging) {
+      return pause(
+        { kind: 'judgement', nodeId: judging.nodeId, agent: judging.agent, items: judging.items.map(judgementItem) },
+        `⚖ Waiting on your coding assistant to judge ${judging.items.length} rule(s) on "${judging.agent}": ${judging.items.map((r) => r.name).join(', ')}.`,
+      );
     }
 
     const remaining = run.guardrails.filter((guardrail) => !earlyResults.some((r) => (guardrail.guardrailId || guardrail.id) === r.guardrailId));
     emit(run, { type: 'validation:start', message: `Running ${remaining.length} workflow-level guardrail(s) against ${ws.generated.length} artifact(s).` });
 
-    const lateResults = await runGuardrails(remaining, { discovery: run.discovery, ws, run });
+    let lateResults = await runGuardrails(remaining, { discovery: run.discovery, ws, run });
+    const latePending = lateResults.filter((r) => r.status === 'pending');
+    if (latePending.length && !halted) {
+      return pause(
+        { kind: 'judgement', nodeId: null, agent: null, items: latePending.map(judgementItem) },
+        `⚖ Waiting on your coding assistant to judge ${latePending.length} workflow rule(s): ${latePending.map((r) => r.name).join(', ')}.`,
+      );
+    }
+    // A halted run reports what it can; a rule nobody got to judge says so, and never reads as passing.
+    lateResults = lateResults.map((r) =>
+      r.status === 'pending' ? { ...r, status: 'warn', evidence: 'Not judged: the run halted before it reached the end.', judgement: undefined } : r,
+    );
     for (const result of lateResults) emitGuardrail(run, result);
 
     const results = [...earlyResults, ...lateResults];
@@ -485,6 +522,7 @@ export async function executeRun(runId, project, { resume = false } = {}) {
     run.status = halted ? 'halted' : run.nodes.some((n) => n.status === 'failed') ? 'completed-with-errors' : 'completed';
     run.finishedAt = now();
     run.rerunSuggestion = defaultRerunNode(run)?.nodeId || null;
+    run.waitingFor = null;
 
     const skipped = run.nodes.filter((n) => n.status === 'skipped').length;
     run.approval = {
@@ -668,6 +706,7 @@ export function prepareSubmission(runId, nodeId, { files = [], notes = [], by = 
     notes: [...(node.notes || []), ...(Array.isArray(notes) ? notes : [notes]).filter(Boolean).map(String)],
   });
   node.handoff = { ...node.handoff, returnedAt: now(), by };
+  run.waitingFor = null;
   run.status = 'queued';
   runs.update(run.id, run);
   emit(run, {
@@ -677,6 +716,64 @@ export function prepareSubmission(runId, nodeId, { files = [], notes = [], by = 
     message: `↩ ${by} handed back ${outputs.length} file(s) for "${node.name}": ${outputs.map((o) => o.path).join(', ')}.`,
   });
   return run;
+}
+
+/** What the assistant needs to judge one plain-English rule: the rule, its scope and the files. */
+function judgementItem(result) {
+  return {
+    guardrailId: result.guardrailId,
+    name: result.name,
+    rule: result.rule || result.judgement?.rule,
+    severity: result.severity,
+    onFailure: result.onFailure,
+    appliesTo: result.appliesTo,
+    scope: result.judgement?.scope,
+    artifacts: result.judgement?.artifacts || [],
+    digest: result.judgement?.digest || '',
+    facts: result.judgement?.facts || null,
+  };
+}
+
+/**
+ * The coding assistant's verdicts on the plain-English rules the run is waiting on. Each needs
+ * evidence. Once every rule is judged the run resumes (call executeRun(…, { resume: true })): the
+ * checks run again, find these verdicts, and a failed rule set to "stop" stops the run as it would
+ * have with any other judge.
+ * @returns {{ run, outstanding: Array }}
+ */
+export function prepareJudgement(runId, { verdicts = [], by = 'your coding assistant' } = {}) {
+  const run = runs.find(runId);
+  if (!run) throw new HttpError(404, 'Run not found.');
+  if (run.status !== 'waiting' || run.waitingFor?.kind !== 'judgement') {
+    throw new HttpError(409, `Run ${runId} is not waiting for a verdict on any rule — it is ${run.status}.`);
+  }
+  const items = run.waitingFor.items || [];
+  const at = now();
+  run.judgements = { ...(run.judgements || {}) };
+  for (const verdict of Array.isArray(verdicts) ? verdicts : [verdicts]) {
+    const item = items.find((i) => i.guardrailId === verdict?.guardrailId);
+    if (!item) {
+      throw new HttpError(400, `"${verdict?.guardrailId}" is not one of the rules waiting to be judged: ${items.map((i) => i.guardrailId).join(', ')}.`);
+    }
+    if (!['pass', 'warn', 'fail'].includes(verdict.status)) throw new HttpError(400, 'A verdict is pass, warn or fail.');
+    if (!String(verdict.evidence || '').trim()) {
+      throw new HttpError(400, `Say what the verdict on "${item.name}" rests on — quote the evidence you saw.`);
+    }
+    run.judgements[item.guardrailId] = { status: verdict.status, evidence: String(verdict.evidence).trim(), by, at };
+  }
+
+  const outstanding = items.filter((i) => !run.judgements[i.guardrailId]);
+  const summary = (list) => list.map((i) => `"${i.name}" → ${run.judgements[i.guardrailId].status}`).join(', ');
+  if (outstanding.length) {
+    runs.update(run.id, { judgements: run.judgements });
+    emit(run, { type: 'judgement', message: `⚖ ${by} judged ${summary(items.filter((i) => run.judgements[i.guardrailId]))}; ${outstanding.length} to go.` });
+    return { run: runs.find(run.id), outstanding };
+  }
+  run.waitingFor = null;
+  run.status = 'queued';
+  runs.update(run.id, run);
+  emit(run, { type: 'judgement', message: `⚖ ${by} judged ${summary(items)}. The run carries on.` });
+  return { run, outstanding: [] };
 }
 
 export function deleteRunsForProject(projectId) {

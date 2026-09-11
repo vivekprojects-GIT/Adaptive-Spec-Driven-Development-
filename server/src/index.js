@@ -14,6 +14,7 @@ import bridgeRouter from './routes/bridge.js';
 import bmadRouter from './routes/bmad.js';
 import { bridgeToken } from './lib/bridge.js';
 import { loadBmad } from './bmad/loader.js';
+import { listRuns } from './engine/orchestrator.js';
 import { TEMPLATES, findTemplate, starterSpec, exampleSpec } from './templates.js';
 import { ensureSeeded as seedAgents } from './registry/agents.js';
 import { ensureSeeded as seedGuardrails } from './registry/guardrails.js';
@@ -34,6 +35,20 @@ seedGuardrails();
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '25mb' }));
+
+// Activity, for a server that stops itself when idle: any request, and any connection still open
+// (a live run stream, the editor bridge's long-poll) keeps it up.
+let lastActivity = Date.now();
+let openRequests = 0;
+app.use((req, res, next) => {
+  openRequests += 1;
+  lastActivity = Date.now();
+  res.on('close', () => {
+    openRequests -= 1;
+    lastActivity = Date.now();
+  });
+  next();
+});
 
 // Every API call is logged, so the dashboard can always show the last thing that happened.
 app.use((req, res, next) => {
@@ -124,6 +139,21 @@ app.use((err, req, res, next) => {
   });
   res.status(status).json({ error: err.message || 'Internal error', details: err.details || null });
 });
+
+// A server the command line started for a project folder stops itself once nothing has used it for
+// a while: no command, no open dashboard (it polls), no editor bridge, and no run in progress. The
+// next command starts it again, from the same state on disk.
+const idleMinutes = Number(process.env.ASDD_IDLE_EXIT_MINUTES || 0);
+if (idleMinutes > 0) {
+  const idleMs = idleMinutes * 60_000;
+  setInterval(() => {
+    const busy = openRequests > 0 || listRuns().some((run) => run.status === 'running' || run.status === 'queued');
+    if (busy || Date.now() - lastActivity < idleMs) return;
+    console.log(`\n  Idle for ${idleMinutes} minute(s) — stopping. The next ASDD command starts it again.`);
+    if (process.env.ASDD_PORT_FILE) fs.rmSync(process.env.ASDD_PORT_FILE, { force: true });
+    process.exit(0);
+  }, Math.min(60_000, Math.max(500, idleMs / 4))).unref();
+}
 
 // Written before listening, so an MCP server started at the same moment finds it.
 bridgeToken();

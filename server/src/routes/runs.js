@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getRun, busFor, listRuns, recordApproval, prepareContinue, prepareRerun, prepareSubmission, executeRun } from '../engine/orchestrator.js';
+import { getRun, busFor, listRuns, recordApproval, prepareContinue, prepareRerun, prepareSubmission, prepareJudgement, executeRun } from '../engine/orchestrator.js';
 import { HttpError, id, now } from '../lib/util.js';
 import { collection } from '../lib/store.js';
 import { planExport, performExport, EXPORTABLE_KINDS, ExportError } from '../lib/exporter.js';
@@ -129,6 +129,24 @@ router.post('/:runId/nodes/:nodeId/submit', (req, res) => {
   });
   runInBackground(run.id, project, { resume: true });
   res.status(202).json({ runId: run.id, nodeId: node.nodeId, files: node.outputs.map((o) => o.path) });
+});
+
+/** The coding assistant's verdicts on the plain-English rules the run is waiting on. */
+router.post('/:runId/judgements', (req, res) => {
+  const { verdicts = [], by = 'your coding assistant' } = req.body || {};
+  const { project } = runAndProject(req.params.runId);
+  const { run, outstanding } = prepareJudgement(req.params.runId, { verdicts, by });
+  onTrail(project.id, {
+    stage: 'run',
+    actor: 'assistant',
+    action: 'run.rules-judged',
+    detail: `${by} judged ${[].concat(verdicts).map((v) => `${v.guardrailId} → ${v.status}`).join(', ')} in run ${run.id}.`,
+  });
+  if (outstanding.length) {
+    return res.json({ runId: run.id, resumed: false, outstanding: outstanding.map((i) => ({ guardrailId: i.guardrailId, name: i.name })) });
+  }
+  runInBackground(run.id, project, { resume: true });
+  return res.status(202).json({ runId: run.id, resumed: true, outstanding: [] });
 });
 
 /**

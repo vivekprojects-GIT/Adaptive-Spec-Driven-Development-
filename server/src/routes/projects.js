@@ -176,7 +176,7 @@ router.post('/:id/interview', asyncH(async (req, res) => {
   const project = must(req.params.id);
   const answers = { ...(project.interview?.answers || {}), ...(req.body?.answers || {}) };
   const spec = req.body?.applyAnswers === false ? project.spec : applyAnswers(project.spec, answers);
-  const assessment = await assessSpec(spec, answers, { withLlm: req.body?.withLlm !== false });
+  const assessment = keepRaisedQuestions(await assessSpec(spec, answers, { withLlm: req.body?.withLlm !== false }), project.interview, answers);
 
   const updated = projects.update(project.id, {
     spec,
@@ -199,7 +199,7 @@ router.post('/:id/interview/answer', asyncH(async (req, res) => {
 
   const answers = { ...(project.interview?.answers || {}), [questionId]: answer };
   const spec = applyAnswers(project.spec, answers);
-  const assessment = await assessSpec(spec, answers, { withLlm: false });
+  const assessment = keepRaisedQuestions(await assessSpec(spec, answers, { withLlm: false }), project.interview, answers);
   const question = (project.interview?.questions || []).find((q) => q.id === questionId);
 
   const updated = projects.update(project.id, {
@@ -210,6 +210,69 @@ router.post('/:id/interview/answer', asyncH(async (req, res) => {
       stage: 'interview',
       action: 'interview.answered',
       detail: `Answered "${question?.question || questionId}" → "${String(answer).slice(0, 120)}". Readiness now ${assessment.readiness}%.`,
+    }),
+  });
+  res.json(updated);
+}));
+
+/**
+ * Questions raised outside the rule engine — by a model, or by the coding assistant in chat — must
+ * survive a re-assessment, with their answers. The rule engine only regenerates its own.
+ */
+function keepRaisedQuestions(assessment, previous, answers) {
+  const known = new Set(assessment.questions.map((q) => q.id));
+  const raised = (previous?.questions || []).filter(
+    (q) => !known.has(q.id) && (q.origin === 'assistant' || (q.origin === 'llm' && !assessment.llm?.used)),
+  );
+  return {
+    ...assessment,
+    questions: [
+      ...assessment.questions,
+      ...raised.map((q) => ({ ...q, answer: answers[q.id] || q.answer || '', answered: Boolean(answers[q.id] || q.answered) })),
+    ],
+  };
+}
+
+/**
+ * A question the coding assistant asked the user in chat, with the user's answer. It joins the
+ * interview (so the report lists it) and the spec's constraints (so discovery and every agent read it).
+ */
+router.post('/:id/interview/questions', asyncH(async (req, res) => {
+  const project = must(req.params.id);
+  const { question, answer = '', why = '', by = 'your coding assistant' } = req.body || {};
+  const asked = String(question || '').trim();
+  const answered = String(answer || '').trim();
+  if (!asked) throw new HttpError(400, 'question is required.');
+  if (!answered) throw new HttpError(400, "Record the user's answer together with the question.");
+
+  const questionId = `ask-${id('q')}`;
+  const answers = { ...(project.interview?.answers || {}), [questionId]: answered };
+  const constraints = [project.spec.constraints, `Clarified: ${asked} — ${answered}`].filter(Boolean).join('\n');
+  const spec = applyAnswers({ ...project.spec, constraints }, answers);
+  const assessment = keepRaisedQuestions(await assessSpec(spec, answers, { withLlm: false }), project.interview, answers);
+  assessment.questions.push({
+    id: questionId,
+    required: false,
+    weight: 0,
+    answer: answered,
+    answered: true,
+    origin: 'assistant',
+    askedBy: by,
+    kind: 'text',
+    field: 'notes',
+    severity: 'minor',
+    question: asked,
+    why: why || `Asked by ${by} after reading the requirements and source.`,
+  });
+
+  const updated = projects.update(project.id, {
+    spec,
+    interview: { ...assessment, answers, assessedAt: now() },
+    stage: ['spec', 'interview'].includes(project.stage) ? (assessment.ready ? 'discovery' : 'interview') : project.stage,
+    trail: trail(project, {
+      stage: 'interview',
+      action: 'interview.clarified',
+      detail: `${by} asked "${asked.slice(0, 160)}" → the user answered "${answered.slice(0, 120)}".`,
     }),
   });
   res.json(updated);

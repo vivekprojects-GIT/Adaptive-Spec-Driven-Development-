@@ -42,6 +42,8 @@
 | **E14 VS Code, BMAD-style** | S14.1 Command line over a per-folder ASDD server, state in the project's `_asdd/` | FR-30 | done |
 | | S14.2 ASDD skills and `asdd install`, next to the project's BMAD skills | FR-30 | done |
 | | S14.3 Model-driven steps handed to the coding assistant, resumed on submit | FR-30 | done |
+| | S14.4 Plain-English guardrails judged by the assistant; its clarifying questions recorded | FR-30 | done |
+| | S14.5 MCP tools on the folder's server; the server stops itself when idle | FR-30 | done |
 
 ## Definition of done (applied to every story)
 

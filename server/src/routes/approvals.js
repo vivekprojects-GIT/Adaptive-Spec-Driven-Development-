@@ -75,8 +75,14 @@ export function pendingApprovals() {
           projectName: project.name,
           runId: run.id,
           stage: 'run',
-          title: `Waiting on your coding assistant: "${node?.name || 'an agent step'}"`,
-          detail: 'In VS Code, ask Copilot to carry on (/asdd-run). It does this step with your files and hands the work back; the run then continues.',
+          title:
+            run.waitingFor?.kind === 'judgement'
+              ? `Waiting on your coding assistant to judge ${run.waitingFor.items.length} rule(s)`
+              : `Waiting on your coding assistant: "${node?.name || 'an agent step'}"`,
+          detail:
+            run.waitingFor?.kind === 'judgement'
+              ? `${run.waitingFor.items.map((i) => i.name).join(', ')} — in VS Code, /asdd-run has Copilot judge them against the run's files; the run then continues.`
+              : 'In VS Code, ask Copilot to carry on (/asdd-run). It does this step with your files and hands the work back; the run then continues.',
           count: 1,
           since: node?.handoff?.at || run.startedAt,
           action: 'Open the run',

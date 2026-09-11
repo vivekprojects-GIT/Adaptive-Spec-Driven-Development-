@@ -151,6 +151,7 @@ export default function RunStage({ project, reload, navigate, toast }) {
   const skipped = (run?.nodes || []).filter((node) => node.status === 'skipped');
   const approvalState = run?.approval?.state;
   const waitingNode = run?.status === 'waiting' ? (run.nodes || []).find((node) => node.status === 'waiting') : null;
+  const judging = run?.status === 'waiting' && run.waitingFor?.kind === 'judgement' ? run.waitingFor : null;
 
   return (
     <>
@@ -190,7 +191,7 @@ export default function RunStage({ project, reload, navigate, toast }) {
         <Stat
           label="Status"
           value={live ? 'running' : run?.status || '—'}
-          tone={live ? 'accent' : waitingNode ? 'warn' : halted || run?.status?.includes('error') || run?.status === 'failed' ? 'fail' : 'pass'}
+          tone={live ? 'accent' : run?.status === 'waiting' ? 'warn' : halted || run?.status?.includes('error') || run?.status === 'failed' ? 'fail' : 'pass'}
           sub={duration ? `${duration}s` : 'in progress'}
         />
         <Stat label="Verdict" value={run?.validation?.verdict || '—'} tone={toneForVerdict(run?.validation?.verdict)} sub={`${results.length} guardrail(s)`} />
@@ -253,6 +254,26 @@ export default function RunStage({ project, reload, navigate, toast }) {
           </div>
         </Card>
       </div>
+
+      {judging && (
+        <Card
+          title="Waiting on your coding assistant"
+          sub="Plain-English rules need judging against what the run produced. In VS Code, Copilot judges them; the run carries on when every verdict is in."
+          right={<Badge tone="warn">judging</Badge>}
+        >
+          <div className="proposal-why" style={{ marginBottom: 10 }}>
+            {judging.items.length} rule(s)
+            {judging.agent ? <> on the work of <b>{judging.agent}</b></> : ' across the whole workflow'}. In Copilot Chat run{' '}
+            <span className="mono">/asdd-run</span>; each verdict is recorded with <span className="mono">node _asdd/asdd.mjs judge</span>, with the evidence
+            it rests on.
+          </div>
+          {judging.items.map((item) => (
+            <div key={item.guardrailId} className="small" style={{ marginTop: 6 }}>
+              <b>{item.name}</b> — “{item.rule}” <span className="faint">({item.severity}; if it fails: {item.onFailure})</span>
+            </div>
+          ))}
+        </Card>
+      )}
 
       {waitingNode && (
         <Card

@@ -153,6 +153,8 @@ async function ensureServer(p) {
       ASDD_WORKSPACE: p.root,
       // From VS Code, agent steps that need a model go to the coding assistant — no API key.
       ASDD_DEFAULT_MODEL: process.env.ASDD_DEFAULT_MODEL || 'assistant',
+      // It stops itself when nothing has used it for this long; the next command starts it again.
+      ASDD_IDLE_EXIT_MINUTES: process.env.ASDD_IDLE_EXIT_MINUTES || '30',
       ...(bmadRoot ? { ASDD_BMAD_ROOT: bmadRoot } : {}),
     },
     detached: true,
@@ -312,6 +314,8 @@ function printQuestions(project) {
     if (question.why) say(`    why it matters: ${truncate(question.why, 240)}`);
     if (question.options?.length) say(`    options: ${question.options.map((o) => (typeof o === 'string' ? o : o.label || o.value)).join(' | ')}`);
   }
+  const clarified = (interview.questions || []).filter((q) => q.origin === 'assistant' && q.answered);
+  if (clarified.length) say('', 'Clarified in chat:', ...clarified.map((q) => `  • ${q.question} → ${truncate(q.answer, 160)}`));
   return { blocking: blocking.length };
 }
 
@@ -435,7 +439,57 @@ function taskMarkdown(ctx, run, node, out) {
   return lines.join('\n');
 }
 
+const ON_FAILURE_TEXT = { stop: 'the run stops here for the user', flag: 'it is flagged and the run carries on', continue: 'it is recorded only' };
+
+function judgeMarkdown(run, items) {
+  const lines = [
+    '# Rules for your coding assistant to judge',
+    '',
+    `**Run:** ${run.id}`,
+    '',
+    'The user wrote these rules in plain English. There is no rule engine for them, so ASDD asks you to judge each one against the files the run produced — those files, nothing else.',
+    '',
+    '- **pass** only if the files demonstrably satisfy the rule.',
+    '- **fail** if they demonstrably break it.',
+    '- **warn** if they do not contain enough to decide.',
+    '- Quote the specific evidence you used. Do not change any files.',
+    '',
+  ];
+  for (const item of items) {
+    lines.push(
+      `## ${item.name}  (\`${item.guardrailId}\`)`,
+      '',
+      `**Rule:** ${item.rule}`,
+      `**Applies to:** ${item.scope} · **Severity:** ${item.severity} · **If it fails:** ${ON_FAILURE_TEXT[item.onFailure] || item.onFailure}`,
+      '',
+    );
+    if (item.facts && Object.keys(item.facts).length) lines.push(`**Source facts:** ${JSON.stringify(item.facts)}`, '');
+    lines.push('````', item.digest || '(no files)', '````', '', `Record it: \`${CMD} judge ${item.guardrailId} pass|warn|fail "<the evidence you saw>"\``, '');
+  }
+  return lines.join('\n');
+}
+
+function announceJudgement(ctx, run) {
+  const items = run.waitingFor.items || [];
+  const dir = path.join(ctx.p.handoff, `${run.id}-rules`);
+  fs.mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, 'JUDGE.md');
+  fs.writeFileSync(file, judgeMarkdown(run, items));
+  say(
+    '',
+    `⚖ WAITING FOR YOU — the coding assistant. Judge ${items.length} rule(s) the user wrote${run.waitingFor.agent ? `, on the work of "${run.waitingFor.agent}"` : ', across the whole workflow'}:`,
+    ...items.map((item) => `  • ${item.name} (${item.guardrailId}) — "${truncate(item.rule, 160)}"`),
+    `  Evidence:  ${relPosix(ctx.p.root, file)}   ← the rules, and the files they apply to`,
+    `  Then, for each rule:  ${CMD} judge <guardrailId> pass|warn|fail "<the evidence you saw>"`,
+  );
+  return next(
+    'Judge each rule strictly on the files in JUDGE.md: pass only if they demonstrably satisfy it, fail if they demonstrably break it, warn if they do not show enough to decide. Quote what you saw.',
+    'A fail on a rule set to "stop" stops the run — what happens then is the user\'s decision, not yours.',
+  );
+}
+
 function announceWaiting(ctx, run) {
+  if (run.waitingFor?.kind === 'judgement') return announceJudgement(ctx, run);
   const node = run.nodes.find((n) => n.status === 'waiting');
   if (!node?.handoff) return say('The run is waiting, but no step is marked as handed over yet. Check again in a moment.');
   const dir = path.join(ctx.p.handoff, `${run.id}-${node.nodeId}`);
@@ -498,6 +552,19 @@ async function cmdInstall(ctx) {
   say(`ASDD ${VERSION} installed in ${p.root}`, '', 'Skills (Copilot Chat lists them when you type /):', ...installed.map((file) => `  + ${file}`));
   if (kept.length) say('Left alone — a skill of yours already has this name:', ...kept.map((file) => `  = ${file}`));
   say(`Command: ${CMD} <command>   (the skills run it for you)`);
+
+  const mcp = options['no-mcp'] ? 'skipped' : installMcpConfig(p.root);
+  const entryText = JSON.stringify(MCP_ENTRY);
+  say(
+    {
+      created: 'MCP: created .vscode/mcp.json with the "asdd" server — ASDD\'s tools in Copilot Chat, on this folder\'s server.',
+      added: 'MCP: added the "asdd" server to .vscode/mcp.json — ASDD\'s tools in Copilot Chat, on this folder\'s server.',
+      present: 'MCP: .vscode/mcp.json already has the "asdd" server.',
+      kept: `MCP: .vscode/mcp.json already has a different "asdd" server — left alone. For this folder's tools, use: "asdd": ${entryText}`,
+      unreadable: `MCP: .vscode/mcp.json is not plain JSON (comments?) — left alone. Add under "servers": "asdd": ${entryText}`,
+      skipped: 'MCP: skipped (--no-mcp).',
+    }[mcp],
+  );
 
   const bmadRoot = bmadRootFor(p.root);
   say(bmadRoot ? `BMAD: found in ${bmadRoot} — your BMAD agents can be workflow steps.` : 'BMAD: not installed here. Everything works without it; to add it: npx bmad-method install');
@@ -899,6 +966,9 @@ async function cmdSubmit(ctx) {
   const api = await ctx.api();
   const run = await currentRun(ctx, api);
   if (run.status !== 'waiting') throw new CliError(`Run ${run.id} is ${run.status}, not waiting on the coding assistant. Nothing to submit.`);
+  if (run.waitingFor?.kind === 'judgement') {
+    throw new CliError(`Run ${run.id} is waiting for verdicts on rules, not for files. See: ${CMD} task   and record each with: ${CMD} judge <guardrailId> pass|warn|fail "<evidence>"`);
+  }
   const node = run.nodes.find((n) => n.status === 'waiting');
   const out = path.join(ctx.p.handoff, `${run.id}-${node.nodeId}`, 'out');
   if (!fs.existsSync(out)) {
@@ -1049,6 +1119,76 @@ async function cmdStop(ctx) {
   return say(`Stopped the ASDD server for this folder (PID ${running.pid}). The project stays in _asdd/.`);
 }
 
+async function cmdJudge(ctx) {
+  const [guardrailId, status, ...words] = ctx.positional;
+  const evidence = ctx.options.evidence && ctx.options.evidence !== true ? String(ctx.options.evidence) : words.join(' ');
+  if (!guardrailId || !['pass', 'warn', 'fail'].includes(status) || !evidence.trim()) {
+    throw new CliError(`${CMD} judge <guardrailId> pass|warn|fail "<the evidence you saw>"`);
+  }
+  const api = await ctx.api();
+  const run = await currentRun(ctx, api);
+  const result = await api(`/runs/${run.id}/judgements`, {
+    method: 'POST',
+    body: { verdicts: [{ guardrailId, status, evidence }], by: 'your coding assistant (VS Code)' },
+  });
+  if (!result.resumed) {
+    say(`Recorded ${status} for ${guardrailId}.`, `Still to judge: ${result.outstanding.map((o) => `${o.name} (${o.guardrailId})`).join(', ')}`);
+    return next(`Judge the rest: ${CMD} judge <guardrailId> pass|warn|fail "<the evidence you saw>"`);
+  }
+  say(`Recorded ${status} for ${guardrailId}. Every rule is judged — the run carries on…`, '');
+  return afterRun(ctx, await settle(api, run.id));
+}
+
+async function cmdClarify(ctx) {
+  const [question, ...words] = ctx.positional;
+  const answer = ctx.options.answer && ctx.options.answer !== true ? String(ctx.options.answer) : words.join(' ');
+  if (!question?.trim() || !answer.trim()) {
+    throw new CliError(`${CMD} clarify "<the question you asked>" "<the user's answer>" [--why "<why it matters>"]`);
+  }
+  const api = await ctx.api();
+  await api(`/projects/${projectId(ctx.p)}/interview/questions`, {
+    method: 'POST',
+    body: { question, answer, why: ctx.options.why && ctx.options.why !== true ? String(ctx.options.why) : '', by: 'your coding assistant (VS Code)' },
+  });
+  return say(
+    `Recorded: "${truncate(question, 160)}" → "${truncate(answer, 160)}".`,
+    'It is part of the spec now (constraints), so discovery and every agent read it, and the report lists it.',
+  );
+}
+
+/** VS Code starts this over stdio. Stdout belongs to the MCP protocol, so nothing is printed. */
+async function cmdMcp(ctx) {
+  const base = await ensureServer(ctx.p);
+  process.env.ASDD_API = base;
+  // Where this folder's server keeps the editor-bridge token.
+  process.env.ASDD_DATA_DIR = ctx.p.state;
+  process.env.ASDD_WORKSPACE = ctx.p.root;
+  await import('./mcp.js');
+}
+
+const MCP_ENTRY = { type: 'stdio', command: 'node', args: ['${workspaceFolder}/_asdd/asdd.mjs', 'mcp'] };
+
+/** Adds the "asdd" MCP server to the project's .vscode/mcp.json — never over one of the user's. */
+function installMcpConfig(root) {
+  const file = path.join(root, '.vscode', 'mcp.json');
+  if (!fs.existsSync(file)) {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, `${JSON.stringify({ servers: { asdd: MCP_ENTRY } }, null, 2)}\n`);
+    return 'created';
+  }
+  let config;
+  try {
+    config = JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch {
+    return 'unreadable';
+  }
+  config.servers = config.servers || {};
+  if (config.servers.asdd) return JSON.stringify(config.servers.asdd) === JSON.stringify(MCP_ENTRY) ? 'present' : 'kept';
+  config.servers.asdd = MCP_ENTRY;
+  fs.writeFileSync(file, `${JSON.stringify(config, null, 2)}\n`);
+  return 'added';
+}
+
 function cmdHelp() {
   say(
     `ASDD ${VERSION} — Adaptive Spec Driven Development, run from your project folder.`,
@@ -1084,7 +1224,12 @@ function cmdHelp() {
     '',
     'Other',
     '  ui [--open]                       the dashboard for this folder (same state as the chat)',
-    '  stop                              stop this folder\'s ASDD server',
+    '  stop                              stop this folder\'s ASDD server (it also stops itself after 30 idle minutes)',
+    '  mcp                               ASDD\'s MCP tools on this folder\'s server (VS Code runs this; see .vscode/mcp.json)',
+    '',
+    'For the coding assistant',
+    '  clarify "<question>" "<answer>"   record a question you asked the user, with their answer',
+    '  judge <guardrailId> pass|warn|fail "<evidence>"   your verdict on a plain-English rule the run is waiting on',
   );
 }
 
@@ -1131,6 +1276,9 @@ const COMMANDS = {
   report: cmdReport,
   ui: cmdUi,
   stop: cmdStop,
+  judge: cmdJudge,
+  clarify: cmdClarify,
+  mcp: cmdMcp,
   help: cmdHelp,
 };
 

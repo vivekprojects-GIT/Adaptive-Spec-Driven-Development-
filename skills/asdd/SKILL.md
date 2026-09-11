@@ -33,6 +33,7 @@ Every command prints what happened and ends with a `NEXT:` line. Follow it.
 - **The user owns every decision.** Never answer an interview question, accept or reject a proposal, approve, request changes, continue past a stop, re-run, or export with `--yes` on your own judgment. Ask, wait for their answer, then run the command with their words in `--note`.
 - **Relay what ASDD reports, as it reports it.** Give verdicts and guardrail evidence plainly. Do not soften a FAIL or a capability gap.
 - **A step handed to you is real work.** When a command prints `WAITING FOR YOU`, read the TASK.md it names, do the step in that role, write the files where it says, then run `node _asdd/asdd.mjs submit`.
+- **When you judge a rule, judge it strictly.** A verdict rests on the files ASDD gives you, with the evidence quoted — never on what you expect them to contain.
 - **Do not edit anything under `_asdd/state/`.** Use the commands.
 - The dashboard (`node _asdd/asdd.mjs ui`) shows the same project as the chat, with the workflow graph, live console and traceability, if the user wants to see it.
 
@@ -50,6 +51,8 @@ Every command prints what happened and ends with a `NEXT:` line. Follow it.
 | `add-guardrail …` | The user's own rule |
 | `run` | Run the accepted workflow |
 | `task` / `submit` | The step handed to you / hand its files back |
+| `judge <id> pass\|warn\|fail "<evidence>"` | Your verdict on a plain-English rule the run is waiting on |
+| `clarify "<question>" "<answer>"` | A question you asked the user, with their answer |
 | `approve` / `request-changes` | Final decision on a run |
 | `continue` | Carry a halted run on past its stop |
 | `rerun --from "<agent>"` | Re-run from a changed agent |

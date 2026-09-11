@@ -93,6 +93,11 @@ function summariseRun(run) {
   const halted = run.status === 'halted';
   const stoppedBy = halted ? results.find((r) => r.guardrailId === run.validation?.haltedBy) : null;
   const next = () => {
+    if (run.status === 'waiting') {
+      return run.waitingFor?.kind === 'judgement'
+        ? 'The run is waiting for you (the assistant) to judge plain-English rules the user wrote. Call asdd_waiting_task, judge each strictly on the files it gives you, then asdd_judge_rules.'
+        : 'An agent step is waiting for you (the assistant) to do. Call asdd_waiting_task, do the step as that persona, then asdd_hand_back_files.';
+    }
     if (halted && run.approval?.state === 'pending') {
       return `A guardrail ("${stoppedBy?.name}") halted this run and it cannot be approved as it stands. Ask the user: continue past the stop (asdd_continue_run), or request changes and re-run from an agent (asdd_rerun_run). Act only on their answer.`;
     }
@@ -361,6 +366,106 @@ tool(
     }
     const started = await api(`/runs/${runId}/rerun`, { method: 'POST', body: { fromNodeId, note: note || '', by: 'human via Copilot Chat' } });
     return { newRunId: started.runId, from: started.from, reused: started.reused, reasons: started.reasons, ...(await waitForRun(started.runId)) };
+  },
+);
+
+tool(
+  'asdd_waiting_task',
+  {
+    title: 'The step waiting for you, the assistant',
+    description:
+      'When a run is waiting on the coding assistant, returns what to do: an agent step (persona, task, inputs, where its files go) or plain-English rules to judge (with the files they apply to).',
+    inputSchema: { runId: z.string() },
+    annotations: readOnly,
+  },
+  async ({ runId }) => {
+    const run = await api(`/runs/${runId}`);
+    if (run.status !== 'waiting') return { runId, status: run.status, waiting: false };
+    if (run.waitingFor?.kind === 'judgement') {
+      return {
+        kind: 'judgement',
+        runId,
+        instructions:
+          'Judge each rule ONLY against the files given. pass = demonstrably satisfied; fail = demonstrably broken; warn = not enough to decide. Quote your evidence. Then call asdd_judge_rules.',
+        rules: run.waitingFor.items.map((item) => ({
+          guardrailId: item.guardrailId,
+          name: item.name,
+          rule: item.rule,
+          appliesTo: item.scope,
+          severity: item.severity,
+          ifItFails: item.onFailure,
+          sourceFacts: item.facts,
+          files: item.digest,
+        })),
+      };
+    }
+    const node = run.nodes.find((n) => n.status === 'waiting');
+    return {
+      kind: 'agent',
+      runId,
+      nodeId: node.nodeId,
+      step: node.name,
+      bmadAgent: node.handoff.bmad,
+      persona: node.handoff.system,
+      task: node.handoff.task,
+      outputDir: node.handoff.outputDir,
+      instructions: `Do this step as the persona. Produce its files (paths relative to the project, normally under ${node.handoff.outputDir}/), then call asdd_hand_back_files with them. Do not change other project files for this step.`,
+    };
+  },
+);
+
+tool(
+  'asdd_hand_back_files',
+  {
+    title: "Hand back an agent step's files",
+    description: 'Records the files you produced for the agent step the run is waiting on, and lets the run carry on. Waits up to two minutes for the result.',
+    inputSchema: {
+      runId: z.string(),
+      files: z.array(z.object({ path: z.string(), content: z.string() })).min(1),
+      notes: z.array(z.string()).optional().describe('Assumptions you made, or what you could not do'),
+    },
+  },
+  async ({ runId, files, notes }) => {
+    const run = await api(`/runs/${runId}`);
+    const node = run.nodes.find((n) => n.status === 'waiting');
+    if (!node) throw new ToolError(`Run ${runId} is not waiting on an agent step (it is ${run.status}).`);
+    await api(`/runs/${runId}/nodes/${node.nodeId}/submit`, { method: 'POST', body: { files, notes: notes || [], by: 'your coding assistant (Copilot Chat)' } });
+    return waitForRun(runId);
+  },
+);
+
+tool(
+  'asdd_judge_rules',
+  {
+    title: 'Judge the plain-English rules',
+    description:
+      "Records your verdicts on the user's plain-English rules the run is waiting on: pass only if the files demonstrably satisfy the rule, fail if they demonstrably break it, warn if they do not show enough. Evidence must quote what you saw.",
+    inputSchema: {
+      runId: z.string(),
+      verdicts: z.array(z.object({ guardrailId: z.string(), status: z.enum(['pass', 'warn', 'fail']), evidence: z.string().min(1) })).min(1),
+    },
+  },
+  async ({ runId, verdicts }) => {
+    const result = await api(`/runs/${runId}/judgements`, { method: 'POST', body: { verdicts, by: 'your coding assistant (Copilot Chat)' } });
+    if (!result.resumed) return { recorded: verdicts.length, stillToJudge: result.outstanding };
+    return waitForRun(runId);
+  },
+);
+
+tool(
+  'asdd_add_clarification',
+  {
+    title: 'Record a clarification from the user',
+    description:
+      "Records a question you asked the user in this conversation and THEIR answer, in their words. It joins the interview and the spec's constraints, so discovery and every agent see it. Never answer on the user's behalf.",
+    inputSchema: { projectId: z.string(), question: z.string(), answer: z.string().describe("The user's answer"), why: z.string().optional() },
+  },
+  async ({ projectId, question, answer, why }) => {
+    const p = await api(`/projects/${projectId}/interview/questions`, {
+      method: 'POST',
+      body: { question, answer, why: why || '', by: 'your coding assistant (Copilot Chat)' },
+    });
+    return { recorded: true, readiness: p.interview.readiness, constraints: p.spec.constraints };
   },
 );
 
