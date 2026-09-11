@@ -144,7 +144,7 @@ Everything. There is no step that requires curl or editing a file by hand.
 | **6 Workflow** | The composed DAG, drawn. Layers come from capability phases, so the picture is the real execution order |
 | **7 Run** | Live execution with a streaming console, per-node status on the graph, guardrail verdicts, and a browsable file viewer of everything generated |
 | **7a Approval** | Approve the run or request changes — the run stays `pending` until you decide. A halted run is continued past its stop, or re-run from the agent you changed — never restarted from scratch |
-| **8 Trace** | Five-column lineage — requirement → source test → agent → artifact → guardrail. Click any node and its whole chain lights up. Plus the traceability matrix and a full decision trail |
+| **8 Trace** | Five-column lineage — requirement → source test → agent → artifact → guardrail. Click any node and its whole chain lights up. Plus the traceability matrix and a full decision trail. For a plan-first build, a **plan trace** comes first: each requirement followed into the PRD, the stories that carry it, and the code files that name those stories — marked *built*, *planned*, *specified* or *missing*, so you see exactly where one fell out |
 | **9 Report** | Acceptance summary and a Markdown report, downloadable, plus a JSON bundle of the entire run |
 
 **Getting the files out.** The run view has **Export to folder** in the top action row: give it an absolute path and it
@@ -155,7 +155,7 @@ source files, and Copilot, Cursor or Claude Code can pick them up from there. Th
 last is remembered per project, so a repeat export is one click — but the preview is always
 recomputed, never restored from the last time.
 
-Four more screens in the sidebar:
+Five more screens in the sidebar:
 
 - **Approvals** — every decision waiting on a human, across every project, in one list: unanswered
   blocking questions, undecided agent and guardrail proposals, halted runs, finished runs nobody has
@@ -166,8 +166,17 @@ Four more screens in the sidebar:
 - **Dashboard** — built to answer one question: *where did it fail?* It ranks failing guardrails with
   their evidence, agents that threw and what they threw, agents that produced placeholders instead of
   real work, requirements that never reached an artifact, capability gaps still open, and projects
-  stuck at the interview. Underneath sits the live activity log — every API call, stage change, agent
-  step, guardrail verdict and model call, filterable by level and scope.
+  stuck at the interview. **Run health** shows how runs end (a run only counts as passed when it
+  finished *and* its guardrails let it through), the typical and 90th-percentile run time, where the
+  time goes agent by agent, how many steps were done by your coding assistant, and which models ran.
+  Underneath sits the live activity log — every API call, stage change, agent step, guardrail verdict
+  and model call, filterable by level and scope.
+- **Governance** — who decided what, when, and under which rules, across every project. Every
+  override of a stop, with who, why and the evidence the check failed on; the policies each project
+  is held to right now (its guardrails, which of them stop the run, which are judged in plain
+  English, how its latest run ended); and the full decision log, telling people, the coding assistant
+  and ASDD itself apart, filterable by project, actor and kind. It is read from the decision trails
+  and the runs themselves, so it cannot drift from what actually happened.
 - **Registries** — browse and extend the agent registry, the guardrail registry, and the technology
   profiles. An agent you add here is available to the *next* discovery on any project.
 - **Settings** — pick the model (**Auto**, **Copilot via VS Code**, Opus 5, Sonnet 5, Haiku 4.5,
@@ -279,6 +288,29 @@ Switch it off per project with the **ASDD document set** checkbox on the Spec st
 Your ASDD personas and workflows can pick up from these documents where the run left off.
 
 ---
+
+## Build from requirements — plan first, approve once
+
+Set **Project kind** to `build` (or pick the *Plan-first* template) and give ASDD nothing but your
+requirements. It proposes the whole plan on one screen:
+
+| Phase | Who does it | Writes |
+|---|---|---|
+| Brief | the analyst persona | `docs/product-brief.md` |
+| PRD | the product-manager persona | `docs/prd.md` |
+| UX design *(only when something has a screen)* | the UX persona | `docs/ux-design.md` |
+| Architecture | the architect persona | `docs/architecture.md` |
+| Epics & stories | the product-manager persona | `docs/epics-and-stories.md` |
+| Implementation | the developer persona | the code, each file tagged with the story it builds |
+
+Each phase reads what the phases before it wrote. Where your persona library has no one for a role,
+ASDD's own agent does it and the plan says so. The guardrails come with it: every requirement must
+be in the PRD, the architecture must cover the PRD (judged in plain English), and — set to **stop** —
+the plan must be complete and every requirement must have a story *before any code is written*.
+
+Press **Approve this plan and run** (or `asdd approve-plan` in VS Code) and everything runs by
+itself, phase after phase, until the one final human decision. The plan trace then shows each
+requirement from the PRD to the code.
 
 ## Any project, not just migrations
 

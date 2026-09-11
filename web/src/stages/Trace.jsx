@@ -68,10 +68,48 @@ export default function TraceStage({ project, navigate, toast }) {
   const orphans = run?.ws?.traceability?.orphanRequirements || [];
   const query = filter.trim().toLowerCase();
 
+  const plan = run?.planTrace;
+
   return (
     <>
+      {plan && (
+        <>
+          <div className="grid cols-4" style={{ marginBottom: 18 }}>
+            <Stat label="Requirements built" value={`${plan.counts.built}/${plan.counts.requirements}`} tone={plan.counts.built === plan.counts.requirements ? 'pass' : 'warn'} sub="Traced all the way to code" />
+            <Stat label="Planned, not built" value={plan.counts.planned} tone={plan.counts.planned ? 'warn' : 'pass'} sub="Have a story, no code names it" />
+            <Stat label="Lost along the way" value={plan.counts.specified + plan.counts.missing} tone={plan.counts.specified + plan.counts.missing ? 'fail' : 'pass'} sub="No story, or not even in the PRD" />
+            <Stat label="Stories · code files" value={`${plan.stories} · ${plan.codeFiles}`} tone="accent" />
+          </div>
+          <Card
+            title="Plan trace"
+            sub="Each requirement followed through the plan: is it in the PRD, which stories carry it, which code files name those stories. Read from what the phases wrote, not typed in."
+            tight
+          >
+            <div className="table-wrap">
+              <table className="table">
+                <thead><tr><th>Requirement</th><th>In the PRD</th><th>Stories</th><th>Code</th><th>Status</th></tr></thead>
+                <tbody>
+                  {plan.rows.map((row) => (
+                    <tr key={row.requirementId}>
+                      <td>
+                        <Badge tone="accent">{row.requirementId}</Badge>
+                        <div className="tiny faint" style={{ marginTop: 4 }}>{row.text}</div>
+                      </td>
+                      <td>{row.inPrd ? <Badge tone="pass">yes</Badge> : <Badge tone="fail">no</Badge>}</td>
+                      <td className="mono small">{row.stories.join(', ') || <span className="faint">none</span>}</td>
+                      <td className="mono tiny">{row.files.length ? row.files.map((file) => <div key={file}>{file}</div>) : <span className="faint">none</span>}</td>
+                      <td><Badge tone={toneForStatus(row.status)}>{row.status}</Badge></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </>
+      )}
+
       {trace && (
-        <div className="grid cols-4" style={{ marginBottom: 14 }}>
+        <div className="grid cols-4" style={{ marginBottom: 18, marginTop: plan ? 18 : 0 }}>
           <Stat label="Trace links" value={trace.counts.links} tone="accent" sub="Every one is derived, not typed" />
           <Stat
             label="Requirements covered"

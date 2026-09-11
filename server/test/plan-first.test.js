@@ -95,6 +95,8 @@ test('from requirements alone, discovery proposes the plan-first structure', () 
 
   const noScreens = runDiscovery(spec({ requirements: 'REQ-001 The nightly job exports orders to CSV' }));
   assert.ok(!noScreens.capabilities.some((c) => c.id === 'plan.ux'), 'no UX phase when nothing has a user interface');
+
+  assert.deepEqual(approvedPlan().graph.errors, [], 'the approved plan composes cleanly — no migration warnings on a build');
 });
 
 test('the plan names who does each step, and the guardrails between the steps', () => {
@@ -139,6 +141,13 @@ test('approved once, every phase runs in order — each reading the documents be
   const developer = run.nodes.find((n) => n.capability === 'build.implement');
   assert.match(developer.handoff.task, /S2\.2/, 'the developer read the stories');
   assert.ok(run.ws.generated.some((a) => a.path === 'src/notes/notes.ts' && a.kind === 'code'), 'the code is in the run, ready to export');
+
+  // Tracing: every requirement followed from the PRD, through its story, to the code that names it.
+  assert.equal(run.planTrace.counts.built, 3, 'all three requirements reach code');
+  const req3 = run.planTrace.rows.find((row) => row.requirementId === 'REQ-003');
+  assert.deepEqual(req3.stories, ['S2.2']);
+  assert.deepEqual(req3.files, ['src/notes/notes.ts']);
+  assert.match(run.report, /Plan trace — requirement → PRD → story → code/);
 });
 
 test('a requirement with no story stops the run before any code is written', async () => {
@@ -150,6 +159,7 @@ test('a requirement with no story stops the run before any code is written', asy
   assert.match(run.validation.results.find((r) => r.guardrailId === 'guard.plan.requirements-in-stories').evidence, /REQ-003/);
   assert.ok(!handedTo.includes('build.implement'), 'implementation never started');
   assert.equal(run.nodes.find((n) => n.capability === 'build.implement').status, 'skipped');
+  assert.equal(run.planTrace.rows.find((row) => row.requirementId === 'REQ-003').status, 'specified', 'the trace shows where it was lost: in the PRD, never storied');
 });
 
 test('from the command line: start a build project, see the plan, approve it once', async () => {

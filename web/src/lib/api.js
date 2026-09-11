@@ -54,6 +54,7 @@ export const api = {
 
   approvals: () => call('/approvals'),
   dashboard: () => call('/dashboard'),
+  governance: () => call('/governance'),
   logs: (params = {}) => call(`/logs?${new URLSearchParams(Object.entries(params).filter(([, v]) => v && v !== 'all')).toString()}`),
   clearLogs: () => call('/logs', { method: 'DELETE' }),
 

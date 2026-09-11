@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { api } from './lib/api.js';
 import { Badge, Dot, useToast } from './lib/ui.jsx';
 import Dashboard from './pages/Dashboard.jsx';
+import Governance from './pages/Governance.jsx';
 import Approvals from './pages/Approvals.jsx';
 import Projects from './pages/Projects.jsx';
 import Workspace from './pages/Workspace.jsx';
@@ -94,6 +95,9 @@ export default function App() {
             </span>
           )}
         </div>
+        <div className={`nav-item ${section === 'governance' ? 'active' : ''}`} onClick={() => navigate('/governance')}>
+          <span className="ico">◈</span> Governance
+        </div>
         <div className={`nav-item ${section === 'projects' && !projectId ? 'active' : ''}`} onClick={() => navigate('/projects')}>
           <span className="ico">▤</span> Projects
           <span className="nav-count">{projects.length}</span>
@@ -147,6 +151,7 @@ export default function App() {
       <main className="main">
         {section === 'dashboard' && <Dashboard navigate={navigate} />}
         {section === 'approvals' && <Approvals navigate={navigate} />}
+        {section === 'governance' && <Governance navigate={navigate} />}
         {section === 'projects' && !projectId && (
           <Projects projects={projects} onChanged={refreshProjects} navigate={navigate} />
         )}

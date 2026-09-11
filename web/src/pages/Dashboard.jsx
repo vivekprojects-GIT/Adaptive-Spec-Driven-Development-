@@ -4,6 +4,55 @@ import { Card, Badge, Stat, Empty, Dot, Bar, toneForStatus, toneForVerdict, relT
 
 const LEVEL_TONE = { error: 'fail', warn: 'warn', info: 'info', debug: '' };
 
+const STATUS_TONE = { completed: 'pass', 'completed-with-errors': 'fail', halted: 'fail', failed: 'fail', waiting: 'warn', running: '', queued: '' };
+
+const duration = (ms) => (ms == null ? '—' : ms < 1000 ? `${ms} ms` : ms < 60_000 ? `${(ms / 1000).toFixed(1)} s` : `${(ms / 60_000).toFixed(1)} min`);
+
+/** Observability at a glance: how runs end, how long they take, where the time goes, which model ran. */
+function RunHealth({ health, runs }) {
+  const statuses = Object.entries(health.byStatus).sort((a, b) => b[1] - a[1]);
+  const models = Object.entries(health.models).sort((a, b) => b[1] - a[1]);
+  const slowest = health.slowestAgents[0]?.avgMs || 1;
+  return (
+    <Card title="Run health" sub="How runs end, how long they take, where the time goes and which model did the work.">
+      <div className="grid cols-4" style={{ marginBottom: 18 }}>
+        <Stat
+          label="Passed its guardrails"
+          value={health.successRate == null ? '—' : `${health.successRate}%`}
+          tone={health.successRate >= 80 ? 'pass' : health.successRate >= 50 ? 'warn' : 'fail'}
+          sub={`of ${runs} run(s) — finished and nothing blocking`}
+        />
+        <Stat label="Typical run" value={duration(health.medianMs)} sub={`90% finish within ${duration(health.p90Ms)}`} />
+        <Stat label="Steps done in VS Code" value={health.handoffs} tone="accent" sub="Handed to the coding assistant" />
+        <Stat label="Models used" value={models.length} sub={models.map(([name]) => name).join(' · ')} />
+      </div>
+      <div className="grid cols-2">
+        <div>
+          <div className="small" style={{ fontWeight: 650, marginBottom: 8 }}>How runs ended</div>
+          {statuses.map(([status, count]) => (
+            <div className="meter" key={status}>
+              <span>{status}</span>
+              <Bar value={count} max={runs} tone={STATUS_TONE[status] ?? ''} />
+              <span className="n">{count}</span>
+            </div>
+          ))}
+        </div>
+        <div>
+          <div className="small" style={{ fontWeight: 650, marginBottom: 8 }}>Where the time goes (average per run)</div>
+          {health.slowestAgents.length === 0 && <div className="small faint">No timings yet.</div>}
+          {health.slowestAgents.map((agent) => (
+            <div className="meter" key={agent.name}>
+              <span title={agent.name} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{agent.name}</span>
+              <Bar value={agent.avgMs} max={slowest} />
+              <span className="n">{duration(agent.avgMs)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 /**
  * The dashboard exists to answer one question: where did it fail? So it leads with failures —
  * which guardrails, which agents, which requirements never landed — and only then with totals.
@@ -74,6 +123,8 @@ export default function Dashboard({ navigate }) {
           />
           <Stat label="Awaiting approval" value={totals.awaitingApproval} tone={totals.awaitingApproval ? 'warn' : 'pass'} sub="Runs with no human decision" />
         </div>
+
+        {data.health && totals.runs > 0 && <RunHealth health={data.health} runs={totals.runs} />}
 
         {checks.total > 0 && (
           <Card title="Check outcomes" sub="Across every run on this machine.">

@@ -52,7 +52,7 @@ app.use((req, res, next) => {
 
 // Every API call is logged, so the dashboard can always show the last thing that happened.
 app.use((req, res, next) => {
-  if (!req.path.startsWith('/api') || req.path === '/api/logs' || req.path === '/api/dashboard' || req.path === '/api/approvals' || req.path.startsWith('/api/llm-bridge/')) return next();
+  if (!req.path.startsWith('/api') || req.path === '/api/logs' || req.path === '/api/dashboard' || req.path === '/api/approvals' || req.path === '/api/governance' || req.path.startsWith('/api/llm-bridge/')) return next();
   const started = Date.now();
   res.on('finish', () => {
     const ms = Date.now() - started;
@@ -127,8 +127,13 @@ app.use('/api', observabilityRouter);
 // Production: serve the built UI from the same origin so `npm start` is a single process.
 const dist = path.resolve(here, '../../web/dist');
 if (fs.existsSync(dist)) {
-  app.use(express.static(dist));
-  app.get(/^(?!\/api).*/, (req, res) => res.sendFile(path.join(dist, 'index.html')));
+  // Hashed bundles can be cached forever; index.html must never be, or an update shows the old UI.
+  const noCache = (res) => res.setHeader('Cache-Control', 'no-cache');
+  app.use(express.static(dist, { setHeaders: (res, file) => file.endsWith('index.html') && noCache(res) }));
+  app.get(/^(?!\/api).*/, (req, res) => {
+    noCache(res);
+    res.sendFile(path.join(dist, 'index.html'));
+  });
 }
 
 // Errors are returned as JSON the UI can render, never swallowed.

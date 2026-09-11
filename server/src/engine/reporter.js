@@ -81,6 +81,52 @@ export function buildTrace(run) {
   };
 }
 
+/**
+ * Plan-first lineage: requirement → PRD → story → code. Every link is read from what the phases
+ * actually wrote — a requirement ID in the PRD, a story that names it, a file that names the story —
+ * so a requirement that fell out anywhere along the way shows exactly where.
+ */
+export function buildPlanTrace(run) {
+  const generated = run.ws?.generated || [];
+  const doc = (path) => generated.find((a) => a.path === path)?.content || '';
+  const prd = doc('docs/prd.md');
+  const storiesDoc = doc('docs/epics-and-stories.md');
+  const code = generated.filter((a) => !a.path.startsWith('docs/') && (a.kind === 'code' || a.kind === 'config'));
+  const escape = (text) => String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const mentions = (text, token) => new RegExp(`(^|[^A-Za-z0-9])${escape(token)}(?![A-Za-z0-9])`).test(text);
+
+  // A story runs from the line that names its ID to the next story or heading.
+  const stories = [];
+  let current = null;
+  for (const line of storiesDoc.split('\n')) {
+    const storyId = line.match(/\bS\d+\.\d+\b/)?.[0];
+    if (storyId) {
+      current = { id: storyId, text: line };
+      stories.push(current);
+    } else if (/^#{1,6}\s/.test(line)) {
+      current = null;
+    } else if (current) {
+      current.text += `\n${line}`;
+    }
+  }
+
+  const rows = (run.discovery?.requirements || []).map((requirement) => {
+    const storyIds = [...new Set(stories.filter((s) => mentions(s.text, requirement.id)).map((s) => s.id))];
+    const files = code.filter((file) => storyIds.some((storyId) => mentions(file.content, storyId))).map((file) => file.path);
+    const inPrd = mentions(prd, requirement.id);
+    const status = files.length ? 'built' : storyIds.length ? 'planned' : inPrd ? 'specified' : 'missing';
+    return { requirementId: requirement.id, text: requirement.text, inPrd, stories: storyIds, files: [...new Set(files)], status };
+  });
+
+  const count = (status) => rows.filter((row) => row.status === status).length;
+  return {
+    rows,
+    counts: { requirements: rows.length, built: count('built'), planned: count('planned'), specified: count('specified'), missing: count('missing') },
+    stories: new Set(stories.map((s) => s.id)).size,
+    codeFiles: code.length,
+  };
+}
+
 export function buildMarkdown(project, run) {
   const { discovery, validation, ws, nodes } = run;
   const line = (s = '') => s;
@@ -159,6 +205,17 @@ export function buildMarkdown(project, run) {
               ? 'Approved'
               : 'Changes requested';
       out.push(`- ${decision.at} — **${what}** by ${decision.by}${decision.note ? `: ${decision.note}` : ''}`);
+    }
+    out.push('');
+  }
+
+  if (run.planTrace) {
+    out.push('## Plan trace — requirement → PRD → story → code');
+    out.push('');
+    out.push('| Requirement | In the PRD | Stories | Code | Status |');
+    out.push('|---|---|---|---|---|');
+    for (const row of run.planTrace.rows) {
+      out.push(`| ${row.requirementId} | ${row.inPrd ? 'yes' : '**no**'} | ${row.stories.join(', ') || '—'} | ${row.files.join('<br>') || '—'} | ${row.status} |`);
     }
     out.push('');
   }

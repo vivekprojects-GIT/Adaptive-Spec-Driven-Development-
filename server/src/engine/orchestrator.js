@@ -15,7 +15,7 @@ import { createHash } from 'node:crypto';
 import { collection } from '../lib/store.js';
 import { resolveImpl, makeArtifact, safeOutputPath } from './agents.js';
 import { runGuardrails, verdictOf, shouldHalt } from './validator.js';
-import { buildTrace, buildMarkdown } from './reporter.js';
+import { buildTrace, buildPlanTrace, buildMarkdown } from './reporter.js';
 import { composeWorkflow } from './workflowComposer.js';
 import { getSettings, resolveModel, assistantHandoff } from '../lib/settings.js';
 import { llmAvailable } from '../lib/llm.js';
@@ -518,6 +518,7 @@ export async function executeRun(runId, project, { resume = false } = {}) {
     };
     run.ws = { ...ws, generated: ws.generated };
     run.trace = buildTrace(run);
+    if (run.discovery?.projectKind === 'build') run.planTrace = buildPlanTrace(run);
     run.report = buildMarkdown(project, run);
     run.status = halted ? 'halted' : run.nodes.some((n) => n.status === 'failed') ? 'completed-with-errors' : 'completed';
     run.finishedAt = now();

@@ -46,13 +46,21 @@ export function composeWorkflow(acceptedAgents, options = {}) {
   const order = topologicalOrder(nodes, edges, errors);
 
   // Sanity: a generator with no analyzer upstream is a composition the user should see flagged.
-  const hasAnalyzer = nodes.some((n) => n.capability.startsWith('source.analyze'));
-  const hasGenerator = nodes.some((n) => n.capability.startsWith('target.generate'));
-  if (hasGenerator && !hasAnalyzer) {
-    errors.push('A target generator is accepted with no source analyzer — the generator will have no source model to read.');
-  }
-  if (!hasGenerator) {
-    errors.push('No target generator accepted — the run will analyse and validate but produce no migrated code.');
+  // A plan-first build has no source to analyse; its generator is the implementation phase.
+  const isBuild = nodes.some((n) => n.capability.startsWith('plan.') || n.capability === 'build.implement');
+  if (isBuild) {
+    if (!nodes.some((n) => n.capability === 'build.implement')) {
+      errors.push('No implementation step accepted — the plan documents will be written, but no code.');
+    }
+  } else {
+    const hasAnalyzer = nodes.some((n) => n.capability.startsWith('source.analyze'));
+    const hasGenerator = nodes.some((n) => n.capability.startsWith('target.generate'));
+    if (hasGenerator && !hasAnalyzer) {
+      errors.push('A target generator is accepted with no source analyzer — the generator will have no source model to read.');
+    }
+    if (!hasGenerator) {
+      errors.push('No target generator accepted — the run will analyse and validate but produce no migrated code.');
+    }
   }
 
   return { id: id('wf'), createdAt: new Date().toISOString(), nodes, edges, layers, order, errors, notes: options.notes || [] };

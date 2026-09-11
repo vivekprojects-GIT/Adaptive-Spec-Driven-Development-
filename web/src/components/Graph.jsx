@@ -73,7 +73,7 @@ export default function Graph({ graph, statuses = {}, selected, onSelect }) {
 
         <defs>
           <marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
-            <path d="M 0 1 L 7 4 L 0 7 z" fill="#2b374c" />
+            <path d="M 0 1 L 7 4 L 0 7 z" style={{ fill: 'var(--edge)' }} />
           </marker>
         </defs>
 

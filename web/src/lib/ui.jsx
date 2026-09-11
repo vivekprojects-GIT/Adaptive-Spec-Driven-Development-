@@ -128,6 +128,7 @@ export const toneForStatus = (status) =>
     pass: 'pass', warn: 'warn', fail: 'fail', done: 'pass', running: 'info', queued: 'info', failed: 'fail', pending: '',
     reused: 'info', skipped: 'warn', halted: 'fail', completed: 'pass', 'completed-with-errors': 'fail', waiting: 'warn', submitted: 'info',
     migrated: 'pass', orphan: 'fail', partial: 'warn', 'not-migrated': 'fail',
+    built: 'pass', planned: 'warn', specified: 'warn', missing: 'fail',
   }[status] || '');
 
 export const toneForVerdict = (verdict) =>
