@@ -15,7 +15,7 @@ with every blocking question answered by the user.
    - What they want to achieve — for example "convert our Selenium Java suite to Playwright TypeScript", or anything else.
    - Where the requirements are: a document in this project (its path), or a few lines they type.
    - Which folder(s) hold the source material — the test suite, collections, fixtures. Look at the project tree and suggest likely folders, but let them confirm.
-   - For a migration: the source stack and the target stack. If it is not a migration, it is a `custom` project and they will author the agents.
+   - What kind of work it is: a **migration** (convert a test suite — ask for the source and target stacks), a **build** (make something new from the requirements, plan-first — ask whether any technology is already decided), or `custom` (anything else — they author the agents).
 
 3. Start it with their answers:
 
@@ -23,7 +23,7 @@ with every blocking question answered by the user.
    node _asdd/asdd.mjs start --name "<name>" --kind migration --source <folder> [--source <folder> …] --requirements <file> --source-stack "<…>" --target-stack "<…>" [--constraints "<…>"]
    ```
 
-   Use `--requirements-text "<their lines, one per line>"` instead of `--requirements` when they typed them, and `--kind custom` when it is not a migration.
+   Use `--requirements-text "<their lines, one per line>"` instead of `--requirements` when they typed them, and `--kind build` or `--kind custom` when it is not a migration.
 
 4. It prints the interview. For every **blocking** question, ask the user — include its "why it matters" line — and record their answer in their words:
 

@@ -114,11 +114,14 @@ export default function SpecStage({ project, reload, navigate, toast }) {
               hint={
                 spec.projectKind === 'custom'
                   ? 'Custom: the platform assumes nothing about the work. It asks what you want produced, then you author the agents that do it.'
-                  : 'Migration: the platform expects a source suite and a target framework, and brings its own parsers, emitters and guardrails.'
+                  : spec.projectKind === 'build'
+                    ? 'Build: plan-first from your requirements — brief → PRD → architecture → epics & stories → implementation, by your ASDD personas, checked between phases. You approve the plan once.'
+                    : 'Migration: the platform expects a source suite and a target framework, and brings its own parsers, emitters and guardrails.'
               }
             >
               <select value={spec.projectKind || 'migration'} onChange={(e) => setSpec({ ...spec, projectKind: e.target.value })}>
                 <option value="migration">Migration — convert a suite from one framework to another</option>
+                <option value="build">Build — plan-first, from requirements to working code</option>
                 <option value="custom">Custom — any other project, agents authored by me</option>
               </select>
             </Field>

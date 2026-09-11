@@ -288,6 +288,20 @@ tool(
 );
 
 tool(
+  'asdd_approve_plan',
+  {
+    title: 'Approve the proposed plan and run it',
+    description:
+      "The one approval of a plan: accepts every agent and guardrail proposal still waiting, composes the workflow and runs every phase — for a plan-first project, brief → PRD → architecture → epics & stories → implementation. ONLY call this after the user has explicitly approved the plan in this conversation.",
+    inputSchema: { projectId: z.string() },
+  },
+  async ({ projectId }) => {
+    const started = await api(`/projects/${projectId}/approve-plan`, { method: 'POST', body: { by: 'human via Copilot Chat' } });
+    return { runId: started.runId, agents: started.agents, guardrails: started.guardrails, ...(await waitForRun(started.runId)) };
+  },
+);
+
+tool(
   'asdd_run_workflow',
   {
     title: 'Compose and run the workflow',

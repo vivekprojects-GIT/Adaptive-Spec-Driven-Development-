@@ -11,6 +11,7 @@
 import { findByCapability, listAgents } from '../registry/agents.js';
 import { capabilityGroup, capabilityPhase } from './discovery.js';
 import { id, pascal } from '../lib/util.js';
+import { PLAN_PHASES, personaFor } from './planFirst.js';
 
 /**
  * Capabilities we are willing to synthesise an agent for. These are orchestration-shaped jobs
@@ -27,7 +28,15 @@ export function proposeAgents(discovery) {
   const proposals = [];
   const gaps = [...(discovery.gaps || [])];
 
+  const personas = listAgents().filter((agent) => agent.source === 'bmad');
+
   for (const capability of discovery.capabilities) {
+    // A plan-first phase: the persona for its role does it, or ASDD's own agent when there is none.
+    if (PLAN_PHASES[capability.id]) {
+      proposals.push(planPhaseProposal(capability, personas));
+      continue;
+    }
+
     const matches = findByCapability(capability.id);
 
     if (matches.length) {
@@ -121,6 +130,45 @@ export function proposeAgents(discovery) {
   }
 
   return { proposals: proposals.sort((a, b) => a.phase - b.phase), gaps };
+}
+
+/**
+ * Who does one plan-first phase. Each phase gets its own agent id, so a guardrail scoped to "the
+ * stories" never runs after the PRD even when the same persona writes both.
+ */
+function planPhaseProposal(capability, personas) {
+  const phase = PLAN_PHASES[capability.id];
+  const persona = personaFor(phase.role, personas);
+  const firstName = persona ? persona.name.split(' — ')[0] : null;
+  return {
+    proposalId: id('ap'),
+    kind: 'agent',
+    decision: 'proposed',
+    source: persona ? 'bmad' : 'asdd',
+    capability: capability.id,
+    group: capability.group,
+    phase: capability.phase,
+    agentId: `agent.${capability.id}`,
+    name: persona ? `${firstName} — ${phase.title}` : `${phase.title} Agent`,
+    description: phase.summary,
+    icon: persona?.icon,
+    inputs: phase.inputs,
+    outputs: [phase.output],
+    impl: persona ? 'bmadPersonaAgent' : 'instructionAgent',
+    authored: {
+      bmadAgentId: persona?.bmad?.id,
+      purpose: phase.summary,
+      instructions: phase.task,
+      inputSelections: phase.inputs,
+      outputDescription: phase.output,
+      runAfter: 'end',
+      runAfterLabel: `${phase.title} phase`,
+    },
+    maturity: persona ? 'persona' : 'built-in',
+    rationale: persona
+      ? `${capability.why} ${persona.icon || ''} ${persona.name}, your ASDD persona for this role, does it — with your team's customisations.`
+      : `${capability.why} Your persona library has no "${phase.role}" persona, so ASDD's own ${phase.title.toLowerCase()} agent does it.`,
+  };
 }
 
 function pickBest(matches) {

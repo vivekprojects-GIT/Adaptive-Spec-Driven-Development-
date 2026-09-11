@@ -74,6 +74,9 @@ export default function ProposalsStage({ project, reload, navigate, toast, kind 
         right={
           <div className="row">
             {isAgents && <button className="btn sm" onClick={() => bulk('accept', 'reuse')}>Accept registry hits</button>}
+            {project.spec?.projectKind === 'build' && (
+              <button className="btn sm primary" onClick={() => navigate('workflow')}>See the whole plan →</button>
+            )}
             <button className="btn sm" onClick={() => bulk('accept')}>Accept all</button>
             <button className="btn sm" onClick={() => setCreating(true)}>+ Create your own</button>
             <button className="btn sm primary" disabled={!accepted.length} onClick={() => navigate(isAgents ? 'guardrails' : 'workflow')}>
@@ -153,10 +156,12 @@ function AgentCard({ proposal, busy, onDecide, onEdit }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="row wrap" style={{ gap: 6, marginBottom: 5 }}>
             <strong style={{ fontSize: 13.5 }}>{proposal.name}</strong>
-            <Badge tone={proposal.source === 'reuse' || proposal.source === 'bmad' ? 'pass' : proposal.source === 'generated' ? 'warn' : 'accent'}>
+            <Badge tone={['reuse', 'bmad', 'asdd'].includes(proposal.source) ? 'pass' : proposal.source === 'generated' ? 'warn' : 'accent'}>
               {proposal.source === 'bmad'
                 ? `${proposal.icon || ''} your ASDD persona`
-                : proposal.source === 'reuse'
+                : proposal.source === 'asdd'
+                  ? 'built into ASDD'
+                  : proposal.source === 'reuse'
                   ? 'reused from registry'
                   : proposal.source === 'generated'
                     ? 'generated for this project'

@@ -50,6 +50,7 @@ Every command prints what happened and ends with a `NEXT:` line. Follow it.
 | `add-agent …` / `add-agent --persona <role>` | The user's own agent / one of their ASDD personas |
 | `personas` | The user's ASDD personas |
 | `add-guardrail …` | The user's own rule |
+| `approve-plan` | The one approval: accept the whole proposed plan and run every phase |
 | `run` | Run the accepted workflow |
 | `task` / `submit` | The step handed to you / hand its files back |
 | `judge <id> pass\|warn\|fail "<evidence>"` | Your verdict on a plain-English rule the run is waiting on |

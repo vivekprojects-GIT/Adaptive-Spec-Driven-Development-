@@ -7,8 +7,11 @@
 
 import { assist, llmAvailable } from '../lib/llm.js';
 import { assistantHandoff } from '../lib/settings.js';
+import { STORY_ID } from './planFirst.js';
 
 const CODE_KINDS = new Set(['code', 'config']);
+const escapeRe = (text) => String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const mentions = (text, token) => new RegExp(`(^|[^A-Za-z0-9])${escapeRe(token)}(?![A-Za-z0-9])`).test(text);
 
 function generatedCode(ws) {
   return ws.generated.filter((a) => CODE_KINDS.has(a.kind));
@@ -178,6 +181,43 @@ const CHECKS = {
     return count
       ? { status: 'warn', evidence: `${count} generated agent(s) ran on the fallback adapter and produced placeholders, not finished work.`, metrics: { placeholders: count } }
       : { status: 'pass', evidence: 'Every agent in the graph had a real implementation.' };
+  },
+
+  /** Plan-first: every document a later phase depends on exists, and says something. */
+  planDocumentsPresent({ ws, params }) {
+    const paths = params.paths || [];
+    const written = (p) => ws.generated.some((a) => a.path === p && a.content.split('\n').filter((line) => line.trim()).length >= 3);
+    const missing = paths.filter((p) => !written(p));
+    return missing.length
+      ? { status: 'fail', evidence: `Not written, or nearly empty: ${missing.join(', ')}. Implementation would be building on a gap.` }
+      : { status: 'pass', evidence: `All ${paths.length} planning documents are written: ${paths.join(', ')}.` };
+  },
+
+  /** Plan-first: every requirement ID from the input appears in a given document — none dropped between phases. */
+  requirementsInDoc({ discovery, ws, params }) {
+    const doc = ws.generated.find((a) => a.path === params.doc);
+    if (!doc) return { status: 'fail', evidence: `${params.doc} was not written.` };
+    const ids = (discovery.requirements || []).map((r) => r.id);
+    if (!ids.length) return { status: 'warn', evidence: 'There are no requirement IDs to look for.' };
+    const missing = ids.filter((reqId) => !mentions(doc.content, reqId));
+    return missing.length
+      ? { status: 'fail', evidence: `${missing.length} of ${ids.length} requirement(s) are missing from ${params.doc}: ${missing.join(', ')}.` }
+      : { status: 'pass', evidence: `All ${ids.length} requirement(s) appear in ${params.doc}.` };
+  },
+
+  /** Plan-first: every story ID in the plan is named in the code that was written. */
+  storiesImplemented({ ws }) {
+    const plan = ws.generated.find((a) => a.path === 'docs/epics-and-stories.md');
+    if (!plan) return { status: 'fail', evidence: 'docs/epics-and-stories.md was not written, so there is nothing to build against.' };
+    const stories = [...new Set(plan.content.match(STORY_ID) || [])];
+    if (!stories.length) return { status: 'warn', evidence: 'The stories document has no story IDs (S1.1, S1.2 …) to check the code against.' };
+    const code = ws.generated.filter((a) => !a.path.startsWith('docs/') && CODE_KINDS.has(a.kind));
+    if (!code.length) return { status: 'fail', evidence: `No code was written for the ${stories.length} stor(ies) in the plan.` };
+    const text = code.map((a) => a.content).join('\n');
+    const missing = stories.filter((story) => !mentions(text, story));
+    return missing.length
+      ? { status: 'fail', evidence: `${missing.length} of ${stories.length} stor(ies) are not named in any code file: ${missing.join(', ')}.` }
+      : { status: 'pass', evidence: `All ${stories.length} stories are named in the ${code.length} code file(s) written.` };
   },
 
   manualSignOff({ guardrail }) {

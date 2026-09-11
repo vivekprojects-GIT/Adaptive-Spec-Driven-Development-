@@ -10,6 +10,7 @@
 import { detectTechnology } from '../registry/technologies.js';
 import { buildSourceModel, SUPPORTED_SOURCE_PARSERS } from './parsers.js';
 import { id, unique } from '../lib/util.js';
+import { UI_WORDS } from './planFirst.js';
 
 /** Capabilities are grouped into phases; the Workflow Composer turns phases into DAG edges. */
 export const CAPABILITY_CATALOG = {
@@ -22,6 +23,13 @@ export const CAPABILITY_CATALOG = {
   'traceability': { phase: 40, label: 'Traceability' },
   'docs.bmad': { phase: 45, label: 'ASDD document set' },
   'bmad.persona': { phase: 25, label: 'ASDD persona' },
+  // Plan-first: each phase reads what the phases before it wrote.
+  'plan.brief': { phase: 12, label: 'Brief' },
+  'plan.prd': { phase: 14, label: 'PRD' },
+  'plan.ux': { phase: 16, label: 'UX design' },
+  'plan.architecture': { phase: 18, label: 'Architecture' },
+  'plan.stories': { phase: 22, label: 'Epics & stories' },
+  'build.implement': { phase: 32, label: 'Implementation' },
   'validate': { phase: 50, label: 'Validation' },
 };
 
@@ -152,8 +160,19 @@ export function runDiscovery(spec) {
   // what it can prove (traceability, structural checks) and leaves the shape of the work to the
   // agents the human authors. Nothing here is specific to any framework.
   const isCustom = spec.projectKind === 'custom';
+  // A "build" project makes something new from the requirements, plan-first: every phase is a
+  // capability, so the Agent Factory proposes who does each and the composer orders them.
+  const isBuild = spec.projectKind === 'build';
 
-  if (isCustom) {
+  if (isBuild) {
+    const wantsUi = UI_WORDS.test(`${spec.requirements || ''}\n${spec.targetStack || ''}\n${spec.constraints || ''}`);
+    require('plan.brief', 'Plan first: the product brief states the problem, the users, the goals and the scope, from the requirements alone.', ['plan-first']);
+    require('plan.prd', 'The PRD turns the brief into numbered requirements with acceptance criteria — every input requirement kept by its ID.', ['plan-first']);
+    if (wantsUi) require('plan.ux', 'The requirements describe screens or user interaction, so the journeys and screens are designed before the architecture.', ['the requirements mention a user interface']);
+    require('plan.architecture', 'The architecture decides the components, data, interfaces, technology and folder structure — every requirement mapped to a component.', ['plan-first']);
+    require('plan.stories', 'Epics and stories break the work into ordered, buildable steps, each covering requirement IDs.', ['plan-first']);
+    require('build.implement', 'The stories are implemented in order, following the architecture, with tests.', ['plan-first']);
+  } else if (isCustom) {
     require(
       'custom.workflow',
       'This project is marked custom, so the platform does not assume what the work is. Author the agents that do it — the graph is yours.',
@@ -176,11 +195,12 @@ export function runDiscovery(spec) {
     }
   }
 
-  if (!isCustom && source.id === 'cypress' && String(target.id).startsWith('playwright')) {
+  if (!isCustom && !isBuild && source.id === 'cypress' && String(target.id).startsWith('playwright')) {
     require('mapping.command.cypress-playwright', 'Cypress chains commands off cy.*; each command needs an explicit Playwright equivalent before generation.', ['source/target pair']);
   }
 
-  if (requirements.length) {
+  // A build project traces requirements through its own plan guardrails (PRD, stories, code).
+  if (requirements.length && !isBuild) {
     if (!isCustom) {
       require('spec.bdd.generate', `${requirements.length} requirement(s) were supplied, so generated tests can and should be anchored to them.`, requirements.slice(0, 3).map((r) => r.id));
     }
@@ -199,7 +219,8 @@ export function runDiscovery(spec) {
 
   // The ASDD document set is on by default — the work is planned this way, so it should be
   // written up this way — but it is a spec-level choice a human can turn off.
-  if (spec.bmadArtifacts !== false) {
+  // A build project writes the document set itself, as its plan — before the code, not after.
+  if (spec.bmadArtifacts !== false && !isBuild) {
     require(
       'docs.bmad.generate',
       'The project is run the ASDD way, so it hands back the ASDD document set: brief, PRD, architecture, epics and stories, all derived from what this run actually found.',
@@ -219,11 +240,20 @@ export function runDiscovery(spec) {
   if (sourceModel.dataFiles.length) {
     risk('risk.data-loss', 'Test data loss', 'blocker', 'Fixture reformatting is the most common place records go missing.', sourceModel.dataFiles.map((f) => `${f.path} (${f.records} records)`).join(', '));
   }
-  if (requirements.length) {
+  if (requirements.length && !isBuild) {
     risk('risk.traceability-loss', 'Traceability loss', 'major', 'Requirements can end up with no test pointing back at them.', `${requirements.length} requirements`);
   }
   risk('risk.broken-output', 'Structurally broken output', 'blocker', 'Generated code can look plausible and still not compile.', 'always checked');
-  risk('risk.unmapped-constructs', 'Unmapped source constructs', 'major', 'Constructs with no target equivalent must be surfaced rather than dropped.', `${sourceModel.unmapped.length} already detected during discovery`);
+  if (isBuild) {
+    risk('risk.plan-incomplete', 'Building on an incomplete plan', 'blocker', 'Implementation that starts before the brief, PRD, architecture and stories exist builds on guesses.', 'plan-first');
+    if (requirements.length) {
+      risk('risk.requirement-dropped', 'A requirement dropped between phases', 'blocker', 'A requirement can fall out of the PRD or the stories and never be built.', `${requirements.length} requirement(s)`);
+    }
+    risk('risk.architecture-drift', 'Architecture that misses the PRD', 'major', 'An architecture can leave requirements with no component to live in.', 'plan-first');
+    risk('risk.story-unbuilt', 'A story left unbuilt', 'major', 'Implementation can finish while skipping stories.', 'stories are written during the run');
+    risk('risk.step-not-run', 'A step that did not really run', 'blocker', 'Without a model, a planning or implementation step writes a brief instead of doing the work.', 'needs Copilot in VS Code, or an API key');
+  }
+  if (!isBuild) risk('risk.unmapped-constructs', 'Unmapped source constructs', 'major', 'Constructs with no target equivalent must be surfaced rather than dropped.', `${sourceModel.unmapped.length} already detected during discovery`);
 
   if (sourceModel.requests.length) {
     risk('risk.contract-drift', 'API contract drift', 'blocker', 'Method, path or expected status can shift during rewriting.', `${sourceModel.requests.length} requests`);
@@ -248,7 +278,7 @@ export function runDiscovery(spec) {
   /* ---- gaps --------------------------------------------------------- */
 
   // A custom project has no expectation of a parser or an emitter, so neither is a gap.
-  if (!isCustom && !SUPPORTED_SOURCE_PARSERS.includes(source.id)) {
+  if (!isCustom && !isBuild && !SUPPORTED_SOURCE_PARSERS.includes(source.id)) {
     gaps.push({
       capability: source.analyzeCapability || 'source.analyze.unknown',
       reason: `No parser exists for "${spec.sourceStack || 'the declared source'}".`,
@@ -257,7 +287,7 @@ export function runDiscovery(spec) {
     });
     risk('risk.generated-agent', 'Unbuilt capability in the path', 'blocker', 'The migration depends on a capability the platform does not have yet.', spec.sourceStack || 'unknown source');
   }
-  if (!isCustom && !target.generateCapability) {
+  if (!isCustom && !isBuild && !target.generateCapability) {
     gaps.push({
       capability: 'target.generate.unknown',
       reason: `No emitter exists for "${spec.targetStack || 'the declared target'}".`,
@@ -277,7 +307,8 @@ export function runDiscovery(spec) {
   return {
     id: id('disc'),
     createdAt: new Date().toISOString(),
-    migrationKind,
+    migrationKind: isBuild ? 'plan-first-build' : migrationKind,
+    projectKind: spec.projectKind || 'migration',
     source,
     target,
     requirements,
@@ -297,8 +328,17 @@ export function runDiscovery(spec) {
     capabilities: capabilities.sort((a, b) => a.phase - b.phase),
     risks,
     gaps,
-    summary: buildSummary({ source, target, sourceModel, requirements, gaps }),
+    summary: isBuild ? buildPlanSummary(requirements, capabilities, spec) : buildSummary({ source, target, sourceModel, requirements, gaps }),
   };
+}
+
+function buildPlanSummary(requirements, capabilities, spec) {
+  const phases = capabilities.filter((c) => c.id.startsWith('plan.') || c.id === 'build.implement').map((c) => c.group);
+  return [
+    `Plan-first build from ${requirements.length} requirement(s)${spec.targetStack ? `, on ${spec.targetStack}` : ''}.`,
+    `Phases: ${phases.join(' → ')}, then validation.`,
+    (spec.artifacts || []).length ? `${spec.artifacts.length} existing file(s) supplied for the new work to fit into.` : 'Starting from no existing code.',
+  ].join(' ');
 }
 
 function buildSummary({ source, target, sourceModel, requirements, gaps }) {

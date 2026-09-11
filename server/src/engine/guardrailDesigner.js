@@ -6,12 +6,15 @@
  */
 import { findByRisk, listGuardrails } from '../registry/guardrails.js';
 import { id } from '../lib/util.js';
+import { PLAN_RISKS, planGuardrails } from './planFirst.js';
 
 export function proposeGuardrails(discovery) {
   const proposals = [];
   const seen = new Set();
 
   for (const risk of discovery.risks) {
+    // A plan-first project's own risks are covered by the plan guardrails added below.
+    if (discovery.projectKind === 'build' && PLAN_RISKS.has(risk.id)) continue;
     const matches = findByRisk(risk.id);
     if (!matches.length) {
       // A risk nobody covers becomes a custom proposal rather than being dropped.
@@ -59,6 +62,8 @@ export function proposeGuardrails(discovery) {
     coverage.params.threshold = discovery.gaps.length ? 0.7 : 0.95;
     coverage.rationale += ` Threshold set to ${coverage.params.threshold} because ${discovery.gaps.length ? 'capability gaps make a full migration unrealistic in this run' : 'every required capability is available'}.`;
   }
+
+  if (discovery.projectKind === 'build') proposals.push(...planGuardrails(discovery));
 
   return proposals.sort((a, b) => severityRank(b.severity) - severityRank(a.severity));
 }

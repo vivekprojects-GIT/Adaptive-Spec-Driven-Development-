@@ -294,6 +294,7 @@ const SOURCE_LABEL = {
   reuse: 'reused from the registry',
   generated: 'generated for this project',
   bmad: 'your ASDD persona',
+  asdd: 'built into ASDD',
   custom: 'added by you',
   'author-required': 'placeholder — author your own agent',
   registry: 'from the registry',
@@ -591,7 +592,7 @@ async function cmdStart(ctx) {
   const api = await ctx.api();
   const name = options.name && options.name !== true ? String(options.name) : path.basename(p.root);
   const spec = {
-    projectKind: options.kind === 'custom' ? 'custom' : 'migration',
+    projectKind: ['custom', 'build'].includes(options.kind) ? options.kind : 'migration',
     sourceStack: options['source-stack'] && options['source-stack'] !== true ? String(options['source-stack']) : '',
     targetStack: options['target-stack'] && options['target-stack'] !== true ? String(options['target-stack']) : '',
     constraints: options.constraints && options.constraints !== true ? String(options.constraints) : '',
@@ -729,6 +730,13 @@ async function cmdDiscover(ctx) {
   if (discovery.risks?.length) say('', 'Risks found:', ...discovery.risks.map((r) => `  ${r.severity}: ${r.label}`));
   if (discovery.gaps?.length) say('', 'Capability gaps — nothing can do these yet:', ...discovery.gaps.map((g) => `  ${g.capability} — needs ${g.needs}`));
   printProposals(project);
+  if (project.spec?.projectKind === 'build') {
+    return next(
+      'This is the proposed plan: the phases in order, who does each, and the guardrails between them. Show it to the user as that structure.',
+      `If they approve it as it is, one command accepts it all and runs every phase: ${CMD} approve-plan`,
+      `If they want changes, make them first (accept / reject / edit / add-agent / add-guardrail), then ${CMD} approve-plan`,
+    );
+  }
   return next(
     'Show the user these proposals and record only their decisions:',
     `  ${CMD} accept <id>   ${CMD} reject <id>   ${CMD} accept all   (every undecided agent and guardrail)`,
@@ -808,7 +816,7 @@ async function cmdEdit(ctx) {
   return undefined;
 }
 
-const INPUT_KEYS = ['requirements', 'constraints', 'artifacts', 'sourceModel', 'generated'];
+const INPUT_KEYS = ['requirements', 'constraints', 'artifacts', 'sourceModel', 'generated', 'planDocs'];
 
 function resolveAgentRef(ref, accepted, what) {
   const query = String(ref).toLowerCase();
@@ -1122,6 +1130,14 @@ async function cmdStop(ctx) {
   return say(`Stopped the ASDD server for this folder (PID ${running.pid}). The project stays in _asdd/.`);
 }
 
+/** The one approval of a plan: accept everything still proposed, compose, and run it all. */
+async function cmdApprovePlan(ctx) {
+  const api = await ctx.api();
+  const started = await api(`/projects/${projectId(ctx.p)}/approve-plan`, { method: 'POST', body: { by: byWhom(ctx) } });
+  say(`✔ Plan approved — ${started.agents} agent(s), ${started.guardrails} guardrail(s). Running ${started.runId}; it carries on by itself from here…`, '');
+  return afterRun(ctx, await settle(api, started.runId));
+}
+
 async function cmdJudge(ctx) {
   const [guardrailId, status, ...words] = ctx.positional;
   const evidence = ctx.options.evidence && ctx.options.evidence !== true ? String(ctx.options.evidence) : words.join(' ');
@@ -1201,7 +1217,7 @@ function cmdHelp() {
     'Set up',
     '  install [--skills <dir>]          add the ASDD skills to this project, next to its other skills',
     '  start --name <n> --source <dir> --requirements <file> | --requirements-text "<lines>"',
-    '        [--kind migration|custom] [--source-stack "<…>"] [--target-stack "<…>"] [--constraints "<…>"]',
+    '        [--kind migration|build|custom] [--source-stack "<…>"] [--target-stack "<…>"] [--constraints "<…>"]',
     '  sync                              re-read the source files and requirements',
     '  status                            where things stand, and what is waiting on the user',
     '  interview | answer <id> "<text>"  the open questions, and recording the user\'s answers',
@@ -1217,6 +1233,7 @@ function cmdHelp() {
     '  personas                          your ASDD personas',
     '',
     'Run and decide',
+    '  approve-plan                      the one approval: accept the whole proposed plan and run every phase',
     '  run                               compose the accepted agents and run them',
     '  task | submit [--notes …]         the step handed to the coding assistant, and handing its files back',
     '  approve | request-changes [--note …]',
@@ -1280,6 +1297,7 @@ const COMMANDS = {
   report: cmdReport,
   ui: cmdUi,
   stop: cmdStop,
+  'approve-plan': cmdApprovePlan,
   judge: cmdJudge,
   clarify: cmdClarify,
   mcp: cmdMcp,

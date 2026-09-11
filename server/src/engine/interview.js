@@ -186,6 +186,35 @@ const CHECKS = [
     }),
   },
   {
+    key: 'build-users',
+    weight: 8,
+    required: false,
+    appliesTo: 'build',
+    test: (ctx) => Boolean(ctx.answers['build-users']) || /\bas an?\s+\w+/i.test(ctx.spec.requirements || ''),
+    question: () => ({
+      question: 'Who will use this, and what is the one thing they must be able to do?',
+      why: 'The brief and every story are written for these people. Without them the plan describes features, not a product.',
+      kind: 'text',
+      field: 'notes',
+      severity: 'major',
+    }),
+  },
+  {
+    key: 'build-stack',
+    weight: 8,
+    required: false,
+    appliesTo: 'build',
+    test: (ctx) => Boolean(ctx.answers['build-stack'] || ctx.spec.targetStack),
+    question: () => ({
+      question: 'Is any technology fixed — language, framework, database, where it runs?',
+      why: 'The architect chooses the stack otherwise. Say now if something is decided, so the architecture and the code follow it.',
+      kind: 'choice',
+      options: ['No — let the architect choose', 'TypeScript / Node.js', 'Python', 'Java', 'Other — I will type it'],
+      field: 'notes',
+      severity: 'major',
+    }),
+  },
+  {
     key: 'definition-of-done',
     weight: 5,
     required: false,
@@ -240,7 +269,7 @@ export async function assessSpec(spec, answers = {}, { withLlm = true } = {}) {
   const satisfied = [];
   let score = 0;
 
-  const kind = spec.projectKind === 'custom' ? 'custom' : 'migration';
+  const kind = ['custom', 'build'].includes(spec.projectKind) ? spec.projectKind : 'migration';
   const applicable = CHECKS.filter((check) => !check.appliesTo || check.appliesTo === kind);
   const total = applicable.reduce((sum, check) => sum + check.weight, 0);
 
@@ -351,7 +380,7 @@ export function applyAnswers(spec, answers = {}) {
     else next[field] = value;
   };
 
-  const kind = spec.projectKind === 'custom' ? 'custom' : 'migration';
+  const kind = ['custom', 'build'].includes(spec.projectKind) ? spec.projectKind : 'migration';
   for (const check of CHECKS.filter((c) => !c.appliesTo || c.appliesTo === kind)) {
     const answer = answers[check.key];
     if (!answer) continue;

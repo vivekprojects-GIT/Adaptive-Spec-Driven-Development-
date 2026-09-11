@@ -475,6 +475,52 @@ router.post('/:id/runs', asyncH(async (req, res) => {
   res.status(202).json({ runId: run.id });
 }));
 
+/**
+ * The one approval of a plan: accept every proposal still waiting, compose the workflow and start
+ * it. From here it runs by itself — stopping only when a guardrail set to stop fails, when a step
+ * is waiting for the coding assistant, and at the end for the person's decision.
+ */
+router.post('/:id/approve-plan', asyncH(async (req, res) => {
+  let project = must(req.params.id);
+  if (!project.discovery) throw new HttpError(409, 'Run discovery first — there is no plan to approve yet.');
+  const busy = listRuns(project.id).find((run) => ['running', 'queued', 'waiting'].includes(run.status));
+  if (busy) throw new HttpError(409, `Run ${busy.id} is still ${busy.status}. Let it finish first.`);
+
+  const accept = (list) => (list || []).map((p) => (p.decision === 'proposed' && !p.authorRequired ? { ...p, decision: 'accepted' } : p));
+  const proposals = { ...project.proposals, agents: accept(project.proposals.agents), guardrails: accept(project.proposals.guardrails) };
+  const agents = proposals.agents.filter((a) => a.decision === 'accepted');
+  const guardrails = proposals.guardrails.filter((g) => g.decision === 'accepted');
+  if (!agents.length) throw new HttpError(409, 'There are no agents in the plan to run.');
+
+  const graph = composeWorkflow(agents);
+  if (!graph.order.length || graph.errors.some((e) => e.startsWith('Cycle'))) {
+    throw new HttpError(409, `The plan cannot be run: ${graph.errors.join(' ')}`);
+  }
+  const by = req.body?.by || 'human';
+  project = projects.update(project.id, {
+    proposals,
+    graph,
+    stage: 'run',
+    trail: trail(project, {
+      stage: 'workflow',
+      action: 'plan.approved',
+      detail: `${by} approved the plan — ${agents.length} agent(s), ${guardrails.length} guardrail(s). It runs by itself from here.`,
+    }),
+  });
+
+  const run = createRun(project);
+  executeRun(run.id, project)
+    .then((finished) => {
+      const latest = projects.find(project.id);
+      projects.update(project.id, {
+        trail: trail(latest, { stage: 'run', actor: 'control-plane', action: 'run.finished', detail: `Run ${finished.id} ${finished.status}; verdict ${finished.validation?.verdict}.` }),
+      });
+    })
+    .catch(() => {});
+
+  res.status(202).json({ runId: run.id, agents: agents.length, guardrails: guardrails.length });
+}));
+
 router.get('/:id/runs', (req, res) => {
   must(req.params.id);
   res.json(listRuns(req.params.id).map(summariseRun));

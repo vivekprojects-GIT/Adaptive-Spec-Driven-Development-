@@ -45,9 +45,29 @@ export function pendingApprovals() {
     }
 
     // 2. Proposals sitting undecided — nothing runs until a human accepts or rejects.
+    // A plan-first project asks one question, not one per proposal: is this plan right?
+    const planSteps = (project.proposals?.agents || []).filter((p) => p.decision === 'proposed' && !p.authorRequired);
+    const planChecks = (project.proposals?.guardrails || []).filter((p) => p.decision === 'proposed');
+    const planWaiting = project.spec?.projectKind === 'build' && planSteps.length + planChecks.length > 0;
+    if (planWaiting) {
+      items.push({
+        id: `plan:${project.id}`,
+        kind: 'plan-approval',
+        severity: 'major',
+        projectId: project.id,
+        projectName: project.name,
+        stage: 'workflow',
+        title: 'The plan is waiting for your approval',
+        detail: `${planSteps.length} step(s) and ${planChecks.length} guardrail(s) still to approve. Approve the plan once and every phase runs by itself.`,
+        count: 1,
+        since: project.updatedAt,
+        action: 'Review the plan',
+      });
+    }
+
     for (const kind of ['agents', 'guardrails']) {
       const undecided = (project.proposals?.[kind] || []).filter((p) => p.decision === 'proposed');
-      if (!undecided.length) continue;
+      if (!undecided.length || planWaiting) continue;
       items.push({
         id: `${kind}:${project.id}`,
         kind: kind === 'agents' ? 'agent-proposals' : 'guardrail-proposals',

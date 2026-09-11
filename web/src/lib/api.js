@@ -44,6 +44,7 @@ export const api = {
   addProposal: (projectId, kind, body) => call(`/projects/${projectId}/proposals/${kind}`, { method: 'POST', body }),
 
   compose: (projectId) => call(`/projects/${projectId}/compose`, { method: 'POST' }),
+  approvePlan: (projectId) => call(`/projects/${projectId}/approve-plan`, { method: 'POST' }),
   startRun: (projectId) => call(`/projects/${projectId}/runs`, { method: 'POST' }),
   runs: (projectId) => call(`/projects/${projectId}/runs`),
 

@@ -12,6 +12,12 @@ const GAP_Y = 14;
 const PAD = 22;
 
 const PHASE_LABEL = {
+  12: 'Brief',
+  14: 'PRD',
+  16: 'UX',
+  18: 'Architecture',
+  22: 'Stories',
+  32: 'Implement',
   10: 'Analyse',
   20: 'Prepare',
   25: 'Custom',

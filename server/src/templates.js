@@ -311,6 +311,21 @@ export const TEMPLATES = [
     example: null,
   },
   {
+    id: 'plan-first',
+    name: 'Build from requirements (plan-first)',
+    headline:
+      'Requirements in; brief → PRD → architecture → epics & stories → implementation out — done by your ASDD personas, checked between every phase. You approve the plan once.',
+    starter: { projectKind: 'build', sourceStack: '', targetStack: '' },
+    expects: [
+      'Your requirements — typed in, or imported as a document',
+      'Optionally: technology that is already decided (language, framework, database)',
+      'Optionally: existing code the new work has to fit into',
+      'A model for the thinking steps: Copilot in VS Code (no key), or an API key in Settings',
+    ],
+    requirementHints: ['REQ-001 A visitor can sign up with an email and a password', 'REQ-002 A signed-in user can create, edit and delete notes'],
+    example: null,
+  },
+  {
     id: 'gap-demo',
     name: 'Unsupported stack (honest-failure demo)',
     headline: 'Deliberately unsupported. Shows the platform raising a Capability Gap — what is missing and what would have to be built — instead of pretending it can migrate.',

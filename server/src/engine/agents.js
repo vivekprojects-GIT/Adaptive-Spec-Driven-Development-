@@ -1155,6 +1155,15 @@ export const INPUT_SOURCES = {
     collect: (ctx) =>
       ctx.ws.generated.map((a) => `--- ${a.path}\n${a.content.slice(0, 4000)}`).join('\n\n'),
   },
+  // Plan-first: each phase reads the documents the phases before it wrote, in full.
+  planDocs: {
+    label: 'Planning documents written earlier in this run',
+    collect: (ctx) =>
+      ctx.ws.generated
+        .filter((a) => a.path.startsWith('docs/'))
+        .map((a) => `--- ${a.path}\n${a.content.slice(0, 20000)}`)
+        .join('\n\n'),
+  },
 };
 
 /** Keeps a model-proposed path inside the run's output tree. */
@@ -1314,7 +1323,7 @@ async function runModelAgent(ctx, { persona = null, bmadAgent = null } = {}) {
   const files = Array.isArray(response.files) ? response.files : [];
   const outputs = files
     .filter((file) => typeof file?.content === 'string' && file.content.trim())
-    .map((file) => artifact(safePath(file.path, outputDir), file.content, { kind: file.kind || (bmadAgent ? 'spec' : 'code') }));
+    .map((file) => artifact(safePath(file.path, outputDir), file.content, { kind: file.kind || (/\.(md|txt)$/i.test(file.path) ? 'spec' : 'code') }));
 
   const notes = [...(response.notes || []), ...(response.unableTo || []).map((item) => `Could not do: ${item}`)];
 

@@ -8,6 +8,14 @@ description: 'Run ASDD discovery and review the proposed agents and guardrails w
 
 AI proposes the workflow; the user owns it. Nothing runs until they are happy with the list.
 
+**A plan-first (`build`) project:** the proposal *is* the plan — the phases in order (brief → PRD →
+UX when there is a user interface → architecture → epics & stories → implementation), who does
+each (their ASDD persona for the role, or ASDD's built-in agent), and the guardrails between the
+phases. Two of those stop the run before any code is written: if the plan is incomplete, or if a
+requirement has no story. Show it to the user as that structure. If they approve it as it is, one
+command accepts it all and runs every phase by itself: `node _asdd/asdd.mjs approve-plan`. If they
+want changes, make them first (the table below), then `approve-plan`.
+
 1. `node _asdd/asdd.mjs discover` — or `proposals` if discovery already ran and nothing changed.
    If it refuses because questions still block, go back to `/asdd-start` step 4. Add `--force` only if the user explicitly says to go ahead anyway.
 

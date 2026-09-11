@@ -21,7 +21,7 @@ description: 'Run the ASDD workflow the user approved in this project, and carry
      2. Do the work for real. Read the project files you need, and write the files under the `out/` folder it names, each at the path it should have in the project.
      3. Stay in that role and that step's scope. Do not change other project files for this step.
      4. If something essential is missing, ask the user. If you go ahead on an assumption, write it in `NOTES.md` in that `out/` folder.
-     5. Run `node _asdd/asdd.mjs submit`. The run carries on, and it may hand you another step — repeat.
+     5. Run `node _asdd/asdd.mjs submit`. The run carries on, and it may hand you another step — repeat. In a plan-first project it hands you each phase in turn — brief, PRD, architecture, stories, then the implementation — and each task includes the documents written before it.
 
    - **`⚖ WAITING FOR YOU … Judge N rule(s)`** — rules the user wrote in plain English need a verdict. You are the judge, so be a strict one:
      1. Read the JUDGE.md it names: each rule, what it applies to, and the files the run produced for it.
